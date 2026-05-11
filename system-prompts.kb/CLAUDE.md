@@ -20,12 +20,10 @@ against a partial; that's expected, not a regression.
 ## Adding a capture
 
 Route Claude Code through `proxy.sh`, then extract the agent body from
-`traffic.jsonl`:
+`traffic.jsonl` via `jsonl2sysprompt.sh`:
 
 ```bash
-jq -r 'select(.phase=="request") | .data.content | fromjson
-        | .system[]? | select(.text? | startswith("\nYou are an interactive agent"))
-        | .text' traffic.jsonl > system-prompts.kb/v<version>.md
+./jsonl2sysprompt.sh traffic.jsonl > system-prompts.kb/v<version>.md
 ```
 
 ## What does not belong
