@@ -1,0 +1,30 @@
+claude-code-mitmproxy
+Copyright 2026 Buck Evan and contributors
+
+Licensed under the Apache License, Version 2.0.
+See LICENSE for the project's license, and
+https://www.apache.org/licenses/LICENSE-2.0 for the full license text.
+
+------------------------------------------------------------------------------
+Third-party content
+------------------------------------------------------------------------------
+
+The following files contain verbatim or near-verbatim text extracted from
+Claude Code network traffic (Claude Code is a product of Anthropic, PBC):
+
+  - system-prompts.kb/v*.md   (captured system-prompt bodies, per cc_version)
+  - system.patched.md          (a captured body with project patches applied)
+
+These files are reproduced unmodified, or as minimally-modified derivative
+works, for the purposes of interoperability and research -- specifically as
+fixture input to `check_patches.py` for offline validation of the patches
+defined under `~/.claude/system-prompt-patches.d/`.
+
+Copyright in those captured prompts, where applicable, is held by their
+original authors (Anthropic, PBC). They are NOT covered by the Apache
+License granted to the rest of this project, and no license to them is
+granted by this repository. Their inclusion here is not an assertion of
+ownership.
+
+Marks: "Claude", "Claude Code", and "Anthropic" are trademarks of Anthropic,
+PBC, used here descriptively to identify the upstream system being analyzed.
