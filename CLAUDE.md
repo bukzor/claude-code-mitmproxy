@@ -12,6 +12,8 @@ flows to JSONL (`flow2jsonl.py`).
 
 ## Collections
 
+- `CLAUDE.kb/` — deferred design/reference notes for this project (protocol
+  shapes, gotchas) — read the relevant one before touching that area.
 - `system-prompts.kb/` — captured system-prompt bodies per cc_version,
   used by `check_patches.py` for offline validation.
 - `.claude/todo.kb/` — strategic task breakdowns (per `Skill(llm-subtask)`).
