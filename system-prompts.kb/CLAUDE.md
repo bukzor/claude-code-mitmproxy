@@ -17,6 +17,11 @@ named section (e.g., `-doing-tasks` for `# Doing tasks` only). Patches whose
 targets fall outside that section will report `failed to match` when run
 against a partial; that's expected, not a regression.
 
+Likewise, patches sunset to `upstream-removed.bool` assert against the
+*current* prompt: run against an old capture they report
+`matched-despite-upstream-removed`, because the removed text is still present
+there. Expected — which is why `check_patches` defaults to the newest capture.
+
 ## Adding a capture
 
 Route Claude Code through `proxy.sh`, then extract the agent body from
