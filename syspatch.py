@@ -149,10 +149,27 @@ class PatchIssue(NamedTuple):
 # Default location for saved offending bodies. Callers pass capture_dir=None to
 # disable capture (offline callers like check_patches only want the warning).
 CAPTURE_DIR = Path(__file__).parent / "patch-failures"
+BODIES_DIRNAME = "_bodies"
 
-# (body_hash, issue) already reported this run. The live proxy patches every
-# request, so without this each unmatched patch warns and logs endlessly.
-_REPORTED: set[tuple[str, PatchIssue]] = set()
+# Per-session-volatile regions that differ between otherwise-identical bodies
+# (cwd, scratchpad path, git status + recent commits). Neutralized only for the
+# dedup hash; the stored body keeps them verbatim for diagnosis.
+_VOLATILE_SUBS = (
+    (re.compile(r"\ngitStatus:.*", re.DOTALL), "\n"),
+    (re.compile(r"(?m)^( - Primary working directory:).*"), r"\1"),
+    (re.compile(r"(?m)^`/tmp/.*scratchpad`$"), "`scratchpad`"),
+)
+
+
+def content_hash(body: str) -> str:
+    """Hash identifying the prompt *content*, stable across sessions: the
+    per-session environment tail (cwd, scratchpad path, git status) is
+    neutralized first, so the same prompt dedups to a single incident instead
+    of one per session that happened to run it from a different directory."""
+    normalized = body
+    for pattern, repl in _VOLATILE_SUBS:
+        normalized = pattern.sub(repl, normalized)
+    return hashlib.sha256(normalized.encode()).hexdigest()[:12]
 
 
 def apply_patches(
@@ -183,47 +200,61 @@ def apply_patches(
 
 
 def report_issues(body: str, issues: list[PatchIssue], capture_dir: Path | None) -> None:
-    """Warn about patches that didn't apply cleanly, once per distinct body+issue.
+    """Warn about patches that didn't apply cleanly; when capture_dir is given,
+    save the body once (content-addressed) plus one incident record per
+    (patch, content) so it can be diagnosed later.
 
-    When capture_dir is given, the offending body is saved there first so the
-    mismatch can be diagnosed and the patch updated later; the warning then
-    points at the saved file.
+    Capture is idempotent on disk: a body whose content was already recorded
+    re-saves nothing and re-warns nothing. The live proxy patches every request,
+    so this is what keeps a persistent mismatch from logging endlessly — the
+    first request captures and warns, the rest find the record present.
     """
-    body_hash = hashlib.sha256(body.encode()).hexdigest()[:12]
+    if capture_dir is None:
+        for issue in issues:
+            logging.warning("patch %r %s", issue.patch, issue.kind)
+        return
+
+    digest = content_hash(body)
+    save_body(body, digest, capture_dir)
     for issue in issues:
-        key = (body_hash, issue)
-        if key in _REPORTED:
-            continue
-        _REPORTED.add(key)
-
-        saved = save_incident(body, body_hash, issue, capture_dir) if capture_dir else None
+        saved = save_incident(issue, digest, capture_dir)
         # logging (not stderr): the console TUI routes records to its event log /
-        # status bar; raw stderr corrupts curses. warn flashes the status bar,
-        # info keeps the saved-path line to the event log only.
-        logging.warning("patch %r %s", issue.patch, issue.kind)
+        # status bar; raw stderr corrupts curses. Warn only on a fresh capture.
         if saved is not None:
-            logging.info("saved offending body -> %s", saved)
+            logging.warning("patch %r %s -> %s", issue.patch, issue.kind, saved)
 
 
-def save_incident(body: str, body_hash: str, issue: PatchIssue, capture_dir: Path) -> Path:
-    """Write the offending body (.md) and its metadata (.json) under
-    capture_dir/{rule}/{date}/{timestamp}.*; return the body path.
-
-    Both are whole-file writes — never appended — so concurrent requests can
-    never interleave a partial record. Microsecond timestamps key each incident.
-    """
-    now = datetime.now(timezone.utc)
-    day_dir = capture_dir / issue.patch / now.date().isoformat()
-    day_dir.mkdir(parents=True, exist_ok=True)
-
-    stamp = now.isoformat()
-    body_path = day_dir / f"{stamp}.md"
-    meta_path = day_dir / f"{stamp}.json"
-    meta = {"at": stamp, "rule": issue.patch, "kind": issue.kind, "hash": body_hash}
-
-    body_path.write_text(body)
-    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+def save_body(body: str, digest: str, capture_dir: Path) -> Path:
+    """Store the offending body once at capture_dir/_bodies/{digest}.md, where
+    digest is its content_hash. No-op if already present. The file holds the
+    verbatim body (one representative session's environment); the digest keys
+    its content, so it is not a checksum of the bytes on disk."""
+    bodies_dir = capture_dir / BODIES_DIRNAME
+    bodies_dir.mkdir(parents=True, exist_ok=True)
+    body_path = bodies_dir / f"{digest}.md"
+    if not body_path.exists():
+        body_path.write_text(body)
     return body_path
+
+
+def save_incident(issue: PatchIssue, digest: str, capture_dir: Path) -> Path | None:
+    """Write one incident at capture_dir/{rule}/{digest}.json, referencing the
+    shared body. Returns the path when freshly written, None when this
+    (patch, content) was already recorded — so the caller warns exactly once
+    per distinct failure, across restarts."""
+    rule_dir = capture_dir / issue.patch
+    rule_dir.mkdir(parents=True, exist_ok=True)
+    meta_path = rule_dir / f"{digest}.json"
+    if meta_path.exists():
+        return None
+    meta = {
+        "at": datetime.now(timezone.utc).isoformat(),
+        "rule": issue.patch,
+        "kind": issue.kind,
+        "body": digest,
+    }
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+    return meta_path
 
 
 # --- mitmproxy addon ---
