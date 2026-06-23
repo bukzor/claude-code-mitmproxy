@@ -17,7 +17,7 @@ def main():
     assert system_file.exists(), system_file
     text = system_file.read_text()
     patches = load_patches(patches_dir)
-    result = apply_patches(text, patches)
+    result = apply_patches(text, patches, capture_dir=None)
 
     delta = len(result) - len(text)
     print(f"original: {len(text)} chars", file=sys.stderr)

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import re
-import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
@@ -139,26 +141,89 @@ def load_patches(patches_dir: Path) -> tuple[Patch, ...]:
     return tuple(patches)
 
 
-def apply_patches(text: str, patches: tuple[Patch, ...]) -> str:
+class PatchIssue(NamedTuple):
+    patch: str
+    kind: str  # "failed-to-match" | "matched-despite-upstream-removed"
+
+
+# Default location for saved offending bodies. Callers pass capture_dir=None to
+# disable capture (offline callers like check_patches only want the warning).
+CAPTURE_DIR = Path(__file__).parent / "patch-failures"
+
+# (body_hash, issue) already reported this run. The live proxy patches every
+# request, so without this each unmatched patch warns and logs endlessly.
+_REPORTED: set[tuple[str, PatchIssue]] = set()
+
+
+def apply_patches(
+    text: str, patches: tuple[Patch, ...], capture_dir: Path | None = CAPTURE_DIR
+) -> str:
+    # Normalize trailing newline so templates ending with `\n` can match a
+    # block that sits at end-of-body. Without this, `$LINES\n` backtracks
+    # one line short when the body's final line has no trailing newline.
+    if not text.endswith("\n"):
+        text += "\n"
+    original = text
+    issues: list[PatchIssue] = []
     for patch in patches:
         m = _find_first_match(text, patch)
         if patch.upstream_removed:
             if m is not None:
-                print(
-                    f"WARNING: patch {patch.name!r} marked upstream-removed but matched body",
-                    file=sys.stderr,
-                )
+                issues.append(PatchIssue(patch.name, "matched-despite-upstream-removed"))
             continue
         if m is None:
             if not patch.conditional:
-                print(
-                    f"WARNING: patch {patch.name!r} failed to match",
-                    file=sys.stderr,
-                )
+                issues.append(PatchIssue(patch.name, "failed-to-match"))
             continue
         assert patch.replace is not None  # invariant: only None when upstream_removed
         text = text[: m.start()] + patch.replace + text[m.end() :]
+    if issues:
+        report_issues(original, issues, capture_dir)
     return text
+
+
+def report_issues(body: str, issues: list[PatchIssue], capture_dir: Path | None) -> None:
+    """Warn about patches that didn't apply cleanly, once per distinct body+issue.
+
+    When capture_dir is given, the offending body is saved there first so the
+    mismatch can be diagnosed and the patch updated later; the warning then
+    points at the saved file.
+    """
+    body_hash = hashlib.sha256(body.encode()).hexdigest()[:12]
+    for issue in issues:
+        key = (body_hash, issue)
+        if key in _REPORTED:
+            continue
+        _REPORTED.add(key)
+
+        saved = save_incident(body, body_hash, issue, capture_dir) if capture_dir else None
+        # logging (not stderr): the console TUI routes records to its event log /
+        # status bar; raw stderr corrupts curses. warn flashes the status bar,
+        # info keeps the saved-path line to the event log only.
+        logging.warning("patch %r %s", issue.patch, issue.kind)
+        if saved is not None:
+            logging.info("saved offending body -> %s", saved)
+
+
+def save_incident(body: str, body_hash: str, issue: PatchIssue, capture_dir: Path) -> Path:
+    """Write the offending body (.md) and its metadata (.json) under
+    capture_dir/{rule}/{date}/{timestamp}.*; return the body path.
+
+    Both are whole-file writes — never appended — so concurrent requests can
+    never interleave a partial record. Microsecond timestamps key each incident.
+    """
+    now = datetime.now(timezone.utc)
+    day_dir = capture_dir / issue.patch / now.date().isoformat()
+    day_dir.mkdir(parents=True, exist_ok=True)
+
+    stamp = now.isoformat()
+    body_path = day_dir / f"{stamp}.md"
+    meta_path = day_dir / f"{stamp}.json"
+    meta = {"at": stamp, "rule": issue.patch, "kind": issue.kind, "hash": body_hash}
+
+    body_path.write_text(body)
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+    return body_path
 
 
 # --- mitmproxy addon ---
@@ -171,7 +236,7 @@ def load(loader):
     """Called once at mitmproxy startup."""
     global PATCHES
     PATCHES = load_patches(PATCHES_DIR)
-    print(f"loaded {len(PATCHES)} system prompt patches", file=sys.stderr)
+    logging.info("loaded %d system prompt patches", len(PATCHES))
     for patch in PATCHES:
         if patch.upstream_removed:
             label = "upstream-removed"
@@ -179,7 +244,7 @@ def load(loader):
             label = "conditional"
         else:
             label = "required"
-        print(f"  {patch.name} ({label})", file=sys.stderr)
+        logging.info("  %s (%s)", patch.name, label)
 
 
 def request(flow):
