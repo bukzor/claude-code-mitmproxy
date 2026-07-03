@@ -7,3 +7,12 @@
   (Curses behavior is so far asserted from mitmproxy 12.2.1 source, not
   observed. The content-addressed/dedup recorder was reworked 2026-06-23 and
   tested offline only — live capture still unverified.)
+- [ ] Verify `strip-fast-mode-info`'s `match.md` against a real capture with
+  `/fast` toggled on. It targets a `<fast_mode_info>` tag reading "uses the
+  same Claude Opus 4.6 model" but the *unconditional* Fast Mode line
+  elsewhere in the current prompt already says "Opus 4.8/4.7" — same
+  stale-version smell `strip-over-engineering` had before it was found to be
+  silently dark. See `CLAUDE.kb/patch-failure-triage.md` § Open verification
+  items. Toggle `/fast` in a proxied session, capture via `traffic.jsonl`,
+  compare the tag's current wording, re-target `match.md`/add `search.md` if
+  it drifted.
