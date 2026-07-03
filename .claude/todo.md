@@ -12,7 +12,7 @@
   same Claude Opus 4.6 model" but the *unconditional* Fast Mode line
   elsewhere in the current prompt already says "Opus 4.8/4.7" — same
   stale-version smell `strip-over-engineering` had before it was found to be
-  silently dark. See `CLAUDE.kb/patch-failure-triage.md` § Open verification
-  items. Toggle `/fast` in a proxied session, capture via `traffic.jsonl`,
+  silently dark. See `~/.claude/system-prompt-patches.d/strip-fast-mode-info/README.md`.
+  Toggle `/fast` in a proxied session, capture via `traffic.jsonl`,
   compare the tag's current wording, re-target `match.md`/add `search.md` if
   it drifted.
