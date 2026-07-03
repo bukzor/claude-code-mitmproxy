@@ -1,5 +1,12 @@
 # Todo
 
+- [ ] Triage the live `found-0-prompt-bodies` incident once a capture lands
+  under `patch-failures/_locate-system-prompt/` (blocked on the next
+  occurrence; the addon hot-reloaded the 2026-07-03 fix, commit 77815a8).
+  Read `_bodies/{digest}.md`, decide: `BODY_MARKER` drifted (add marker
+  alternatives) vs. a non-Claude-Code request shape (leave unpatched by
+  design). See `CLAUDE.kb/patch-failure-triage.md`. When it lands it also
+  serves as the live end-to-end capture verification the next item wants.
 - [ ] Verify patch-failure capture end-to-end live: run `proxy.sh`, route Claude
   Code through it, induce a patch miss (e.g. stale `match.md`); confirm the
   `logging.warning` flashes in the mitmproxy status bar and the records land
