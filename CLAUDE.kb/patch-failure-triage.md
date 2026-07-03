@@ -34,6 +34,18 @@ Two `kind`s, emitted by `apply_patches`:
 - `matched-despite-upstream-removed` — an `upstream-removed.bool` patch's
   `match` hit: Anthropic put back what we'd sunset.
 
+One more, emitted by the addon's `request` hook before any patch runs, under
+the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
+`_bodies/`, so it can't collide with a patch name):
+
+- `found-N-prompt-bodies` — a content-blocks `system` list didn't contain
+  exactly one block starting with the prompt-body marker
+  (`\nYou are an interactive agent`); the request passed through unpatched.
+  The captured body is the whole list flattened: text blocks verbatim (so
+  `content_hash` dedup still neutralizes session-volatile regions), non-text
+  blocks as JSON, with `=== system[i] ===` separators. Usual causes: the
+  marker text drifted upstream, or a non-Claude-Code request shape.
+
 ### Split `match`/`search`, or single-file?
 
 - **Split (`search` narrower than `match`)** — use whenever a reliable

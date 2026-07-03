@@ -146,7 +146,7 @@ def load_patches(patches_dir: Path) -> tuple[Patch, ...]:
 
 class PatchIssue(NamedTuple):
     patch: str
-    kind: str  # "failed-to-match" | "matched-despite-upstream-removed"
+    kind: str  # "failed-to-match" | "matched-despite-upstream-removed" | "found-N-prompt-bodies"
 
 
 # Default location for saved offending bodies. Callers pass capture_dir=None to
@@ -216,7 +216,7 @@ def apply_patches(
 
 
 def report_issues(body: str, issues: list[PatchIssue], capture_dir: Path | None) -> None:
-    """Warn about patches that didn't apply cleanly; when capture_dir is given,
+    """Warn about rules that didn't apply cleanly; when capture_dir is given,
     save the body once (content-addressed) plus one incident record per
     (patch, content) so it can be diagnosed later.
 
@@ -278,6 +278,26 @@ def save_incident(issue: PatchIssue, digest: str, capture_dir: Path) -> Path | N
 PATCHES_DIR = Path("~/.claude/system-prompt-patches.d").expanduser()
 PATCHES: tuple[Patch, ...] = ()
 
+# Opening text that identifies the main prompt body among `system` blocks.
+BODY_MARKER = "\nYou are an interactive agent"
+# Incident rule for a `system` list without exactly one such block.
+# Underscore-prefixed, like _bodies, so it can't collide with a patch name.
+LOCATOR_RULE = "_locate-system-prompt"
+
+
+def render_system_blocks(system: list) -> str:
+    """Flatten a content-blocks `system` list into one capture body: text
+    blocks verbatim (so content_hash still neutralizes session-volatile
+    regions), anything else as JSON, with per-block separators."""
+    parts = []
+    for i, item in enumerate(system):
+        if isinstance(item, dict) and isinstance(item.get("text"), str):
+            rendered = item["text"]
+        else:
+            rendered = json.dumps(item, indent=2)
+        parts.append(f"=== system[{i}] ===\n{rendered}")
+    return "\n\n".join(parts)
+
 
 def load(loader):
     """Called once at mitmproxy startup."""
@@ -315,20 +335,19 @@ def request(flow):
     if isinstance(system, str):
         request["system"] = apply_patches(system, PATCHES)
     elif isinstance(system, list):
-        system = [
+        bodies = [
             item
             for item in system
             if isinstance(item, dict)
             and item.get("type") == "text"
-            and item.get("text", "").startswith("\nYou are an interactive agent")
+            and item.get("text", "").startswith(BODY_MARKER)
         ]
-        assert len(system) == 1, (
-            "expected 1 system-prompt body, found",
-            len(system),
-            system,
-        )
-        system = system[0]
-        system["text"] = apply_patches(system["text"], PATCHES)
+        if len(bodies) != 1:
+            issue = PatchIssue(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
+            report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
+            return
+        body = bodies[0]
+        body["text"] = apply_patches(body["text"], PATCHES)
     else:
         raise AssertionError(("unexpected system type", type(system)))
 
