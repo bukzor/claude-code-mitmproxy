@@ -22,9 +22,9 @@ DEFAULT_PATTERN = r"[^\n]*"
 
 class Patch(NamedTuple):
     name: str
-    matches: tuple[str, ...]
+    matches: tuple[str, ...]  # match.md/match.d: is this patch applicable here at all?
+    search: tuple[str, ...]  # search.md/search.d: exact text to replace; () means "whichever match template hit"
     replace: str | None  # None when upstream_removed
-    conditional: bool
     upstream_removed: bool
 
     @staticmethod
@@ -32,18 +32,19 @@ class Patch(NamedTuple):
         name = directory.name
         replace_file = directory / "replace.md"
 
-        matches = _load_matches(directory)
+        matches = _load_templates(directory, "match")
+        assert matches, (directory, "missing match.md or match.d/")
+        search = _load_templates(directory, "search")
         upstream_removed = _read_bool(directory / "upstream-removed.bool")
-        conditional = _read_bool(directory / "conditional.bool")
 
-        assert not (upstream_removed and conditional), (
-            name,
-            "upstream-removed and conditional are mutually exclusive",
-        )
         if upstream_removed:
             assert not replace_file.exists(), (
                 name,
                 "replace.md must be absent when upstream-removed",
+            )
+            assert not search, (
+                name,
+                "search.md/search.d is meaningless when upstream-removed (no replace happens)",
             )
             replace = None
         else:
@@ -53,34 +54,34 @@ class Patch(NamedTuple):
         return Patch(
             name=name,
             matches=matches,
+            search=search,
             replace=replace,
-            conditional=conditional,
             upstream_removed=upstream_removed,
         )
 
 
-def _load_matches(directory: Path) -> tuple[str, ...]:
-    """Load match templates from `match.md` (single) or `match.d/*.md` (alternatives).
+def _load_templates(directory: Path, base_name: str) -> tuple[str, ...]:
+    """Load templates from `{base_name}.md` (single) or `{base_name}.d/*.md`
+    (alternatives, tried in sorted-filename order, first hit wins). Returns
+    () if neither is present -- callers decide whether that's required
+    (match) or an optional default (search)."""
+    single_file = directory / f"{base_name}.md"
+    multi_dir = directory / f"{base_name}.d"
+    has_file = single_file.is_file()
+    has_dir = multi_dir.is_dir()
 
-    Exactly one form must be present. Inside `match.d/`, only `*.md` files are read,
-    in sorted-filename order. Alternatives are tried in order at apply time.
-    """
-    match_file = directory / "match.md"
-    match_dir = directory / "match.d"
-    has_file = match_file.is_file()
-    has_dir = match_dir.is_dir()
-
-    assert has_file or has_dir, (directory, "missing match.md or match.d/")
     assert not (has_file and has_dir), (
         directory,
-        "both match.md and match.d/ present",
+        f"both {base_name}.md and {base_name}.d/ present",
     )
 
     if has_file:
-        return (match_file.read_text(),)
+        return (single_file.read_text(),)
+    if not has_dir:
+        return ()
 
-    files = sorted(p for p in match_dir.iterdir() if p.is_file() and p.suffix == ".md")
-    assert files, (match_dir, "no *.md files in match.d/")
+    files = sorted(p for p in multi_dir.iterdir() if p.is_file() and p.suffix == ".md")
+    assert files, (multi_dir, f"no *.md files in {base_name}.d/")
     return tuple(p.read_text() for p in files)
 
 
@@ -118,9 +119,11 @@ def _template_to_regex(template: str) -> re.Pattern[str]:
     return re.compile("".join(regex_parts), re.DOTALL)
 
 
-def _find_first_match(text: str, patch: Patch) -> re.Match[str] | None:
-    """Return the first matching template's `re.Match`, or None if none match."""
-    for template in patch.matches:
+def _first_hit(text: str, templates: tuple[str, ...]) -> re.Match[str] | None:
+    """Try each template against text in order, return the first `re.Match`,
+    or None if none hit. Shared by match (applicability) and search (replace
+    target) -- both are "try these alternatives, first one wins"."""
+    for template in templates:
         pattern = _template_to_regex(template)
         m = pattern.search(text)
         if m is not None:
@@ -183,17 +186,30 @@ def apply_patches(
     original = text
     issues: list[PatchIssue] = []
     for patch in patches:
-        m = _find_first_match(text, patch)
-        if patch.upstream_removed:
-            if m is not None:
-                issues.append(PatchIssue(patch.name, "matched-despite-upstream-removed"))
-            continue
+        m = _first_hit(text, patch.matches)
         if m is None:
-            if not patch.conditional:
-                issues.append(PatchIssue(patch.name, "failed-to-match"))
+            # match didn't find its target: this patch isn't applicable here
+            # (wrong prompt variant, session-optional content absent,
+            # whatever). Always silent -- a non-match is not a failure, it's
+            # the mechanism by which a patch detects its own relevance.
             continue
+        if patch.upstream_removed:
+            issues.append(PatchIssue(patch.name, "matched-despite-upstream-removed"))
+            continue
+        if not patch.search:
+            target = m
+        else:
+            target = _first_hit(text, patch.search)
+            if target is None:
+                # match succeeded (we're in scope) but none of search's
+                # alternatives found their precise target -- always loud, no
+                # override. Unlike a match miss, this means the patch's own
+                # precondition holds yet its target vanished: a real
+                # drift/regression to triage.
+                issues.append(PatchIssue(patch.name, "failed-to-match"))
+                continue
         assert patch.replace is not None  # invariant: only None when upstream_removed
-        text = text[: m.start()] + patch.replace + text[m.end() :]
+        text = text[: target.start()] + patch.replace + text[target.end() :]
     if issues:
         report_issues(original, issues, capture_dir)
     return text
@@ -271,10 +287,10 @@ def load(loader):
     for patch in PATCHES:
         if patch.upstream_removed:
             label = "upstream-removed"
-        elif patch.conditional:
-            label = "conditional"
+        elif patch.search:
+            label = "match+search"
         else:
-            label = "required"
+            label = "match-only"
         logging.info("  %s (%s)", patch.name, label)
 
 
