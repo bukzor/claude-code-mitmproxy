@@ -2,7 +2,7 @@
 cost-benefit-sweh:
   timebox:
     '@value': 2
-    rationale: two live-verification items; the triage item is blocked on the next found-0-prompt-bodies occurrence
+    rationale: three live-verification items; the triage item is blocked on the next found-0-prompt-bodies occurrence
     confidence: unsure
   benefit-2w:
     '@value': 0.3
@@ -29,6 +29,12 @@ cost-benefit-sweh:
   (Curses behavior is so far asserted from mitmproxy 12.2.1 source, not
   observed. The content-addressed/dedup recorder was reworked 2026-06-23 and
   tested offline only — live capture still unverified.)
+- [ ] Verify uncaught-exception capture end-to-end live: the new
+  `incidents.capture_uncaught` (wraps `request`/`response` in `syspatch.py`,
+  `thinkpatch.py`, `flow2jsonl.py` — rule `_uncaught-{addon}`) is so far
+  only verified with an offline smoke test (fake flows tripping asserts),
+  not through a real running `proxy.sh`. See
+  `CLAUDE.kb/patch-failure-triage.md`.
 - [ ] Verify `strip-fast-mode-info`'s `match.md` against a real capture with
   `/fast` toggled on. It targets a `<fast_mode_info>` tag reading "uses the
   same Claude Opus 4.6 model" but the *unconditional* Fast Mode line

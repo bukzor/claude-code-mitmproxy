@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import re
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
+
+from incidents import CAPTURE_DIR, Incident, capture_uncaught, content_hash, save_body, save_incident
 
 # Matches $ALLCAPS placeholders in templates
 PLACEHOLDER_RE = re.compile(r"\$([A-Z]+)")
@@ -144,37 +144,6 @@ def load_patches(patches_dir: Path) -> tuple[Patch, ...]:
     return tuple(patches)
 
 
-class PatchIssue(NamedTuple):
-    patch: str
-    kind: str  # "failed-to-match" | "matched-despite-upstream-removed" | "found-N-prompt-bodies"
-
-
-# Default location for saved offending bodies. Callers pass capture_dir=None to
-# disable capture (offline callers like check_patches only want the warning).
-CAPTURE_DIR = Path(__file__).parent / "patch-failures"
-BODIES_DIRNAME = "_bodies"
-
-# Per-session-volatile regions that differ between otherwise-identical bodies
-# (cwd, scratchpad path, git status + recent commits). Neutralized only for the
-# dedup hash; the stored body keeps them verbatim for diagnosis.
-_VOLATILE_SUBS = (
-    (re.compile(r"\ngitStatus:.*", re.DOTALL), "\n"),
-    (re.compile(r"(?m)^( - Primary working directory:).*"), r"\1"),
-    (re.compile(r"(?m)^`/tmp/.*scratchpad`$"), "`scratchpad`"),
-)
-
-
-def content_hash(body: str) -> str:
-    """Hash identifying the prompt *content*, stable across sessions: the
-    per-session environment tail (cwd, scratchpad path, git status) is
-    neutralized first, so the same prompt dedups to a single incident instead
-    of one per session that happened to run it from a different directory."""
-    normalized = body
-    for pattern, repl in _VOLATILE_SUBS:
-        normalized = pattern.sub(repl, normalized)
-    return hashlib.sha256(normalized.encode()).hexdigest()[:12]
-
-
 def apply_patches(
     text: str, patches: tuple[Patch, ...], capture_dir: Path | None = CAPTURE_DIR
 ) -> str:
@@ -184,7 +153,7 @@ def apply_patches(
     if not text.endswith("\n"):
         text += "\n"
     original = text
-    issues: list[PatchIssue] = []
+    issues: list[Incident] = []
     for patch in patches:
         m = _first_hit(text, patch.matches)
         if m is None:
@@ -194,7 +163,7 @@ def apply_patches(
             # the mechanism by which a patch detects its own relevance.
             continue
         if patch.upstream_removed:
-            issues.append(PatchIssue(patch.name, "matched-despite-upstream-removed"))
+            issues.append(Incident(patch.name, "matched-despite-upstream-removed"))
             continue
         if not patch.search:
             target = m
@@ -206,7 +175,7 @@ def apply_patches(
                 # override. Unlike a match miss, this means the patch's own
                 # precondition holds yet its target vanished: a real
                 # drift/regression to triage.
-                issues.append(PatchIssue(patch.name, "failed-to-match"))
+                issues.append(Incident(patch.name, "failed-to-match"))
                 continue
         assert patch.replace is not None  # invariant: only None when upstream_removed
         text = text[: target.start()] + patch.replace + text[target.end() :]
@@ -215,10 +184,10 @@ def apply_patches(
     return text
 
 
-def report_issues(body: str, issues: list[PatchIssue], capture_dir: Path | None) -> None:
+def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -> None:
     """Warn about rules that didn't apply cleanly; when capture_dir is given,
     save the body once (content-addressed) plus one incident record per
-    (patch, content) so it can be diagnosed later.
+    (rule, content) so it can be diagnosed later.
 
     Capture is idempotent on disk: a body whose content was already recorded
     re-saves nothing and re-warns nothing. The live proxy patches every request,
@@ -227,7 +196,7 @@ def report_issues(body: str, issues: list[PatchIssue], capture_dir: Path | None)
     """
     if capture_dir is None:
         for issue in issues:
-            logging.warning("patch %r %s", issue.patch, issue.kind)
+            logging.warning("patch %r %s", issue.rule, issue.kind)
         return
 
     digest = content_hash(body)
@@ -237,40 +206,7 @@ def report_issues(body: str, issues: list[PatchIssue], capture_dir: Path | None)
         # logging (not stderr): the console TUI routes records to its event log /
         # status bar; raw stderr corrupts curses. Warn only on a fresh capture.
         if saved is not None:
-            logging.warning("patch %r %s -> %s", issue.patch, issue.kind, saved)
-
-
-def save_body(body: str, digest: str, capture_dir: Path) -> Path:
-    """Store the offending body once at capture_dir/_bodies/{digest}.md, where
-    digest is its content_hash. No-op if already present. The file holds the
-    verbatim body (one representative session's environment); the digest keys
-    its content, so it is not a checksum of the bytes on disk."""
-    bodies_dir = capture_dir / BODIES_DIRNAME
-    bodies_dir.mkdir(parents=True, exist_ok=True)
-    body_path = bodies_dir / f"{digest}.md"
-    if not body_path.exists():
-        body_path.write_text(body)
-    return body_path
-
-
-def save_incident(issue: PatchIssue, digest: str, capture_dir: Path) -> Path | None:
-    """Write one incident at capture_dir/{rule}/{digest}.json, referencing the
-    shared body. Returns the path when freshly written, None when this
-    (patch, content) was already recorded — so the caller warns exactly once
-    per distinct failure, across restarts."""
-    rule_dir = capture_dir / issue.patch
-    rule_dir.mkdir(parents=True, exist_ok=True)
-    meta_path = rule_dir / f"{digest}.json"
-    if meta_path.exists():
-        return None
-    meta = {
-        "at": datetime.now(timezone.utc).isoformat(),
-        "rule": issue.patch,
-        "kind": issue.kind,
-        "body": digest,
-    }
-    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
-    return meta_path
+            logging.warning("patch %r %s -> %s", issue.rule, issue.kind, saved)
 
 
 # --- mitmproxy addon ---
@@ -314,7 +250,22 @@ def load(loader):
         logging.info("  %s (%s)", patch.name, label)
 
 
+UNCAUGHT_RULE = "_uncaught-syspatch"
+
+
 def request(flow):
+    """mitmproxy request hook. Wraps _request so a bug here (an unexpected
+    system shape, a regression in apply_patches) lands in the same
+    content-addressed capture as a patch-application issue, instead of only
+    flashing through mitmproxy's own log."""
+    try:
+        _request(flow)
+    except Exception as exc:
+        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        raise
+
+
+def _request(flow):
     from mitmproxy import http
 
     assert isinstance(flow, http.HTTPFlow)
@@ -343,7 +294,7 @@ def request(flow):
             and item.get("text", "").startswith(BODY_MARKER)
         ]
         if len(bodies) != 1:
-            issue = PatchIssue(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
+            issue = Incident(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
             report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
             return
         body = bodies[0]

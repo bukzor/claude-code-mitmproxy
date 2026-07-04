@@ -9,6 +9,9 @@ from typing import IO, Optional
 
 from mitmproxy import ctx, http
 
+from incidents import CAPTURE_DIR, capture_uncaught
+
+UNCAUGHT_RULE = "_uncaught-flow2jsonl"
 
 _fp: Optional[IO[str]] = None
 
@@ -57,9 +60,17 @@ def _emit(entry: dict):
 
 
 def request(flow: http.HTTPFlow):
-    _emit({"phase": "request", "data": flow.request.get_state()})
+    try:
+        _emit({"phase": "request", "data": flow.request.get_state()})
+    except Exception as exc:
+        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        raise
 
 
 def response(flow: http.HTTPFlow):
-    assert flow.response is not None
-    _emit({"phase": "response", "data": flow.response.get_state()})
+    try:
+        assert flow.response is not None
+        _emit({"phase": "response", "data": flow.response.get_state()})
+    except Exception as exc:
+        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        raise

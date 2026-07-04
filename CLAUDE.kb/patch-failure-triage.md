@@ -3,9 +3,21 @@
 `patch-failures/` (gitignored) captures system-prompt bodies where a patch
 didn't apply cleanly. An incident is one body, content-addressed: the verbatim
 body at `_bodies/{digest}.md`, and one record per `(rule, kind)` at
-`{rule}/{digest}.json`. `digest` is `syspatch.content_hash()` — the body with
+`{rule}/{digest}.json`. `digest` is `incidents.content_hash()` — the body with
 its per-session environment (cwd, scratchpad path, git status) neutralized, so
 the same prompt dedups to a single incident across sessions and proxy restarts.
+
+The capture primitives (`content_hash`, `save_body`, `save_incident`, the
+`Incident` record) live in `incidents.py`, not `syspatch.py` — they're generic
+over what's being captured. `syspatch.py`'s `report_issues` is the
+patch-domain-specific caller (a body plus a list of match/search issues);
+`incidents.capture_uncaught` is the other caller, used by all three addon
+scripts (`syspatch.py`, `thinkpatch.py`, `flow2jsonl.py`) to wrap their
+mitmproxy hooks: any exception that escapes the hook body is captured under
+rule `_uncaught-{addon}` (kind = the exception's class name) via the same
+content-addressed, idempotent-on-disk mechanism, then re-raised — capture,
+not fail-soft. Same `_bodies`-style underscore-prefixed rule as
+`_locate-system-prompt`, so it can't collide with a patch name.
 
 ## The match/search model
 

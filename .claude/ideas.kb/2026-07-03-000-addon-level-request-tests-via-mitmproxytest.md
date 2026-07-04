@@ -41,6 +41,14 @@ the happy one-body path.
   mitmproxy interpreter (`~/.local/share/uv/tools/mitmproxy/bin/python`) or
   a proper dev venv.
 - Whether `thinkpatch.py` should get the same treatment.
+- 2026-07-04: `incidents.py` now also captures uncaught exceptions from all
+  three addons' hooks (`_uncaught-{addon}` rule, see
+  `CLAUDE.kb/patch-failure-triage.md`). Verified only by an ad hoc scratch
+  script (not committed) that exercised `syspatch.request()`,
+  `thinkpatch.request()`, and `flow2jsonl.request()`/`response()` against
+  malformed/error-inducing flows. No permanent regression test exists for
+  `capture_uncaught` or the wrapping — same gap this idea already names,
+  now with one more addon-level behavior to cover whenever it's promoted.
 
 ## Next Steps (if pursuing)
 

@@ -10,7 +10,10 @@ from __future__ import annotations
 
 import json
 
+from incidents import CAPTURE_DIR, capture_uncaught
+
 REDACT_BETA = "redact-thinking-2026-02-12"
+UNCAUGHT_RULE = "_uncaught-thinkpatch"
 
 
 def _patch_anthropic_beta(flow) -> None:
@@ -58,5 +61,9 @@ def request(flow):
     from mitmproxy import http
 
     assert isinstance(flow, http.HTTPFlow)
-    _patch_anthropic_beta(flow)
-    _patch_thinking_body(flow)
+    try:
+        _patch_anthropic_beta(flow)
+        _patch_thinking_body(flow)
+    except Exception as exc:
+        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        raise
