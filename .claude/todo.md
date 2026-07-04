@@ -1,3 +1,18 @@
+---
+cost-benefit-sweh:
+  timebox:
+    '@value': 2
+    rationale: two live-verification items; the triage item is blocked on the next found-0-prompt-bodies occurrence
+    confidence: unsure
+  benefit-2w:
+    '@value': 0.3
+    rationale: confidence in the capture pipeline; the patch itself is already hot-fixed
+    confidence: unsure
+  cost-of-delay-2w:
+    '@value': 0.1
+    rationale: the blocked item self-serves as verification when it fires
+    confidence: unsure
+---
 # Todo
 
 - [ ] Triage the live `found-0-prompt-bodies` incident once a capture lands
