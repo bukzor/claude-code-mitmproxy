@@ -229,6 +229,7 @@ CLI_IDENTITY = "You are Claude Code, Anthropic's official CLI for Claude."
 AUX_TASK_PREFIXES = (
     "Generate a concise, sentence-case title",
     "You are an assistant for performing a web search tool use",
+    "You are a security monitor for autonomous AI coding agents",
 )
 
 # Subagent requests (Task-tool invocations) carry a per-agent-type prompt
