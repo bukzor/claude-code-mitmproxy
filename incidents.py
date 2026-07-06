@@ -19,13 +19,14 @@ CAPTURE_DIR = Path(__file__).parent / "patch-failures"
 BODIES_DIRNAME = "_bodies"
 
 # Per-session-volatile regions that differ between otherwise-identical bodies
-# (cwd, scratchpad path, git status + recent commits). Neutralized only for
-# the dedup hash; the stored body keeps them verbatim for diagnosis. A no-op
-# on text with no such lines, e.g. a traceback.
+# (cwd, scratchpad path, git status + recent commits, CLI build version).
+# Neutralized only for the dedup hash; the stored body keeps them verbatim
+# for diagnosis. A no-op on text with no such lines, e.g. a traceback.
 _VOLATILE_SUBS = (
-    (re.compile(r"\ngitStatus:.*", re.DOTALL), "\n"),
-    (re.compile(r"(?m)^( - Primary working directory:).*"), r"\1"),
-    (re.compile(r"(?m)^`/tmp/.*scratchpad`$"), "`scratchpad`"),
+    (re.compile(r"\ngitStatus:.*", re.DOTALL), "\ngitStatus: $GIT_STATUS\n"),
+    (re.compile(r"(?m)^( - Primary working directory:).*"), r"\1 $CWD"),
+    (re.compile(r"(?m)^`/tmp/.*scratchpad`$"), "`$SCRATCHPAD`"),
+    (re.compile(r"\bcc_version=[^;]+"), "cc_version=$CC_VERSION"),
 )
 
 

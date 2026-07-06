@@ -15,18 +15,17 @@ cost-benefit-sweh:
 ---
 # Todo
 
-- [ ] Stop `found-0-prompt-bodies` incident spam from auxiliary CLI requests.
-  Triage 2026-07-05 found all 13 captures are non-interactive request shapes
-  (session-title generation, web-search helper, bare "You are Claude Code"
-  header) — unpatched by design, not marker drift. But dedup is broken:
-  the `x-anthropic-billing-header` block embeds the cc_version *build
-  suffix* (`2.1.201.f67` vs `.761` vs `2.1.200.48f`...), so `content_hash`
-  treats the identical session-title prompt as a new incident per CLI
-  build. Fix in `incidents.content_hash` neutralization (mask the
-  cc_version value) and/or teach the `_locate-system-prompt` check to
-  skip-and-not-capture recognized auxiliary shapes. Then delete the 13
-  resolved incidents (verdict recorded here; bodies are boilerplate,
-  no kb capture needed).
+- [x] Stop `found-0-prompt-bodies` incident spam from auxiliary CLI requests
+  (2026-07-05): added `cc_version=$CC_VERSION` masking to
+  `incidents._VOLATILE_SUBS` — the billing header's build suffix was
+  defeating `content_hash` dedup, re-capturing identical auxiliary prompts
+  (session-title, web-search helper) once per CLI build. Verified against
+  the 15 on-disk bodies: they collapse to 3 distinct shapes. Resolved
+  incidents moved to `trash/resolved-incidents-2026-07-05/`. Note: the
+  hash-scheme change orphans old digests, so each shape will re-capture
+  once more on live traffic, then stay silent. Chose NOT to
+  skip-and-not-capture auxiliary shapes: one capture per new shape is
+  signal, spam was the only problem.
 - [x] Verify patch-failure capture end-to-end live — the recorder path is
   proven: 13 real `found-0-prompt-bodies` incidents landed under
   `_locate-system-prompt/` + `_bodies/` from live `proxy.sh` traffic,
