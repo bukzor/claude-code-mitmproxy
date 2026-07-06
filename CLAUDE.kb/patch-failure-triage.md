@@ -59,12 +59,30 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
   marker text drifted upstream, or a non-Claude-Code request shape.
 
   Known auxiliary CLI shapes (session-title generation, web-search helper)
-  are exempt: `is_auxiliary_system` passes them through with an info log,
-  no incident. It recognizes block *forms* (billing header, bare CLI
-  identity line, `AUX_TASK_PREFIXES`), so a drifted interactive prompt
-  still captures. When a new auxiliary shape lands an incident, triage it
-  the same way — if it's genuinely non-interactive, add its task prompt's
-  opening to `AUX_TASK_PREFIXES` and delete the incident.
+  are exempt: `is_auxiliary_system` passes them through, no incident. It
+  recognizes block *forms* (billing header, bare CLI identity line,
+  `AUX_TASK_PREFIXES`), so a drifted interactive prompt still captures.
+  When a new auxiliary shape lands an incident, triage it the same way —
+  if it's genuinely non-interactive, add its task prompt's opening to
+  `AUX_TASK_PREFIXES` and delete the incident.
+
+  Subagent requests (Task-tool invocations) are a second, separately
+  recognized exemption: `is_subagent_request` checks the billing header for
+  `cc_is_subagent=true` rather than enumerating block forms, because the
+  actual prompt body is agent-type-specific (claude-code-guide, Explore,
+  general-purpose, ...) — too open-ended to match block-by-block like the
+  CLI shapes. Same reasoning also applies in `thinkpatch.py`: subagent
+  requests using classic (non-adaptive) reasoning send
+  `thinking: {"type": "enabled", "budget_tokens": N}`, a config shape with
+  no `display` field to set, so `_patch_thinking_body` treats it as a
+  no-op alongside `"disabled"`.
+
+  Both exemptions log at `logging.debug`, not `info` — every Task-tool
+  call hits this path (this proxy sees traffic from every concurrent
+  Claude Code session on the machine), so it fails the "happy to see this
+  every time" bar for `info`. Compare the CLI-auxiliary case: low volume
+  enough that its confirmation log was tolerable before it was unified
+  with the subagent path onto the same `debug` line.
 
 ### Split `match`/`search`, or single-file?
 

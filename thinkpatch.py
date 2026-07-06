@@ -43,10 +43,12 @@ def _patch_thinking_body(flow) -> None:
 
     assert isinstance(thinking, dict), ("unexpected thinking type", type(thinking), thinking)
     thinking_type = thinking.get("type")
-    if thinking_type == "disabled":
-        # Auxiliary CLI calls (session-title generation, subagent tool
-        # descriptions, ...) send `thinking: {"type": "disabled"}`; only the
-        # interactive-agent request uses "adaptive". Nothing to patch.
+    if thinking_type in ("disabled", "enabled"):
+        # Auxiliary CLI calls (session-title generation, ...) send
+        # `{"type": "disabled"}`; subagent requests using classic
+        # (non-adaptive) reasoning send `{"type": "enabled", "budget_tokens":
+        # N}` -- a config shape with no "display" field to set in the first
+        # place. Only the interactive-agent request uses "adaptive".
         return
     assert thinking_type == "adaptive", ("unexpected thinking config", thinking)
 

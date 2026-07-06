@@ -231,11 +231,33 @@ AUX_TASK_PREFIXES = (
     "You are an assistant for performing a web search tool use",
 )
 
+# Subagent requests (Task-tool invocations) carry a per-agent-type prompt
+# template that never uses BODY_MARKER either, but unlike the auxiliary CLI
+# shapes above, the template body itself varies arbitrarily by agent type
+# (claude-code-guide, Explore, general-purpose, ...) -- too open-ended to
+# enumerate block-by-block. Recognize the request instead, via the billing
+# header's own subagent flag.
+SUBAGENT_MARKER = "cc_is_subagent=true"
+
 
 def is_auxiliary_system(system: list) -> bool:
     """True when every system block belongs to a recognized non-interactive
     request shape, so a missing prompt body is expected, not an incident."""
     return bool(system) and all(_is_auxiliary_block(item) for item in system)
+
+
+def is_subagent_request(system: list) -> bool:
+    """True when the billing-header block marks this a subagent request --
+    its prompt body is agent-type-specific and never carries BODY_MARKER."""
+    if not system:
+        return False
+    first = system[0]
+    return (
+        isinstance(first, dict)
+        and isinstance(first.get("text"), str)
+        and first["text"].startswith("x-anthropic-billing-header:")
+        and SUBAGENT_MARKER in first["text"]
+    )
 
 
 def _is_auxiliary_block(item) -> bool:
@@ -266,6 +288,7 @@ def render_system_blocks(system: list) -> str:
 
 def load(loader):
     """Called once at mitmproxy startup."""
+    del loader  # unused
     global PATCHES
     PATCHES = load_patches(PATCHES_DIR)
     logging.info("loaded %d system prompt patches", len(PATCHES))
@@ -323,8 +346,11 @@ def _request(flow):
             and item.get("text", "").startswith(BODY_MARKER)
         ]
         if len(bodies) != 1:
-            if not bodies and is_auxiliary_system(system):
-                logging.info("auxiliary CLI request: no prompt body to patch; ok")
+            if not bodies and (is_auxiliary_system(system) or is_subagent_request(system)):
+                # Expected, high-frequency (every subagent call): silent like
+                # a patch-level match miss, not logged at info -- we are not
+                # happy to see this every time, only if we go looking.
+                logging.debug("non-interactive request: no prompt body to patch; ok")
             else:
                 issue = Incident(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
                 report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
