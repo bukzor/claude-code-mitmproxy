@@ -1,0 +1,17 @@
+[project]
+name = "cc-mitm"
+version = "0.1.0"
+description = "Reverse-proxy that records and rewrites Claude Code traffic"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "basedpyright-as-pyright",
+    "mitmproxy>=12.2.3",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+[tool.uv.sources]
+basedpyright-as-pyright = { path = "../../repo/github.com/bukzor/basedpyright-as-pyright" }
