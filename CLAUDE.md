@@ -1,6 +1,7 @@
 --- # workaround: anthropics/claude-code#13003
 requires:
     - Skill(llm-kb)
+git-caution: personal
 ---
 
 # mitmproxy: Claude Code traffic patching
@@ -17,3 +18,11 @@ flows to JSONL (`flow2jsonl.py`).
 - `system-prompts.kb/` — captured system-prompt bodies per cc_version,
   used by `check_patches.py` for offline validation.
 - `.claude/todo.kb/` — strategic task breakdowns (per `Skill(llm-subtask)`).
+
+## Standing maintenance
+
+Always implicitly appended to the todo list (recurring, not a literal
+checkbox to clear):
+
+- Check `patch-failures/` for new incidents; triage per
+  `CLAUDE.kb/patch-failure-triage.md`.
