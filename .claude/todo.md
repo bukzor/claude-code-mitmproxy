@@ -1,8 +1,8 @@
 ---
 cost-benefit-sweh:
   timebox:
-    '@value': 1.5
-    rationale: one code fix (incident dedup/skip), one narrowed live observation, one match.md re-verification
+    '@value': 1
+    rationale: one code fix (incident dedup/skip); fast-mode verification demoted to ideas.kb 2026-07-05
     confidence: unsure
   benefit-2w:
     '@value': 0.3
@@ -37,12 +37,3 @@ cost-benefit-sweh:
   capture: thinkpatch's disabled-thinking `AssertionError` landed as
   `_uncaught-thinkpatch/4380a5b276ed` from live traffic 2026-07-04;
   root cause fixed in commit 42fe263, incident since trashed.
-- [ ] Verify `strip-fast-mode-info`'s `match.md` against a real capture with
-  `/fast` toggled on. It targets a `<fast_mode_info>` tag reading "uses the
-  same Claude Opus 4.6 model" but the *unconditional* Fast Mode line
-  elsewhere in the current prompt already says "Opus 4.8/4.7" — same
-  stale-version smell `strip-over-engineering` had before it was found to be
-  silently dark. See `~/.claude/system-prompt-patches.d/strip-fast-mode-info/README.md`.
-  Toggle `/fast` in a proxied session, capture via `traffic.jsonl`,
-  compare the tag's current wording, re-target `match.md`/add `search.md` if
-  it drifted.
