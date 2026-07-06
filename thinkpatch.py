@@ -42,7 +42,13 @@ def _patch_thinking_body(flow) -> None:
         return
 
     assert isinstance(thinking, dict), ("unexpected thinking type", type(thinking), thinking)
-    assert thinking.get("type") == "adaptive", ("unexpected thinking config", thinking)
+    thinking_type = thinking.get("type")
+    if thinking_type == "disabled":
+        # Auxiliary CLI calls (session-title generation, subagent tool
+        # descriptions, ...) send `thinking: {"type": "disabled"}`; only the
+        # interactive-agent request uses "adaptive". Nothing to patch.
+        return
+    assert thinking_type == "adaptive", ("unexpected thinking config", thinking)
 
     existing_display = thinking.get("display")
     assert existing_display in (None, "summarized"), (
