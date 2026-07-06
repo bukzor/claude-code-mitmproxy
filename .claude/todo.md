@@ -1,40 +1,42 @@
 ---
 cost-benefit-sweh:
   timebox:
-    '@value': 2
-    rationale: three live-verification items; the triage item is blocked on the next found-0-prompt-bodies occurrence
+    '@value': 1.5
+    rationale: one code fix (incident dedup/skip), one narrowed live observation, one match.md re-verification
     confidence: unsure
   benefit-2w:
     '@value': 0.3
-    rationale: confidence in the capture pipeline; the patch itself is already hot-fixed
+    rationale: stops steady incident spam from auxiliary CLI requests; capture pipeline itself now verified live
     confidence: unsure
   cost-of-delay-2w:
-    '@value': 0.1
-    rationale: the blocked item self-serves as verification when it fires
+    '@value': 0.2
+    rationale: every CLI build bump re-captures the same auxiliary prompts, burying real drift signals
     confidence: unsure
 ---
 # Todo
 
-- [ ] Triage the live `found-0-prompt-bodies` incident once a capture lands
-  under `patch-failures/_locate-system-prompt/` (blocked on the next
-  occurrence; the addon hot-reloaded the 2026-07-03 fix, commit 77815a8).
-  Read `_bodies/{digest}.md`, decide: `BODY_MARKER` drifted (add marker
-  alternatives) vs. a non-Claude-Code request shape (leave unpatched by
-  design). See `CLAUDE.kb/patch-failure-triage.md`. When it lands it also
-  serves as the live end-to-end capture verification the next item wants.
-- [ ] Verify patch-failure capture end-to-end live: run `proxy.sh`, route Claude
-  Code through it, induce a patch miss (e.g. stale `match.md`); confirm the
-  `logging.warning` flashes in the mitmproxy status bar and the records land
-  under `patch-failures/_bodies/{digest}.md` + `patch-failures/{rule}/{digest}.json`.
-  (Curses behavior is so far asserted from mitmproxy 12.2.1 source, not
-  observed. The content-addressed/dedup recorder was reworked 2026-06-23 and
-  tested offline only — live capture still unverified.)
-- [ ] Verify uncaught-exception capture end-to-end live: the new
-  `incidents.capture_uncaught` (wraps `request`/`response` in `syspatch.py`,
-  `thinkpatch.py`, `flow2jsonl.py` — rule `_uncaught-{addon}`) is so far
-  only verified with an offline smoke test (fake flows tripping asserts),
-  not through a real running `proxy.sh`. See
-  `CLAUDE.kb/patch-failure-triage.md`.
+- [ ] Stop `found-0-prompt-bodies` incident spam from auxiliary CLI requests.
+  Triage 2026-07-05 found all 13 captures are non-interactive request shapes
+  (session-title generation, web-search helper, bare "You are Claude Code"
+  header) — unpatched by design, not marker drift. But dedup is broken:
+  the `x-anthropic-billing-header` block embeds the cc_version *build
+  suffix* (`2.1.201.f67` vs `.761` vs `2.1.200.48f`...), so `content_hash`
+  treats the identical session-title prompt as a new incident per CLI
+  build. Fix in `incidents.content_hash` neutralization (mask the
+  cc_version value) and/or teach the `_locate-system-prompt` check to
+  skip-and-not-capture recognized auxiliary shapes. Then delete the 13
+  resolved incidents (verdict recorded here; bodies are boilerplate,
+  no kb capture needed).
+- [x] Verify patch-failure capture end-to-end live — the recorder path is
+  proven: 13 real `found-0-prompt-bodies` incidents landed under
+  `_locate-system-prompt/` + `_bodies/` from live `proxy.sh` traffic,
+  2026-07-03..05.
+  - [x] `logging.warning` flash in the mitmproxy status bar: user observed
+    it working as intended (confirmed 2026-07-05).
+- [x] Verify uncaught-exception capture end-to-end live — proven by real
+  capture: thinkpatch's disabled-thinking `AssertionError` landed as
+  `_uncaught-thinkpatch/4380a5b276ed` from live traffic 2026-07-04;
+  root cause fixed in commit 42fe263, incident since trashed.
 - [ ] Verify `strip-fast-mode-info`'s `match.md` against a real capture with
   `/fast` toggled on. It targets a `<fast_mode_info>` tag reading "uses the
   same Claude Opus 4.6 model" but the *unconditional* Fast Mode line
