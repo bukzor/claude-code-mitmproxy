@@ -58,6 +58,14 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
   blocks as JSON, with `=== system[i] ===` separators. Usual causes: the
   marker text drifted upstream, or a non-Claude-Code request shape.
 
+  Known auxiliary CLI shapes (session-title generation, web-search helper)
+  are exempt: `is_auxiliary_system` passes them through with an info log,
+  no incident. It recognizes block *forms* (billing header, bare CLI
+  identity line, `AUX_TASK_PREFIXES`), so a drifted interactive prompt
+  still captures. When a new auxiliary shape lands an incident, triage it
+  the same way — if it's genuinely non-interactive, add its task prompt's
+  opening to `AUX_TASK_PREFIXES` and delete the incident.
+
 ### Split `match`/`search`, or single-file?
 
 - **Split (`search` narrower than `match`)** — use whenever a reliable

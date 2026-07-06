@@ -220,6 +220,35 @@ BODY_MARKER = "\nYou are an interactive agent"
 # Underscore-prefixed, like _bodies, so it can't collide with a patch name.
 LOCATOR_RULE = "_locate-system-prompt"
 
+# Auxiliary CLI requests (session-title generation, web-search helper, ...)
+# legitimately carry no interactive prompt body. Recognized by shape, not by
+# full prompt text: every block must be a billing header, the bare CLI
+# identity line, or a known task prompt. A drifted interactive prompt still
+# captures -- its body block matches none of these.
+CLI_IDENTITY = "You are Claude Code, Anthropic's official CLI for Claude."
+AUX_TASK_PREFIXES = (
+    "Generate a concise, sentence-case title",
+    "You are an assistant for performing a web search tool use",
+)
+
+
+def is_auxiliary_system(system: list) -> bool:
+    """True when every system block belongs to a recognized non-interactive
+    request shape, so a missing prompt body is expected, not an incident."""
+    return bool(system) and all(_is_auxiliary_block(item) for item in system)
+
+
+def _is_auxiliary_block(item) -> bool:
+    if not (isinstance(item, dict) and isinstance(item.get("text"), str)):
+        return False
+    else:
+        text = item["text"]
+        return (
+            text.startswith("x-anthropic-billing-header:")
+            or text.strip() == CLI_IDENTITY
+            or text.startswith(AUX_TASK_PREFIXES)
+        )
+
 
 def render_system_blocks(system: list) -> str:
     """Flatten a content-blocks `system` list into one capture body: text
@@ -294,8 +323,11 @@ def _request(flow):
             and item.get("text", "").startswith(BODY_MARKER)
         ]
         if len(bodies) != 1:
-            issue = Incident(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
-            report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
+            if not bodies and is_auxiliary_system(system):
+                logging.info("auxiliary CLI request: no prompt body to patch; ok")
+            else:
+                issue = Incident(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
+                report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
             return
         body = bodies[0]
         body["text"] = apply_patches(body["text"], PATCHES)
