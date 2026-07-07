@@ -10,8 +10,9 @@ from typing import NamedTuple
 
 from incidents import CAPTURE_DIR, Incident, capture_uncaught, content_hash, save_body, save_incident
 
-# Matches $ALLCAPS placeholders in templates
-PLACEHOLDER_RE = re.compile(r"\$([A-Z]+)")
+# Matches $ALLCAPS placeholders in templates (trailing digits allowed:
+# $LINES1/$LINES2 are distinct placeholders of the LINES type)
+PLACEHOLDER_RE = re.compile(r"\$([A-Z]+[0-9]*)")
 
 # Pattern for $LINES: one or more non-empty lines (no trailing newline)
 LINES_PATTERN = r"[^\n]+(?:\n[^\n]+)*"
@@ -101,20 +102,26 @@ def _read_bool(path: Path) -> bool:
 def _template_to_regex(template: str) -> re.Pattern[str]:
     """Convert a template with $PLACEHOLDER tokens to a compiled regex.
 
-    Same-named placeholders must capture the same text (via backreference).
-    $LINES matches one or more non-empty lines.
-    Other $NAMES match any non-empty text (non-greedy).
+    Same-named placeholders must match the same text (backreference);
+    use distinct names for independent matches. Trailing digits vary the
+    name without changing the type: $LINES, $LINES2, ... each match one
+    or more non-empty lines; non-LINES names match the rest of the line
+    (possibly empty).
     """
     parts = PLACEHOLDER_RE.split(template)
     # parts alternates: [literal, name, literal, name, ..., literal]
     regex_parts: list[str] = []
+    seen: set[str] = set()
 
     for i, part in enumerate(parts):
         if i % 2 == 0:
             regex_parts.append(re.escape(part))
+        elif part in seen:
+            regex_parts.append(f"(?P={part})")
         else:
-            pattern = LINES_PATTERN if part == "LINES" else DEFAULT_PATTERN
-            regex_parts.append(f"(?:{pattern})")
+            seen.add(part)
+            pattern = LINES_PATTERN if part.rstrip("0123456789") == "LINES" else DEFAULT_PATTERN
+            regex_parts.append(f"(?P<{part}>{pattern})")
 
     return re.compile("".join(regex_parts), re.DOTALL)
 
