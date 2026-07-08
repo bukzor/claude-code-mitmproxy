@@ -229,10 +229,14 @@ LOCATOR_RULE = "_locate-system-prompt"
 
 # Auxiliary CLI requests (session-title generation, web-search helper, ...)
 # legitimately carry no interactive prompt body. Recognized by shape, not by
-# full prompt text: every block must be a billing header, the bare CLI
-# identity line, or a known task prompt. A drifted interactive prompt still
+# full prompt text: every block must be a billing header, a bare identity
+# line, or a known task prompt. A drifted interactive prompt still
 # captures -- its body block matches none of these.
-CLI_IDENTITY = "You are Claude Code, Anthropic's official CLI for Claude."
+IDENTITY_LINES = (
+    "You are Claude Code, Anthropic's official CLI for Claude.",
+    # sdk-cli entrypoint (observed on session-title generation)
+    "You are a Claude agent, built on Anthropic's Claude Agent SDK.",
+)
 AUX_TASK_PREFIXES = (
     "Generate a concise, sentence-case title",
     "You are an assistant for performing a web search tool use",
@@ -287,7 +291,7 @@ def _is_auxiliary_block(item) -> bool:
         text = item["text"]
         return (
             text.startswith("x-anthropic-billing-header:")
-            or text.strip() == CLI_IDENTITY
+            or text.strip() in IDENTITY_LINES
             or text.startswith(AUX_TASK_PREFIXES)
         )
 
