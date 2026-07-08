@@ -35,6 +35,9 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
   captured prompt body (default: newest full capture in `system-prompts.kb/`)
   and prints the patched result plus size stats to stderr. Expect zero
   warnings against the newest capture.
+- `check_dark_patches.py` — per-patch match matrix across all kb captures;
+  run after promoting a new capture to spot patches gone silently dark
+  (match misses are silent by design).
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a
   `traffic.jsonl` capture. Caution: the live proxy records requests
@@ -43,6 +46,8 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
 
 ## Knowledge bases
 
+- `design/` — layered design docs (mission → goals → design): the why-chain
+  behind the invariants, per its `CLAUDE.md`.
 - `CLAUDE.kb/` — durable design notes and gotchas (where the system prompt
   actually lives in the wire protocol, patch-failure triage, thinking
   redaction); read the relevant note before touching that area.

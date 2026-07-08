@@ -154,6 +154,9 @@ patch's job is done — sunset it, don't recreate it.
    collection's `CLAUDE.md`).
 2. Run `check_patches` (defaults to the newest unsuffixed full capture; pass a
    variant capture explicitly to check the others) → expect zero warnings.
+   Also run `check_dark_patches.py` — its per-patch match matrix shows
+   patches gone silently dark on shapes they used to hit, which zero
+   warnings cannot (match misses are silent by design).
    Older captures, and captures of a variant a patch doesn't target, are
    expected to warn — `matched-despite-upstream-removed` for sunset patches
    whose text still predates removal, or `failed-to-match` for a patch whose

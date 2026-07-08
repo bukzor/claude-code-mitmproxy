@@ -1,6 +1,8 @@
 --- # workaround: anthropics/claude-code#13003
 requires:
     - Skill(llm-kb)
+depends:
+    - Skill(llm-design-kb)
 git-caution: personal
 ---
 
@@ -14,6 +16,9 @@ pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
 
 ## Collections
 
+- `design/` — layered why-chain (mission → goals → design) per
+  `Skill(llm-design-kb)`; read before changing invariants (addon order,
+  loudness, capture semantics).
 - `CLAUDE.kb/` — deferred design/reference notes for this project (protocol
   shapes, gotchas) — read the relevant one before touching that area.
 - `system-prompts.kb/` — captured system-prompt bodies per cc_version,
