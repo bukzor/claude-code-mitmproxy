@@ -1,5 +1,5 @@
 ---
-last-updated: 2026-07-03
+last-updated: 2026-07-08
 ---
 
 # claude-code-mitmproxy
@@ -24,6 +24,7 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
 
 | Addon | What it does |
 | --- | --- |
+| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `prompt-captures/`, one content-addressed file per unique body. This is where new `system-prompts.kb/` captures come from. |
 | `syspatch.py` | Rewrites the system prompt using modular patch directories from `~/.claude/system-prompt-patches.d/` (format and rationale in that directory's README). A patch whose in-scope target has drifted warns loudly and captures the offending body under `patch-failures/` for triage — see `CLAUDE.kb/patch-failure-triage.md`. |
 | `thinkpatch.py` | Restores summarized thinking on Opus 4.7+: strips the `redact-thinking-*` beta header **and** sets `thinking.display=summarized` (both required — see `CLAUDE.kb/thinking-display.md`). |
 | `flow2jsonl.py` | Streams every request/response as one JSONL line each. |
@@ -36,8 +37,9 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
   warnings against the newest capture.
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a
-  `traffic.jsonl` capture; this is how new `system-prompts.kb/` captures are
-  made.
+  `traffic.jsonl` capture. Caution: the live proxy records requests
+  *post-patch*, so bodies extracted from its output are contaminated —
+  kb captures come from `prompt-captures/` (see `syscapture.py`) instead.
 
 ## Knowledge bases
 

@@ -35,12 +35,18 @@ there. Expected — which is why `check_patches` defaults to the newest capture.
 
 ## Adding a capture
 
-Route Claude Code through `proxy.sh`, then extract the agent body from
-`traffic.jsonl` via `jsonl2sysprompt.sh`:
+Route Claude Code through `proxy.sh`; `syscapture.py` records each unique
+prompt body — pristine, pre-patch — to `prompt-captures/` (gitignored) as
+`v<cc_version>_<model>_<digest>.md`. Promote by copying:
 
 ```bash
-./jsonl2sysprompt.sh traffic.jsonl > system-prompts.kb/v<version>.md
+cp prompt-captures/v<cc_version>_<model>_<digest>.md system-prompts.kb/v<MAJOR.MINOR.PATCH>.md
 ```
+
+Append a `-<variant>`/`-<scope>` suffix per the naming rules above when it
+isn't the default long-form shape. Do **not** capture from `traffic.jsonl`
+or `traffic.flow`: the proxy records requests *after* patching, so bodies
+extracted there are contaminated whenever patches applied cleanly.
 
 ## What does not belong
 

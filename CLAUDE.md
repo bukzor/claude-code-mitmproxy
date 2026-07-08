@@ -8,8 +8,9 @@ git-caution: personal
 
 Reverse-proxy in front of `api.anthropic.com` that records and rewrites
 Claude Code traffic. Entry point: `proxy.sh`. Patches the system prompt
-(`syspatch.py`) and thinking-redaction beta (`thinkpatch.py`); dumps
-flows to JSONL (`flow2jsonl.py`).
+(`syspatch.py`) and thinking-redaction beta (`thinkpatch.py`); captures
+pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
+(`flow2jsonl.py`).
 
 ## Collections
 

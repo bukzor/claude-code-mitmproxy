@@ -22,6 +22,7 @@ mitmproxy \
   --mode "reverse:https://api.anthropic.com" \
   --listen-port "$PORT" \
   -w "$FLOW_FILE" \
+  -s "${SCRIPT_DIR}/syscapture.py" \
   -s "${SCRIPT_DIR}/syspatch.py" \
   -s "${SCRIPT_DIR}/thinkpatch.py" \
   -s "${SCRIPT_DIR}/flow2jsonl.py" \

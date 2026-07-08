@@ -248,6 +248,18 @@ AUX_TASK_PREFIXES = (
 SUBAGENT_MARKER = "cc_is_subagent=true"
 
 
+def locate_prompt_bodies(system: list) -> list[dict]:
+    """The text blocks carrying an interactive prompt body (BODY_MARKER).
+    Exactly one is expected in an interactive request; callers handle 0/N."""
+    return [
+        item
+        for item in system
+        if isinstance(item, dict)
+        and item.get("type") == "text"
+        and item.get("text", "").startswith(BODY_MARKER)
+    ]
+
+
 def is_auxiliary_system(system: list) -> bool:
     """True when every system block belongs to a recognized non-interactive
     request shape, so a missing prompt body is expected, not an incident."""
@@ -346,13 +358,7 @@ def _request(flow):
     if isinstance(system, str):
         request["system"] = apply_patches(system, PATCHES)
     elif isinstance(system, list):
-        bodies = [
-            item
-            for item in system
-            if isinstance(item, dict)
-            and item.get("type") == "text"
-            and item.get("text", "").startswith(BODY_MARKER)
-        ]
+        bodies = locate_prompt_bodies(system)
         if len(bodies) != 1:
             if not bodies and (is_auxiliary_system(system) or is_subagent_request(system)):
                 # Expected, high-frequency (every subagent call): silent like

@@ -2,4 +2,5 @@ __pycache__/
 traffic.flow
 traffic.jsonl
 patch-failures/
+prompt-captures/
 trash/
