@@ -24,9 +24,10 @@ offline validator (`check_patches.py`) covers `apply_patches` only; the
 hook's own logic (system-shape dispatch, prompt-body locator, incident
 capture, pass-through) has no repeatable check.
 
-A working seed exists: `trash/test_locator.py` (from the 2026-07-03
-session). It covers found-0 capture + pass-through, dedup on repeat, and
-the happy one-body path.
+Working seeds exist: `trash/test_locator.py` (2026-07-03: found-0
+capture + pass-through, dedup on repeat, happy one-body path) and
+`trash/test_syscapture.py` (2026-07-08: fresh capture, masked-digest
+dedup, non-interactive pass-through, string-system fallback).
 
 ## Potential Benefits
 
