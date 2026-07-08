@@ -79,6 +79,31 @@ def save_incident(incident: Incident, digest: str, capture_dir: Path) -> Path | 
     return meta_path
 
 
+def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -> None:
+    """Warn about rules that didn't apply cleanly; when capture_dir is given,
+    save the body once (content-addressed) plus one incident record per
+    (rule, content) so it can be diagnosed later.
+
+    Capture is idempotent on disk: a body whose content was already recorded
+    re-saves nothing and re-warns nothing. The live proxy patches every request,
+    so this is what keeps a persistent mismatch from logging endlessly — the
+    first request captures and warns, the rest find the record present.
+    """
+    if capture_dir is None:
+        for issue in issues:
+            logging.warning("patch %r %s", issue.rule, issue.kind)
+        return
+
+    digest = content_hash(body)
+    save_body(body, digest, capture_dir)
+    for issue in issues:
+        saved = save_incident(issue, digest, capture_dir)
+        # logging (not stderr): the console TUI routes records to its event log /
+        # status bar; raw stderr corrupts curses. Warn only on a fresh capture.
+        if saved is not None:
+            logging.warning("patch %r %s -> %s", issue.rule, issue.kind, saved)
+
+
 def capture_uncaught(rule: str, exc: BaseException, capture_dir: Path | None) -> None:
     """Persist an uncaught exception's traceback the same content-addressed
     way as a patch-application issue, so a bug in an addon hook survives for

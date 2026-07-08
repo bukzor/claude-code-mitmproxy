@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import NamedTuple
 
-from incidents import CAPTURE_DIR, Incident, capture_uncaught, content_hash, save_body, save_incident
+from incidents import CAPTURE_DIR, Incident, capture_uncaught, report_issues
 
 # Matches $ALLCAPS placeholders in templates (trailing digits allowed:
 # $LINES1/$LINES2 are distinct placeholders of the LINES type)
@@ -191,35 +191,9 @@ def apply_patches(
     return text
 
 
-def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -> None:
-    """Warn about rules that didn't apply cleanly; when capture_dir is given,
-    save the body once (content-addressed) plus one incident record per
-    (rule, content) so it can be diagnosed later.
-
-    Capture is idempotent on disk: a body whose content was already recorded
-    re-saves nothing and re-warns nothing. The live proxy patches every request,
-    so this is what keeps a persistent mismatch from logging endlessly — the
-    first request captures and warns, the rest find the record present.
-    """
-    if capture_dir is None:
-        for issue in issues:
-            logging.warning("patch %r %s", issue.rule, issue.kind)
-        return
-
-    digest = content_hash(body)
-    save_body(body, digest, capture_dir)
-    for issue in issues:
-        saved = save_incident(issue, digest, capture_dir)
-        # logging (not stderr): the console TUI routes records to its event log /
-        # status bar; raw stderr corrupts curses. Warn only on a fresh capture.
-        if saved is not None:
-            logging.warning("patch %r %s -> %s", issue.rule, issue.kind, saved)
-
-
 # --- mitmproxy addon ---
 
 PATCHES_DIR = Path("~/.claude/system-prompt-patches.d").expanduser()
-PATCHES: tuple[Patch, ...] = ()
 
 # Opening text that identifies the main prompt body among `system` blocks.
 BODY_MARKER = "\nYou are an interactive agent"
@@ -311,12 +285,13 @@ def render_system_blocks(system: list) -> str:
 
 
 def load(loader):
-    """Called once at mitmproxy startup."""
+    """Called once at mitmproxy startup. Patches are re-read from disk on
+    every request (see _request) so editing `*-patches.d/` takes effect
+    immediately -- this hook only logs what's configured at startup."""
     del loader  # unused
-    global PATCHES
-    PATCHES = load_patches(PATCHES_DIR)
-    logging.info("loaded %d system prompt patches", len(PATCHES))
-    for patch in PATCHES:
+    patches = load_patches(PATCHES_DIR)
+    logging.info("loaded %d system prompt patches", len(patches))
+    for patch in patches:
         if patch.upstream_removed:
             label = "upstream-removed"
         elif patch.search:
@@ -359,8 +334,10 @@ def _request(flow):
     if system is None:
         return
 
+    patches = load_patches(PATCHES_DIR)
+
     if isinstance(system, str):
-        request["system"] = apply_patches(system, PATCHES)
+        request["system"] = apply_patches(system, patches)
     elif isinstance(system, list):
         bodies = locate_prompt_bodies(system)
         if len(bodies) != 1:
@@ -374,7 +351,7 @@ def _request(flow):
                 report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
             return
         body = bodies[0]
-        body["text"] = apply_patches(body["text"], PATCHES)
+        body["text"] = apply_patches(body["text"], patches)
     else:
         raise AssertionError(("unexpected system type", type(system)))
 

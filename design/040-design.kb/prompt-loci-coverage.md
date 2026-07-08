@@ -18,5 +18,6 @@ Coverage is deliberate, not aspirational:
 - Per-turn envelopes (`<command-*>`, hook output) — unpatched;
   transient.
 
-Extending coverage means a new walk over the same patch machinery, not
-new patch semantics.
+Extending coverage means a new walk, and usually the same template
+patch machinery -- but not always: `tools[].description` earned its own
+exact-compare semantics (`exact-compare-tool-stubs.md`).

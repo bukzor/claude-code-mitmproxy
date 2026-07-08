@@ -26,6 +26,7 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
 | --- | --- |
 | `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `prompt-captures/`, one content-addressed file per unique body. This is where new `system-prompts.kb/` captures come from. |
 | `syspatch.py` | Rewrites the system prompt using modular patch directories from `~/.claude/system-prompt-patches.d/` (format and rationale in that directory's README). A patch whose in-scope target has drifted warns loudly and captures the offending body under `patch-failures/` for triage — see `CLAUDE.kb/patch-failure-triage.md`. |
+| `toolpatch.py` | Replaces built-in tool descriptions with slim stubs from `~/.claude/tool-description-patches.d/` (format in that directory's README). Upstream drift warns loudly and captures like a syspatch failure. |
 | `thinkpatch.py` | Restores summarized thinking on Opus 4.7+: strips the `redact-thinking-*` beta header **and** sets `thinking.display=summarized` (both required — see `CLAUDE.kb/thinking-display.md`). |
 | `flow2jsonl.py` | Streams every request/response as one JSONL line each. |
 
@@ -35,6 +36,8 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
   captured prompt body (default: newest full capture in `system-prompts.kb/`)
   and prints the patched result plus size stats to stderr. Expect zero
   warnings against the newest capture.
+- `check_tool_patches.py` — same for tool-description patches, against each
+  patch's own `upstream.md`.
 - `check_dark_patches.py` — per-patch match matrix across all kb captures;
   run after promoting a new capture to spot patches gone silently dark
   (match misses are silent by design).

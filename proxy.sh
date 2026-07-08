@@ -24,6 +24,7 @@ mitmproxy \
   -w "$FLOW_FILE" \
   -s "${SCRIPT_DIR}/syscapture.py" \
   -s "${SCRIPT_DIR}/syspatch.py" \
+  -s "${SCRIPT_DIR}/toolpatch.py" \
   -s "${SCRIPT_DIR}/thinkpatch.py" \
   -s "${SCRIPT_DIR}/flow2jsonl.py" \
   --set "jsonl_path=${JSONL_FILE}"
