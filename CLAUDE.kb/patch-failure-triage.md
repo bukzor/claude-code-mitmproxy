@@ -60,11 +60,14 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
 
   Known auxiliary CLI shapes (session-title generation, web-search helper)
   are exempt: `is_auxiliary_system` passes them through, no incident. It
-  recognizes block *forms* (billing header, bare CLI identity line,
-  `AUX_TASK_PREFIXES`), so a drifted interactive prompt still captures.
+  recognizes block *forms* (billing header, bare CLI identity line, an
+  `AUX_TASK_PREFIXES` task opening, or an `AUX_TRAILER_PREFIXES` trailer
+  such as the `## Session Context` block), so a drifted interactive prompt
+  still captures.
   When a new auxiliary shape lands an incident, triage it the same way —
-  if it's genuinely non-interactive, add its task prompt's opening to
-  `AUX_TASK_PREFIXES` and delete the incident.
+  if it's genuinely non-interactive, add its opening to `AUX_TASK_PREFIXES`
+  (or, for a block that trails after the task prompt, `AUX_TRAILER_PREFIXES`)
+  and delete the incident.
 
   Subagent requests (Task-tool invocations) are a second, separately
   recognized exemption: `is_subagent_request` checks the billing header for
