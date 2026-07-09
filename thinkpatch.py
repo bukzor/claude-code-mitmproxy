@@ -53,7 +53,7 @@ def _patch_thinking_body(flow) -> None:
     assert thinking_type == "adaptive", ("unexpected thinking config", thinking)
 
     existing_display = thinking.get("display")
-    assert existing_display in (None, "summarized"), (
+    assert existing_display in (None, "omitted", "summarized"), (
         "unexpected thinking.display",
         existing_display,
     )

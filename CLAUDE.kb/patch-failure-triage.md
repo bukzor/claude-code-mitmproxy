@@ -165,5 +165,10 @@ patch's job is done — sunset it, don't recreate it.
    whose text still predates removal, or `failed-to-match` for a patch whose
    `search.md` target simply didn't exist yet at that older version. Neither
    is a regression.
-3. Resolved incidents under `patch-failures/` are safe to delete — the body is
-   preserved in the kb capture.
+3. Archive resolved incidents rather than deleting them outright:
+   `incidents.archive_incident(rule, digest, CAPTURE_DIR)` (digest is the
+   `{digest}.json` stem) moves it into `patch-failures/_archive/`, taking
+   the shared body along only once no other live incident still
+   references it. This keeps a just-resolved incident inspectable for a
+   while; `gc_patch_failures.py`, run periodically (not automatic),
+   reclaims anything left archived past its retention window.

@@ -32,3 +32,5 @@ checkbox to clear):
 
 - Check `patch-failures/` for new incidents; triage per
   `CLAUDE.kb/patch-failure-triage.md`.
+- Run `gc_patch_failures.py` occasionally to prune `patch-failures/_archive/`
+  entries past their retention window.

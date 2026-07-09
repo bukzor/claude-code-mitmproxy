@@ -17,6 +17,7 @@ from typing import NamedTuple
 # (offline callers like check_patches only want an in-process warning).
 CAPTURE_DIR = Path(__file__).parent / "patch-failures"
 BODIES_DIRNAME = "_bodies"
+ARCHIVE_DIRNAME = "_archive"
 
 # Per-session-volatile regions that differ between otherwise-identical bodies
 # (cwd, scratchpad path, git status + recent commits, CLI build version).
@@ -77,6 +78,45 @@ def save_incident(incident: Incident, digest: str, capture_dir: Path) -> Path | 
     }
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
     return meta_path
+
+
+def _body_still_live(digest: str, capture_dir: Path) -> bool:
+    """True if any non-archived incident, under any rule, still references
+    this digest -- a single capture can trip several rules at once
+    (e.g. two patches failing to match the same body), so the shared body
+    at _bodies/{digest}.md may outlive any one of them being resolved."""
+    for rule_dir in capture_dir.iterdir():
+        if not rule_dir.is_dir() or rule_dir.name in (BODIES_DIRNAME, ARCHIVE_DIRNAME):
+            continue
+        if (rule_dir / f"{digest}.json").exists():
+            return True
+    return False
+
+
+def archive_incident(rule: str, digest: str, capture_dir: Path) -> None:
+    """Move a resolved incident to capture_dir/_archive/{rule}/{digest}.json
+    instead of deleting it -- so the data survives long enough to answer
+    "what was this" questions, but doesn't accumulate forever (see
+    gc_patch_failures.py). The shared body only follows once no other
+    live incident still references the digest. Both moved files get their
+    mtime reset to now, which is the clock gc reads from -- not the
+    incident's original `at` timestamp.
+    """
+    src = capture_dir / rule / f"{digest}.json"
+    if not src.exists():
+        return
+    dest = capture_dir / ARCHIVE_DIRNAME / rule / f"{digest}.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    src.rename(dest)
+    dest.touch()
+
+    if not _body_still_live(digest, capture_dir):
+        body_src = capture_dir / BODIES_DIRNAME / f"{digest}.md"
+        if body_src.exists():
+            body_dest = capture_dir / ARCHIVE_DIRNAME / BODIES_DIRNAME / f"{digest}.md"
+            body_dest.parent.mkdir(parents=True, exist_ok=True)
+            body_src.rename(body_dest)
+            body_dest.touch()
 
 
 def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -> None:
