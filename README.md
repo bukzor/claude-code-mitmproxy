@@ -1,5 +1,5 @@
 ---
-last-updated: 2026-07-08
+last-updated: 2026-07-11
 ---
 
 # claude-code-mitmproxy
@@ -24,7 +24,7 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
 
 | Addon | What it does |
 | --- | --- |
-| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `prompt-captures/`, one content-addressed file per unique body. This is where new `system-prompts.kb/` captures come from. |
+| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `prompt-captures/`, as a content-addressed `.raw.md` / `.md` pair (verbatim / hash-masked, the latter a low-noise diff target). This is where new `system-prompts.kb/` captures come from (promote the `.raw.md`). |
 | `syspatch.py` | Rewrites the system prompt using modular patch directories from `~/.claude/system-prompt-patches.d/` (format and rationale in that directory's README). A patch whose in-scope target has drifted warns loudly and captures the offending body under `patch-failures/` for triage — see `CLAUDE.kb/patch-failure-triage.md`. |
 | `toolpatch.py` | Replaces built-in tool descriptions with slim stubs from `~/.claude/tool-description-patches.d/` (format in that directory's README). Upstream drift warns loudly and captures like a syspatch failure. |
 | `thinkpatch.py` | Restores summarized thinking on Opus 4.7+: strips the `redact-thinking-*` beta header **and** sets `thinking.display=summarized` (both required — see `CLAUDE.kb/thinking-display.md`). |

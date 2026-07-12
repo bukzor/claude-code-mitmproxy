@@ -36,12 +36,17 @@ there. Expected — which is why `check_patches` defaults to the newest capture.
 ## Adding a capture
 
 Route Claude Code through `proxy.sh`; `syscapture.py` records each unique
-prompt body — pristine, pre-patch — to `prompt-captures/` (gitignored) as
-`v<cc_version>_<model>_<digest>.md`. Promote by copying:
+prompt body — pristine, pre-patch — to `prompt-captures/` (gitignored) as a
+`v<cc_version>_<model>_<digest>.raw.md` / `.md` pair (verbatim / hash-masked
+— see `syscapture.py`'s module docstring). Promote the **raw** one by copying:
 
 ```bash
-cp prompt-captures/v<cc_version>_<model>_<digest>.md system-prompts.kb/v<MAJOR.MINOR.PATCH>.md
+cp prompt-captures/v<cc_version>_<model>_<digest>.raw.md system-prompts.kb/v<MAJOR.MINOR.PATCH>.md
 ```
+
+The masked `.md` sibling has `cwd`/`gitStatus`/etc. replaced with
+placeholders — useful for a quick diff, wrong for a fixture: `check_patches.py`
+needs pristine text so patch `match.md` anchors see real content.
 
 Append a `-<variant>`/`-<scope>` suffix per the naming rules above when it
 isn't the default long-form shape. Do **not** capture from `traffic.jsonl`

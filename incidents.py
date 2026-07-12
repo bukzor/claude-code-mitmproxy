@@ -36,15 +36,22 @@ class Incident(NamedTuple):
     kind: str
 
 
-def content_hash(body: str) -> str:
-    """Hash identifying the captured text, stable across sessions: the
-    per-session environment tail (cwd, scratchpad path, git status) is
-    neutralized first, so the same content dedups to a single incident
-    instead of one per session that happened to run it differently."""
+def normalize_body(body: str) -> str:
+    """Body with session-volatile regions (cwd, scratchpad path, git status,
+    cc_version) masked -- stable across sessions that ran the same content
+    differently. A no-op on text with no such lines, e.g. a traceback."""
     normalized = body
     for pattern, repl in _VOLATILE_SUBS:
         normalized = pattern.sub(repl, normalized)
-    return hashlib.sha256(normalized.encode()).hexdigest()[:12]
+    return normalized
+
+
+def content_hash(body: str) -> str:
+    """Hash identifying the captured text, stable across sessions: see
+    normalize_body for what's masked before hashing, so the same content
+    dedups to a single incident instead of one per session that happened to
+    run it differently."""
+    return hashlib.sha256(normalize_body(body).encode()).hexdigest()[:12]
 
 
 def save_body(body: str, digest: str, capture_dir: Path) -> Path:

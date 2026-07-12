@@ -15,5 +15,7 @@ on a proxy that patches every request warns on the first request and
 never again — for that content.
 
 The same primitive serves failure capture (`patch-failures/`, verbatim
-body + incident record) and fixture capture (`prompt-captures/`, body
-only); only the directory layout and the promotion path differ.
+body + incident record) and fixture capture (`prompt-captures/`, verbatim
+`.raw.md` plus its masked `.md` sibling — the normalization is already
+computed for the digest, so materializing it doubles as a low-noise diff
+target); only the directory layout and the promotion path differ.

@@ -2,11 +2,15 @@
 
 Loaded before syspatch.py (addon hooks run in load order), so bodies are
 recorded pristine, pre-patch -- unlike traffic.jsonl/traffic.flow, which
-record what was actually sent upstream. One file per unique body lands in
-prompt-captures/ (gitignored) as v{cc_version}_{model}_{digest}.md; digest
-is incidents.content_hash, so the same prompt re-seen across sessions and
-restarts writes and logs exactly once. Promote a capture into
-system-prompts.kb/ per that collection's CLAUDE.md.
+record what was actually sent upstream. One pair of files per unique body
+lands in prompt-captures/ (gitignored), keyed by v{cc_version}_{model}_{digest}:
+{digest}.raw.md is the verbatim body, {digest}.md is its hash-normalized
+sibling (incidents.normalize_body) -- the low-noise day-to-day diff target,
+since the raw form carries per-session boilerplate (cwd, gitStatus, ...) that
+swamps real prompt changes. digest is incidents.content_hash, so the same
+prompt re-seen across sessions and restarts writes and logs exactly once.
+Promote a capture's .raw.md into system-prompts.kb/ per that collection's
+CLAUDE.md -- check_patches.py needs the pristine, unmasked text.
 """
 from __future__ import annotations
 
@@ -15,7 +19,7 @@ import logging
 import re
 from pathlib import Path
 
-from incidents import CAPTURE_DIR, capture_uncaught, content_hash
+from incidents import CAPTURE_DIR, capture_uncaught, content_hash, normalize_body
 from syspatch import BODY_MARKER, locate_prompt_bodies
 
 PROMPTS_DIR = Path(__file__).parent / "prompt-captures"
@@ -36,17 +40,20 @@ def cc_version_of(system) -> str:
 
 
 def save_prompt(body: str, cc_version: str, model: str) -> Path | None:
-    """Write body once, keyed by content_hash; return the path when freshly
-    written, None when this content was already captured under any name (the
-    digest is the key -- cc_version/model prefixes are provenance, so a
-    version bump that leaves the prompt text unchanged captures nothing)."""
+    """Write the raw body plus its normalized sibling once, keyed by
+    content_hash; return the raw path when freshly written, None when this
+    content was already captured under any name (the digest is the key --
+    cc_version/model prefixes are provenance, so a version bump that leaves
+    the prompt text unchanged captures nothing)."""
     digest = content_hash(body)
     PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
-    if next(PROMPTS_DIR.glob(f"*_{digest}.md"), None) is not None:
+    if next(PROMPTS_DIR.glob(f"*_{digest}.raw.md"), None) is not None:
         return None
-    path = PROMPTS_DIR / f"v{cc_version}_{model}_{digest}.md"
-    path.write_text(body)
-    return path
+    base_name = f"v{cc_version}_{model}_{digest}"
+    raw_path = PROMPTS_DIR / f"{base_name}.raw.md"
+    raw_path.write_text(body)
+    (PROMPTS_DIR / f"{base_name}.md").write_text(normalize_body(body))
+    return raw_path
 
 
 def request(flow):
