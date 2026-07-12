@@ -52,7 +52,9 @@ A complete patcher requires three targets:
    `~/.claude/tool-description-patches.d/README.md`).
    `input_schema.properties.*.description` remains unpatched.
 3. Each `request["messages"][i].content[j].text` where role is `user` —
-   walk `<system-reminder>` envelopes and patch their bodies. Still open.
+   walk `<system-reminder>` envelopes and patch their bodies. Unpatched by
+   policy — their bulk is the user's own CLAUDE.md/agents/skills content
+   (`design/040-design.kb/prompt-loci-coverage.md`).
 
 The patch-format machinery (`Patch`, `apply_patches`,
 `_template_to_regex`) is fully reusable; only the **walk** differs per
