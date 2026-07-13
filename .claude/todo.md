@@ -3,7 +3,7 @@ managed-by: Skill(llm-subtask)
 ---
 # Todo
 
-- [ ] Promote v2.1.207 captures into `system-prompts.kb/` (backlog found
+- [x] Promote v2.1.207 captures into `system-prompts.kb/` (backlog found
   2026-07-12 review; kb newest is v2.1.202/203-harness)
   - [x] `cp` newest long-form raw capture
     (`prompt-captures/v2.1.207.a42_claude-sonnet-5_*.raw.md` →
@@ -13,9 +13,11 @@ managed-by: Skill(llm-subtask)
     `v2.1.207-harness.md`
   - [x] Run `check_patches.py` (both, zero warnings confirmed) and
     `check_dark_patches.py` (table clean, no unexpected MISS)
-  - [ ] Then the additive-drift bloat review applies to these, not
-    v2.1.202: see `ideas.kb/2026-07-08-000-Review-v2-1-202-*` (idea file
-    retargeted to v2.1.207 2026-07-12; review itself not yet done)
+  - [x] Additive-drift bloat review done against v2.1.199 baseline: see
+    `ideas.kb/2026-07-08-000-Review-v2-1-202-*` (resolved, no patches
+    needed — original "new sections" premise was wrong, real drift was
+    dynamic-content noise; see new
+    `CLAUDE.kb/raw-capture-byte-diffs-include-dynamic-content.md`)
 - [ ] Add standing-maintenance bullet to root `CLAUDE.md`: check
   `prompt-captures/` for cc_versions newer than the newest kb capture
   (promotion currently has no trigger; additive drift is invisible to

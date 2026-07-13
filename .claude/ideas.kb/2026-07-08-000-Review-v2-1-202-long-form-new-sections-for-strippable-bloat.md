@@ -42,12 +42,53 @@ coverage is lost by skipping a 202-specific pass.
 
 ## Next Steps (if pursuing)
 
-- [ ] Diff `system-prompts.kb/v2.1.207.md` against `v2.1.199.md`,
+- [x] Diff `system-prompts.kb/v2.1.207.md` against `v2.1.199.md`,
   section by section
-- [ ] For each new/reworked span: strip (new patch dir), keep, or note
+- [x] For each new/reworked span: strip (new patch dir), keep, or note
   contradiction
-- [ ] Same pass for `v2.1.207-harness.md` vs `v2.1.199-harness.md`
+- [x] Same pass for `v2.1.207-harness.md` vs `v2.1.199-harness.md`
+
+## Findings 2026-07-12
+
+The original premise was wrong: `# Executing actions with care` and
+`# Text output ...` are **not** new headers -- both already exist
+verbatim at v2.1.199. The 15.0k -> 17.9k growth was almost entirely the
+dynamic `# Environment` block (scratchpad path length, `git status`
+dump size) varying by capture instance, not template growth -- see
+`CLAUDE.kb/raw-capture-byte-diffs-include-dynamic-content.md` (new,
+this session) for the general gotcha.
+
+Long-form (v2.1.199.md -> v2.1.207.md), real (non-dynamic) content:
+- `# Executing actions with care`'s body paragraph reworked/expanded:
+  adds preferring a reversible step over deleting, running `git status`
+  before destructive git commands, and checking for secrets before
+  staging/pushing. **Assessment: keep, no patch.** Reinforces (doesn't
+  contradict) conventions already in this user's own
+  `~/.claude/reference.kb/git/*.md`; it's safety-additive, not the kind
+  of company-serving bloat existing patches target.
+- `# Session-specific guidance` bullets differ (`!`/fork tips vs.
+  Agent/Explore tips) -- but this section is itself session-dependent
+  (confirmed: this very session's live prompt carries the *new*
+  `# Executing actions with care` body alongside the *old* `!`/fork
+  bullets), so the swap is session variance, not version drift. Not
+  actionable.
+
+Harness (v2.1.199-harness.md -> v2.1.207-harness.md), real content:
+- `# Harness`'s `<system-reminder>` bullet reworded (harness-injection
+  framing -> "mid-conversation system turns" framing). Minor, doesn't
+  contradict user instructions. **Assessment: keep, no patch.**
+- A 4-paragraph "operating autonomously" block and the Fable-5
+  model-family paragraph appear in v2.1.199-harness but not
+  v2.1.207-harness. Likely mode/model-conditional (subagent
+  autonomous-mode framing, model-family text already known to vary --
+  `strip-model-family` exists for exactly this) rather than an upstream
+  removal, but unconfirmed with only one capture per version -- would
+  need multiple same-cc_version harness captures across session modes
+  to disambiguate. Not pursued further this pass.
+
+No new patches added. Closing -- reopen only if a future capture shows
+these spans are stable and worth revisiting.
 
 ## Lifecycle
 
-**Status:** Exploring
+**Status:** Resolved -- no action
