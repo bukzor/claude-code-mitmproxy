@@ -20,7 +20,7 @@ import re
 from pathlib import Path
 
 from incidents import CAPTURE_DIR, capture_uncaught, content_hash, normalize_body
-from syspatch import BODY_MARKER, locate_prompt_bodies
+from syspatch import BODY_MARKER, locate_prompt_bodies, locate_subagent_body
 
 PROMPTS_DIR = Path(__file__).parent / "prompt-captures"
 UNCAUGHT_RULE = "_uncaught-syscapture"
@@ -86,6 +86,9 @@ def _request(flow):
         bodies = [system] if BODY_MARKER in system else []
     elif isinstance(system, list):
         bodies = [item["text"] for item in locate_prompt_bodies(system)]
+        subagent_body = locate_subagent_body(system)
+        if subagent_body is not None:
+            bodies.append(subagent_body)
     else:
         return
 

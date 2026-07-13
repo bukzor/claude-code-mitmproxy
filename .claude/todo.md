@@ -79,11 +79,27 @@ managed-by: Skill(llm-subtask)
     `prompt-loci-coverage.md`'s new locus bullet + `[!TODO]`; also fixed
     `is_subagent_request`'s docstring in `syspatch.py`, which overclaimed
     "never carries BODY_MARKER" for all subagent requests.
-- [ ] Capture specialized-agent-type system prompts (content-hash keyed,
+- [x] Capture specialized-agent-type system prompts (content-hash keyed,
   like `syscapture.py` does for the interactive body) — new locus
   decided open in `design/040-design.kb/prompt-loci-coverage.md`;
   confirmed distinct for at least `Explore`, unknown how many distinct
   prompts exist across all built-in agent types
+  - Implemented: `syspatch.locate_subagent_body` (joins every block
+    after the billing header, for a bodyless subagent request); wired
+    into `syscapture.py`'s capture loop. Validated the pure function
+    directly against all 91 historical subagent requests in
+    `traffic.jsonl` (89 general-purpose correctly return `None`, both
+    known specialized-agent cases correctly extract the expected text)
+    — strong evidence the logic is right.
+  - NOT yet confirmed live: the running proxy (pid 1468, the one
+    carrying this session) predates the edit and only re-reads
+    `*-patches.d/` content per request, not Python module code (see
+    `CLAUDE.kb/patches-reread-per-request.md` — same "ghost failure
+    mode" class). A live probe post-edit produced no new capture file,
+    consistent with stale bytecode, not a logic bug. Needs a proxy
+    restart to take effect — deferred, since restarting it would
+    interrupt the session currently using it. Confirm capture actually
+    lands in `prompt-captures/` after the next natural restart.
 - [ ] Decide `system.patched.md`'s fate: tracked but v2.1.76-era stale;
   regenerable, so delete (with matching `NOTICE`/README license edits) or
   regenerate with a stated purpose

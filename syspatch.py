@@ -262,6 +262,23 @@ def is_subagent_request(system: list) -> bool:
     )
 
 
+def locate_subagent_body(system: list) -> str | None:
+    """The agent-type-specific prompt text for a specialized subagent
+    request (Explore, Plan, claude-code-guide, ...) -- every block after
+    the billing header, joined. None when this isn't a bodyless subagent
+    request: the default/general-purpose agent type resends the
+    interactive body, which `locate_prompt_bodies` already finds, so
+    there's nothing left for this function to do."""
+    if not is_subagent_request(system) or locate_prompt_bodies(system):
+        return None
+    parts = [
+        item["text"]
+        for item in system[1:]
+        if isinstance(item, dict) and isinstance(item.get("text"), str)
+    ]
+    return "\n\n".join(parts) if parts else None
+
+
 def _is_auxiliary_block(item) -> bool:
     if not (isinstance(item, dict) and isinstance(item.get("text"), str)):
         return False
