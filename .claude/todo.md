@@ -32,13 +32,23 @@ managed-by: Skill(llm-subtask)
   `~/.claude/system-prompt-patches.d/strip-help-feedback/` (match now
   targets its own text directly, search.md removed as redundant); not a
   repo change since patches live outside this git tree.
-- [ ] New finding from the above: `strip-colon-before-tools` and
+- [x] New finding from the above: `strip-colon-before-tools` and
   `strip-url-restriction` now show `failed-to-match` (match hit, search
   missed) on `v2.1.128.md` only — zero warnings on the current v2.1.207
   fixture, so not live-impacting, but worth understanding (real
   version-specific wording drift vs. an interaction with an earlier
   patch's edit) before deciding whether it needs a `search.d` split like
   `strip-doing-tasks-bloat` has.
+  - Resolved: not drift, not subsumption (table shows plain `HIT`, not
+    `SUBSUMED`). Both bullets are byte-identical in v2.1.76.md and
+    v2.1.207.md but simply absent from v2.1.128.md's `# Tone and
+    style`/`# System` sections — a content flicker on one archival
+    snapshot. Exactly the documented-expected case in
+    `CLAUDE.kb/patch-failure-triage.md`: "failed-to-match for a patch
+    whose `search.md` target simply didn't exist yet at that older
+    version. Neither is a regression." No `search.d` split needed —
+    that mechanism is for multiple *currently valid* wordings, not a
+    value that transiently didn't exist upstream.
 - [ ] `load_patches`/`load_tool_patches`: assert on malformed patch dirs
   instead of silently skipping (missing `match.*`/`description.md` is a
   config error, not out-of-scope — unearned silence)
