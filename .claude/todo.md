@@ -22,10 +22,23 @@ managed-by: Skill(llm-subtask)
   `prompt-captures/` for cc_versions newer than the newest kb capture
   (promotion currently has no trigger; additive drift is invisible to
   every loud mechanism)
-- [ ] `check_dark_patches.py`: flag subsumption — evaluate each `match`
+- [x] `check_dark_patches.py`: flag subsumption — evaluate each `match`
   against text-as-patched-by-earlier-patches too; raw-HIT but
-  patched-MISS = SUBSUMED (the `strip-over-engineering` failure mode is
-  still audit-only)
+  patched-MISS = SUBSUMED. Found a live one on first run:
+  `strip-help-feedback` anchored `match` on the same `# Doing tasks`
+  heading `strip-doing-tasks-bloat` deletes wholesale, so it never fired
+  on any current fixture — the `/help`+feedback bullets were shipping
+  unstripped in every patched v2.1.207 request. Fixed in
+  `~/.claude/system-prompt-patches.d/strip-help-feedback/` (match now
+  targets its own text directly, search.md removed as redundant); not a
+  repo change since patches live outside this git tree.
+- [ ] New finding from the above: `strip-colon-before-tools` and
+  `strip-url-restriction` now show `failed-to-match` (match hit, search
+  missed) on `v2.1.128.md` only — zero warnings on the current v2.1.207
+  fixture, so not live-impacting, but worth understanding (real
+  version-specific wording drift vs. an interaction with an earlier
+  patch's edit) before deciding whether it needs a `search.d` split like
+  `strip-doing-tasks-bloat` has.
 - [ ] `load_patches`/`load_tool_patches`: assert on malformed patch dirs
   instead of silently skipping (missing `match.*`/`description.md` is a
   config error, not out-of-scope — unearned silence)

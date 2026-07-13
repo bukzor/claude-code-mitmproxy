@@ -22,7 +22,14 @@ interactive prompt still lands loud.
 
 Because `match` misses are silent by design, they need a periodic
 sweep: `check_dark_patches.py` prints the per-patch match matrix across
-fixtures; run it whenever a new capture is promoted.
+fixtures; run it whenever a new capture is promoted. The sweep also
+flags SUBSUMPTION: a patch whose `match` hits the raw fixture but no
+longer hits once earlier patches (load order) have already run against
+it, in which case it's silently dead in the real pipeline even though a
+raw-only check would call it live (e.g. `strip-help-feedback` anchored
+its `match` on the same `# Doing tasks` heading that
+`strip-doing-tasks-bloat` deletes wholesale — always subsumed, fixed
+2026-07-13 by matching its own target text directly).
 
 Triage procedure for the loud cases:
 `../../CLAUDE.kb/patch-failure-triage.md`.
