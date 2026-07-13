@@ -30,6 +30,10 @@ class ToolPatch(NamedTuple):
             directory,
             "both upstream.md and upstream.d/ present",
         )
+        assert single.is_file() or multi.is_dir(), (
+            directory,
+            "missing upstream.md or upstream.d/",
+        )
         # rstrip: descriptions travel without a trailing newline; the files
         # carry one (text editors, jq -j both happen -- normalize either way).
         if single.is_file():
@@ -38,21 +42,22 @@ class ToolPatch(NamedTuple):
             files = sorted(p for p in multi.iterdir() if p.suffix == ".md")
             assert files, (multi, "no *.md files in upstream.d/")
             upstreams = tuple(p.read_text().rstrip("\n") for p in files)
+        description_file = directory / "description.md"
+        assert description_file.is_file(), (directory, "missing description.md")
         return ToolPatch(
             name=directory.name,
             upstreams=upstreams,
-            replacement=(directory / "description.md").read_text().rstrip("\n"),
+            replacement=description_file.read_text().rstrip("\n"),
         )
 
 
 def load_tool_patches(patches_dir: Path) -> dict[str, ToolPatch]:
+    """Every subdirectory of patches_dir is a patch: ToolPatch.load asserts on
+    a malformed one (missing description.md) rather than this function
+    silently dropping it -- a config error, not out-of-scope."""
     if not patches_dir.is_dir():
         return {}
-    return {
-        child.name: ToolPatch.load(child)
-        for child in sorted(patches_dir.iterdir())
-        if child.is_dir() and (child / "description.md").is_file()
-    }
+    return {child.name: ToolPatch.load(child) for child in sorted(patches_dir.iterdir()) if child.is_dir()}
 
 
 def apply_tool_patches(

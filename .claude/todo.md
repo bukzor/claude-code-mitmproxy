@@ -49,9 +49,18 @@ managed-by: Skill(llm-subtask)
     version. Neither is a regression." No `search.d` split needed —
     that mechanism is for multiple *currently valid* wordings, not a
     value that transiently didn't exist upstream.
-- [ ] `load_patches`/`load_tool_patches`: assert on malformed patch dirs
+- [x] `load_patches`/`load_tool_patches`: assert on malformed patch dirs
   instead of silently skipping (missing `match.*`/`description.md` is a
   config error, not out-of-scope — unearned silence)
+  - Fixed: `load_patches` and `load_tool_patches` no longer pre-filter
+    directories by required-file presence; they call `Patch.load`/
+    `ToolPatch.load` unconditionally, letting the existing (and one new)
+    assert fire loud. Added the missing `assert single.is_file() or
+    multi.is_dir()` to `ToolPatch.load` for `upstream.md`/`upstream.d` —
+    found via testing the fix, previously a bare `FileNotFoundError` from
+    `multi.iterdir()`. `check_patches.py`/`check_tool_patches.py` zero
+    warnings, `check_dark_patches.py` unchanged (2 known explained
+    warnings).
 - [ ] Decide subagent-prompt coverage: `is_subagent_request` passes Task-tool
   prompts through unpatched *and uncaptured*, and no design doc records
   that as a decision — either add the by-policy sentence to

@@ -139,16 +139,12 @@ def _first_hit(text: str, templates: tuple[str, ...]) -> re.Match[str] | None:
 
 
 def load_patches(patches_dir: Path) -> tuple[Patch, ...]:
+    """Every subdirectory of patches_dir is a patch: Patch.load asserts on a
+    malformed one (missing match.md/match.d/) rather than this function
+    silently dropping it -- a config error, not out-of-scope."""
     if not patches_dir.is_dir():
         return ()
-    patches = []
-    for child in sorted(patches_dir.iterdir()):
-        if not child.is_dir():
-            continue
-        if not (child / "match.md").exists() and not (child / "match.d").is_dir():
-            continue
-        patches.append(Patch.load(child))
-    return tuple(patches)
+    return tuple(Patch.load(child) for child in sorted(patches_dir.iterdir()) if child.is_dir())
 
 
 def apply_patches(
