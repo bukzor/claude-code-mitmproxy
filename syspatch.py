@@ -246,8 +246,11 @@ def is_auxiliary_system(system: list) -> bool:
 
 
 def is_subagent_request(system: list) -> bool:
-    """True when the billing-header block marks this a subagent request --
-    its prompt body is agent-type-specific and never carries BODY_MARKER."""
+    """True when the billing-header block marks this a subagent request.
+    Most agent types' prompt body is agent-type-specific and never
+    carries BODY_MARKER; the general-purpose/default agent type is an
+    exception -- it resends the interactive body verbatim, so it takes
+    the ordinary patched/captured path instead of this branch."""
     if not system:
         return False
     first = system[0]

@@ -61,10 +61,29 @@ managed-by: Skill(llm-subtask)
     `multi.iterdir()`. `check_patches.py`/`check_tool_patches.py` zero
     warnings, `check_dark_patches.py` unchanged (2 known explained
     warnings).
-- [ ] Decide subagent-prompt coverage: `is_subagent_request` passes Task-tool
+- [x] Decide subagent-prompt coverage: `is_subagent_request` passes Task-tool
   prompts through unpatched *and uncaptured*, and no design doc records
   that as a decision — either add the by-policy sentence to
   `design/040-design.kb/prompt-loci-coverage.md` or treat as a new locus
+  - Decided: agent-type-dependent, not a blanket gap. Initial grep-based
+    check ("zero captures of subagent-marked content exist anywhere in
+    prompt-captures/") was a flawed test — the billing-header marker
+    structurally never appears inside a captured body regardless of
+    coverage, so it proved nothing either way. Corrected via a live
+    probe (spawned a real `Explore` subagent, inspected its actual wire
+    request) plus a `traffic.jsonl` history scan: the default/
+    general-purpose agent type resends the interactive body verbatim
+    (already captured/patched today, no gap); specialized types
+    (confirmed: `Explore`) send a genuinely distinct, never-BODY_MARKER
+    prompt that's unpatched *and uncaptured*. Recorded precisely in
+    `prompt-loci-coverage.md`'s new locus bullet + `[!TODO]`; also fixed
+    `is_subagent_request`'s docstring in `syspatch.py`, which overclaimed
+    "never carries BODY_MARKER" for all subagent requests.
+- [ ] Capture specialized-agent-type system prompts (content-hash keyed,
+  like `syscapture.py` does for the interactive body) — new locus
+  decided open in `design/040-design.kb/prompt-loci-coverage.md`;
+  confirmed distinct for at least `Explore`, unknown how many distinct
+  prompts exist across all built-in agent types
 - [ ] Decide `system.patched.md`'s fate: tracked but v2.1.76-era stale;
   regenerable, so delete (with matching `NOTICE`/README license edits) or
   regenerate with a stated purpose
