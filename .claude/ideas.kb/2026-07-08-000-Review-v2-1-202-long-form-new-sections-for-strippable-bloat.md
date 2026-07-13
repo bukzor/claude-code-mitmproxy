@@ -27,19 +27,26 @@ grew 10.2k -> 11.0k. Nobody has yet read the new sections asking the
 project's motivating questions: does this contradict user CLAUDE.md?
 is it bloat?
 
+**Update 2026-07-12:** v2.1.202 was never promoted to `system-prompts.kb/`
+before v2.1.207 superseded it (now promoted instead; see todo.md). This
+review's target shifts to v2.1.207 -- diff against the same v2.1.199
+baseline still captures 202's additive drift as a subset, so no
+coverage is lost by skipping a 202-specific pass.
+
 ## Open Questions / Unknowns
 
 - Which new spans contradict user instructions vs. merely restate them?
-- Does the harness variant (v2.1.203-harness.md, also grown: 9.4k ->
-  11.5k) carry parallel new content deserving the same review?
+- Does the harness variant (v2.1.207-harness.md, also grown relative to
+  v2.1.199-harness.md) carry parallel new content deserving the same
+  review?
 
 ## Next Steps (if pursuing)
 
-- [ ] Diff `system-prompts.kb/v2.1.202.md` against `v2.1.199.md`,
+- [ ] Diff `system-prompts.kb/v2.1.207.md` against `v2.1.199.md`,
   section by section
 - [ ] For each new/reworked span: strip (new patch dir), keep, or note
   contradiction
-- [ ] Same pass for `v2.1.203-harness.md` vs `v2.1.199-harness.md`
+- [ ] Same pass for `v2.1.207-harness.md` vs `v2.1.199-harness.md`
 
 ## Lifecycle
 

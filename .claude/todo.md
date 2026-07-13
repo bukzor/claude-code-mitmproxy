@@ -5,14 +5,17 @@ managed-by: Skill(llm-subtask)
 
 - [ ] Promote v2.1.207 captures into `system-prompts.kb/` (backlog found
   2026-07-12 review; kb newest is v2.1.202/203-harness)
-  - [ ] `cp` newest long-form raw capture
+  - [x] `cp` newest long-form raw capture
     (`prompt-captures/v2.1.207.a42_claude-sonnet-5_*.raw.md` →
-    `v2.1.207.md`) and newest harness
-    (`...claude-fable-5_*.raw.md` → `v2.1.207-harness.md`)
-  - [ ] Run `check_patches.py` (both, expect zero warnings — pre-verified
-    2026-07-12) and `check_dark_patches.py`
+    `v2.1.207.md`) and newest harness — a newer fable capture
+    (`v2.1.207.c82_claude-fable-5_*.raw.md`, 2026-07-12) landed after the
+    review that wrote this todo, so it (not `.468_`) went to
+    `v2.1.207-harness.md`
+  - [x] Run `check_patches.py` (both, zero warnings confirmed) and
+    `check_dark_patches.py` (table clean, no unexpected MISS)
   - [ ] Then the additive-drift bloat review applies to these, not
-    v2.1.202: see `ideas.kb/2026-07-08-000-Review-v2-1-202-*`
+    v2.1.202: see `ideas.kb/2026-07-08-000-Review-v2-1-202-*` (idea file
+    retargeted to v2.1.207 2026-07-12; review itself not yet done)
 - [ ] Add standing-maintenance bullet to root `CLAUDE.md`: check
   `prompt-captures/` for cc_versions newer than the newest kb capture
   (promotion currently has no trigger; additive drift is invisible to
