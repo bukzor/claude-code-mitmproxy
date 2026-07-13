@@ -18,7 +18,7 @@ managed-by: Skill(llm-subtask)
     needed — original "new sections" premise was wrong, real drift was
     dynamic-content noise; see new
     `CLAUDE.kb/raw-capture-byte-diffs-include-dynamic-content.md`)
-- [ ] Add standing-maintenance bullet to root `CLAUDE.md`: check
+- [x] Add standing-maintenance bullet to root `CLAUDE.md`: check
   `prompt-captures/` for cc_versions newer than the newest kb capture
   (promotion currently has no trigger; additive drift is invisible to
   every loud mechanism)

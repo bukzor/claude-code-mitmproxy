@@ -34,3 +34,8 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `patch-failures/_archive/`
   entries past their retention window.
+- Check `prompt-captures/` for cc_versions newer than the newest full-body
+  capture in `system-prompts.kb/`; promote per the pattern in git log (`cp`
+  newest raw long-form + harness, `check_patches.py`, `check_dark_patches.py`).
+  Promotion has no automatic trigger — additive drift is invisible to every
+  loud mechanism until someone looks.
