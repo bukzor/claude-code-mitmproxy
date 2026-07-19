@@ -209,8 +209,11 @@ IDENTITY_LINES = (
 )
 AUX_TASK_PREFIXES = (
     "Generate a concise, sentence-case title",
+    "Generate a short kebab-case name",  # session-title generation, reworded
     "You are an assistant for performing a web search tool use",
     "You are a security monitor for autonomous AI coding agents",
+    # phone-notification classifier (PushNotification tool)
+    "A user kicked off a Claude Code agent to do a coding task and walked away",
 )
 # A trailing per-session context block (user identity) may follow the task
 # prompt -- seen on the auto-mode security-monitor request. It leads with

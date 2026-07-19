@@ -3,6 +3,50 @@ managed-by: Skill(llm-subtask)
 ---
 # Todo
 
+- [x] Regular maintenance pass (2026-07-18)
+  - [x] Triage `patch-failures/`: `tooldesc-Monitor` `changed-upstream`
+    (Anthropic appended a PushNotification-usage paragraph to the
+    `Monitor` tool description) — replaced
+    `~/.claude/tool-description-patches.d/Monitor/upstream.md` with the
+    new live text, folded the new guidance into
+    `~/.claude/must-read.kb/before/using-claude-code-tool/Monitor.md`
+    (new "Pushing notifications" section), `check_tool_patches.py` zero
+    warnings, incident archived
+  - [x] Triage `patch-failures/_locate-system-prompt/`: two
+    `found-0-prompt-bodies` incidents, both genuinely auxiliary CLI
+    shapes with drifted opening text — added
+    `"Generate a short kebab-case name"` (session-title generation,
+    reworded from `"Generate a concise, sentence-case title"`) and
+    `"A user kicked off a Claude Code agent to do a coding task and
+    walked away"` (new: the PushNotification phone-notification
+    classifier) to `AUX_TASK_PREFIXES` in `syspatch.py`; verified both
+    via `is_auxiliary_system`, incidents deleted (not archived — no
+    patch content to keep, per `CLAUDE.kb/patch-failure-triage.md`)
+  - [x] Promote newer `prompt-captures/` cc_versions into
+    `system-prompts.kb/` (kb newest was v2.1.207/207-harness):
+    `cp` newest long-form raw sonnet capture
+    (`v2.1.214.ec3_claude-sonnet-5_645e76c13d04.raw.md` → `v2.1.214.md`;
+    v2.1.208/212 long-form skipped, same "superseded before promoted"
+    precedent as 202→207) and newest harness raw fable capture
+    (`v2.1.212.f03_claude-fable-5_180f8505b0a0.raw.md` →
+    `v2.1.212-harness.md`). `check_patches.py` zero warnings;
+    `check_dark_patches.py` table unchanged (same 2 known-explained
+    `v2.1.128`-only warnings, both new columns HIT/`-` match their
+    v2.1.207/-harness predecessors exactly)
+  - [x] Confirmed live: subagent-type prompt capture (the
+    `locate_subagent_body`/`syscapture.py` work from the 2026-07-12
+    session, deferred pending "next natural restart") — the running
+    proxy has since restarted; `prompt-captures/` now has real
+    subagent-body captures (`v2.1.214.67a`/`.31a`, both sonnet and
+    opus-4-8, at least Explore/Plan-shaped bodies). Closes the open
+    verification note in the 2026-07-12 entry below.
+  - Not pursued this pass (flagging, not fixing): diffing
+    `v2.1.207.md`→`v2.1.214.md` shows two new real (non-dynamic)
+    long-form sections since the last bloat review closed —
+    a they/them pronoun-default paragraph under `# Text output`, and a
+    whole new `# Background Session` section (also present in the new
+    `v2.1.212-harness.md`). Same shape as
+    `ideas.kb/2026-07-08-000-*`; worth a similar pass if that's wanted.
 - [x] Promote v2.1.207 captures into `system-prompts.kb/` (backlog found
   2026-07-12 review; kb newest is v2.1.202/203-harness)
   - [x] `cp` newest long-form raw capture
