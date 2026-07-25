@@ -4,7 +4,7 @@ cost-benefit-sweh:
   timebox:
     "@value": 0.5
     rationale: |
-      Toggle /fast in a proxied session, capture via traffic.jsonl,
+      Toggle /fast in a proxied session, capture via the jsonl log,
       compare the <fast_mode_info> tag wording, re-target match.md if
       drifted. Mechanical once a fast-mode session happens.
   benefit-2w:
@@ -32,7 +32,7 @@ had before it was found to be silently dark. See
 
 ## Next Steps (if pursuing)
 
-- [ ] Toggle `/fast` in a proxied session, capture via `traffic.jsonl`
+- [ ] Toggle `/fast` in a proxied session, capture via the jsonl log
 - [ ] Compare the tag's current wording; re-target `match.md` / add
   `search.d/` if it drifted
 

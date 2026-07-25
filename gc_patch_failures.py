@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prune patch-failures/_archive/ entries older than a retention window.
+"""Prune log/patch-failures/_archive/ entries older than a retention window.
 
 incidents.archive_incident moves resolved incidents out of the live rule
 dirs into _archive/ instead of deleting them outright, so a just-resolved

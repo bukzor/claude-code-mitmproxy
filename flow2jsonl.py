@@ -1,10 +1,16 @@
 """mitmproxy addon: stream requests and responses as separate JSONL lines.
 
-Configured via the `jsonl_path` option (default: /dev/stdout):
-    mitmproxy ... -s flow2jsonl.py --set jsonl_path=traffic.jsonl
+`jsonl_path` (default /dev/stdout) is strftime-formatted and reopened when
+the formatted string changes; prefix with "+" for append mode. Mirrors
+mitmproxy's own save_stream_file option -- design/040-design.kb/
+ease-of-operation.kb/ has the why.
+
+    mitmproxy ... -s flow2jsonl.py --set jsonl_path=+traffic/%Y-%m-%d.jsonl
 """
 import base64
 import json
+from datetime import datetime
+from pathlib import Path
 from typing import IO, Optional
 
 from mitmproxy import ctx, http
@@ -14,6 +20,7 @@ from incidents import CAPTURE_DIR, capture_uncaught
 UNCAUGHT_RULE = "_uncaught-flow2jsonl"
 
 _fp: Optional[IO[str]] = None
+_current_path: Optional[str] = None
 
 
 def load(loader):
@@ -21,20 +28,33 @@ def load(loader):
         name="jsonl_path",
         typespec=str,
         default="/dev/stdout",
-        help="Path to write request/response JSONL.",
+        help="Path to write request/response JSONL. strftime-formatted; "
+        "prefix with + to append instead of overwrite.",
     )
 
 
-def running():
-    global _fp
-    _fp = open(ctx.options.jsonl_path, "w", buffering=1)
+def _rotate_if_needed():
+    """Reopen the output file when today's formatted jsonl_path differs from
+    the currently open one."""
+    global _fp, _current_path
+    spec = ctx.options.jsonl_path
+    append = spec.startswith("+")
+    path = datetime.today().strftime(spec[1:] if append else spec)
+    if path == _current_path:
+        return
+    if _fp is not None:
+        _fp.close()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    _fp = open(path, "a" if append else "w", buffering=1)
+    _current_path = path
 
 
 def done():
-    global _fp
+    global _fp, _current_path
     if _fp is not None:
         _fp.close()
         _fp = None
+    _current_path = None
 
 
 def _default(obj):
@@ -55,6 +75,7 @@ def _default(obj):
 
 
 def _emit(entry: dict):
+    _rotate_if_needed()
     assert _fp is not None
     _fp.write(json.dumps(entry, default=_default) + "\n")
 

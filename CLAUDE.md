@@ -14,6 +14,13 @@ Claude Code traffic. Entry point: `proxy.sh`. Patches the system prompt
 pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
 (`flow2jsonl.py`).
 
+## Generated output
+
+Everything the proxy or its tooling writes at runtime is gitignored and
+lives under `log/` -- never at repo root, never committed. Why unbounded
+outputs are day-sharded and restarts append instead of truncate:
+`design/040-design.kb/ease-of-operation.kb/`.
+
 ## Collections
 
 - `design/` — layered why-chain (mission → goals → design) per
@@ -30,11 +37,11 @@ pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
 Always implicitly appended to the todo list (recurring, not a literal
 checkbox to clear):
 
-- Check `patch-failures/` for new incidents; triage per
+- Check `log/patch-failures/` for new incidents; triage per
   `CLAUDE.kb/patch-failure-triage.md`.
-- Run `gc_patch_failures.py` occasionally to prune `patch-failures/_archive/`
+- Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
-- Check `prompt-captures/` for cc_versions newer than the newest full-body
+- Check `log/prompt-captures/` for cc_versions newer than the newest full-body
   capture in `system-prompts.kb/`; promote per the pattern in git log (`cp`
   newest raw long-form + harness, `check_patches.py`, `check_dark_patches.py`).
   Promotion has no automatic trigger — additive drift is invisible to every

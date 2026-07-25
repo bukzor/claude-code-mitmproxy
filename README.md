@@ -18,14 +18,16 @@ it survives Claude Code upgrades.
 ANTHROPIC_BASE_URL=http://localhost:8080 claude
 ```
 
-All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
+All generated output lives under `log/` (gitignored). Traffic is dumped to
+`log/traffic/YYYY-MM-DD.flow` / `.jsonl`, sharded daily since a live proxy
+can run for weeks without restarting.
 
 ## Addons
 
 | Addon | What it does |
 | --- | --- |
-| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `prompt-captures/`, as a content-addressed `.raw.md` / `.md` pair (verbatim / hash-masked, the latter a low-noise diff target). This is where new `system-prompts.kb/` captures come from (promote the `.raw.md`). |
-| `syspatch.py` | Rewrites the system prompt using modular patch directories from `~/.claude/system-prompt-patches.d/` (format and rationale in that directory's README). A patch whose in-scope target has drifted warns loudly and captures the offending body under `patch-failures/` for triage — see `CLAUDE.kb/patch-failure-triage.md`. |
+| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `log/prompt-captures/`, as a content-addressed `.raw.md` / `.md` pair (verbatim / hash-masked, the latter a low-noise diff target). This is where new `system-prompts.kb/` captures come from (promote the `.raw.md`). |
+| `syspatch.py` | Rewrites the system prompt using modular patch directories from `~/.claude/system-prompt-patches.d/` (format and rationale in that directory's README). A patch whose in-scope target has drifted warns loudly and captures the offending body under `log/patch-failures/` for triage — see `CLAUDE.kb/patch-failure-triage.md`. |
 | `toolpatch.py` | Replaces built-in tool descriptions with slim stubs from `~/.claude/tool-description-patches.d/` (format in that directory's README). Upstream drift warns loudly and captures like a syspatch failure. |
 | `thinkpatch.py` | Restores summarized thinking on Opus 4.7+: strips the `redact-thinking-*` beta header **and** sets `thinking.display=summarized` (both required — see `CLAUDE.kb/thinking-display.md`). |
 | `flow2jsonl.py` | Streams every request/response as one JSONL line each. |
@@ -42,10 +44,10 @@ All traffic is dumped to `traffic.flow` / `traffic.jsonl` (gitignored).
   run after promoting a new capture to spot patches gone silently dark
   (match misses are silent by design).
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
-- `jsonl2sysprompt.sh` — extract the system-prompt body from a
-  `traffic.jsonl` capture. Caution: the live proxy records requests
+- `jsonl2sysprompt.sh` — extract the system-prompt body from a jsonl
+  capture (`log/traffic/*.jsonl`). Caution: the live proxy records requests
   *post-patch*, so bodies extracted from its output are contaminated —
-  kb captures come from `prompt-captures/` (see `syscapture.py`) instead.
+  kb captures come from `log/prompt-captures/` (see `syscapture.py`) instead.
 
 ## Knowledge bases
 

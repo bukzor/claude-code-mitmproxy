@@ -3,7 +3,7 @@
 Loaded before syspatch.py (addon hooks run in load order), so bodies are
 recorded pristine, pre-patch -- unlike traffic.jsonl/traffic.flow, which
 record what was actually sent upstream. One pair of files per unique body
-lands in prompt-captures/ (gitignored), keyed by v{cc_version}_{model}_{digest}:
+lands in log/prompt-captures/ (gitignored), keyed by v{cc_version}_{model}_{digest}:
 {digest}.raw.md is the verbatim body, {digest}.md is its hash-normalized
 sibling (incidents.normalize_body) -- the low-noise day-to-day diff target,
 since the raw form carries per-session boilerplate (cwd, gitStatus, ...) that
@@ -22,7 +22,7 @@ from pathlib import Path
 from incidents import CAPTURE_DIR, capture_uncaught, content_hash, normalize_body
 from syspatch import BODY_MARKER, locate_prompt_bodies, locate_subagent_body
 
-PROMPTS_DIR = Path(__file__).parent / "prompt-captures"
+PROMPTS_DIR = Path(__file__).parent / "log" / "prompt-captures"
 UNCAUGHT_RULE = "_uncaught-syscapture"
 
 # cc_version rides in the billing-header block, not the prompt body itself.

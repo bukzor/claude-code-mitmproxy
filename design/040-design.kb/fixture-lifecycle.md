@@ -7,7 +7,7 @@ why:
 # Fixture lifecycle
 
 1. `syscapture.py` writes each unique pre-patch prompt body to
-   `prompt-captures/` (gitignored) as
+   `log/prompt-captures/` (gitignored) as
    `v{cc_version}_{model}_{digest}.raw.md` plus a masked `.md` sibling —
    automatic, deduplicated by masked digest.
 2. A human promotes noteworthy captures' `.raw.md` into

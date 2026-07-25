@@ -1,6 +1,6 @@
 # Patch-failure triage
 
-`patch-failures/` (gitignored) captures system-prompt bodies where a patch
+`log/patch-failures/` (gitignored) captures system-prompt bodies where a patch
 didn't apply cleanly. An incident is one body, content-addressed: the verbatim
 body at `_bodies/{digest}.md`, and one record per `(rule, kind)` at
 `{rule}/{digest}.json`. `digest` is `incidents.content_hash()` — the body with
@@ -167,7 +167,7 @@ patch's job is done — sunset it, don't recreate it.
    is a regression.
 3. Archive resolved incidents rather than deleting them outright:
    `incidents.archive_incident(rule, digest, CAPTURE_DIR)` (digest is the
-   `{digest}.json` stem) moves it into `patch-failures/_archive/`, taking
+   `{digest}.json` stem) moves it into `log/patch-failures/_archive/`, taking
    the shared body along only once no other live incident still
    references it. This keeps a just-resolved incident inspectable for a
    while; `gc_patch_failures.py`, run periodically (not automatic),

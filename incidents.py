@@ -15,7 +15,7 @@ from typing import NamedTuple
 
 # Gitignored; callers pass capture_dir=None to disable capture entirely
 # (offline callers like check_patches only want an in-process warning).
-CAPTURE_DIR = Path(__file__).parent / "patch-failures"
+CAPTURE_DIR = Path(__file__).parent / "log" / "patch-failures"
 BODIES_DIRNAME = "_bodies"
 ARCHIVE_DIRNAME = "_archive"
 

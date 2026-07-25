@@ -3,7 +3,7 @@
 A Task-tool subagent call is marked by `cc_is_subagent=true` in the
 billing-header block (`system[0]`) -- but the *rest* of `system` varies
 by agent type. This was confirmed by a live probe (spawning a real
-subagent and inspecting its actual `traffic.jsonl` entry), not by any
+subagent and inspecting its actual jsonl-capture entry), not by any
 upstream documentation, since none exists.
 
 Two shapes observed:
@@ -32,4 +32,4 @@ for Explore's specialized prompt). `Plan`, `claude-code-guide`,
 `general-purpose`, `statusline-setup` are presumed to follow whichever
 shape matches their nature but are unconfirmed -- worth checking each
 against this doc's two shapes as evidence accumulates in
-`prompt-captures/`, rather than re-deriving from scratch.
+`log/prompt-captures/`, rather than re-deriving from scratch.

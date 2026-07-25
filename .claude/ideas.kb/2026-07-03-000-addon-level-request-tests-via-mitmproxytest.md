@@ -51,7 +51,7 @@ dedup, non-interactive pass-through, string-system fallback).
   `capture_uncaught` or the wrapping — same gap this idea already names,
   now with one more addon-level behavior to cover whenever it's promoted.
 - 2026-07-09: `incidents.py` gained `archive_incident`/`_body_still_live`
-  (moves a resolved incident to `patch-failures/_archive/`, keeping a
+  (moves a resolved incident to `log/patch-failures/_archive/`, keeping a
   shared body live until no other rule still references its digest) and
   `gc_patch_failures.py` gained `gc()` (age-prunes `_archive/` by mtime).
   Both verified only by an ad hoc scratch script (not committed) covering

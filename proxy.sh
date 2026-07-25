@@ -11,8 +11,10 @@ trap onerror ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PORT="${1:-8080}"
-FLOW_FILE="${SCRIPT_DIR}/traffic.flow"
-JSONL_FILE="${SCRIPT_DIR}/traffic.jsonl"
+# strftime path, append mode: shards by day, survives restarts -- see
+# design/040-design.kb/ease-of-operation.kb/.
+FLOW_FILE="+${SCRIPT_DIR}/log/traffic/%Y-%m-%d.flow"
+JSONL_FILE="+${SCRIPT_DIR}/log/traffic/%Y-%m-%d.jsonl"
 
 if (( DEBUG > 0 )); then
   set -x

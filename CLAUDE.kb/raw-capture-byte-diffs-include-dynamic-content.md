@@ -1,6 +1,6 @@
 # Raw capture byte-diffs are contaminated by dynamic content
 
-`system-prompts.kb/*.md` files (promoted from `prompt-captures/*.raw.md`
+`system-prompts.kb/*.md` files (promoted from `log/prompt-captures/*.raw.md`
 per the todo.md promotion step) are **raw**, unnormalized captures: they
 retain whatever was live in that specific session — cwd, scratchpad
 path, `git status`/recent-commits dump, and the model-id suffix (e.g.

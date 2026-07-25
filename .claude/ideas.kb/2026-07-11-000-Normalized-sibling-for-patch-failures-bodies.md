@@ -10,7 +10,7 @@ cost-benefit-sweh:
   benefit-2w:
     "@value": 0.5  # or just: 2.0
     rationale: |
-      patch-failures/ incidents are triaged individually (one body per
+      log/patch-failures/ incidents are triaged individually (one body per
       failure), not diffed against each other the way prompt-captures
       versions are — the motivating pain point (noisy diffs across
       captures) doesn't obviously apply. Marginal benefit unless triage
@@ -21,15 +21,15 @@ cost-benefit-sweh:
 
 ## The Idea
 
-2026-07-11: `prompt-captures/` now writes both the verbatim body
+2026-07-11: `log/prompt-captures/` now writes both the verbatim body
 (`.raw.md`) and a hash-normalized sibling (`.md`, via the new
 `incidents.normalize_body()`) — the normalized one is the low-noise
 day-to-day diff target, raw is for auditing/promotion. `incidents.py`'s
-other capture site, `save_body()` (backing `patch-failures/_bodies/`),
+other capture site, `save_body()` (backing `log/patch-failures/_bodies/`),
 still writes only the verbatim body. Per `design/040-design.kb/
 content-addressed-capture.md`, both sites share one primitive and were
 previously symmetric (verbatim-only); this idea is whether to extend the
-same pair-write to `save_body`/`patch-failures/` for consistency.
+same pair-write to `save_body`/`log/patch-failures/` for consistency.
 
 ## Potential Benefits
 
@@ -42,7 +42,7 @@ same pair-write to `save_body`/`patch-failures/` for consistency.
 ## Open Questions / Unknowns
 
 - Is there an actual triage workflow that wants this, or is symmetry
-  the only argument? `patch-failures/` incidents are usually read one
+  the only argument? `log/patch-failures/` incidents are usually read one
   at a time (`CLAUDE.kb/patch-failure-triage.md`), not diffed against
   each other — the noisy-diff problem that motivated the prompt-captures
   change may not exist here.

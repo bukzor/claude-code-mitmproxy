@@ -14,8 +14,8 @@ makes warnings idempotent across proxy restarts. A persistent mismatch
 on a proxy that patches every request warns on the first request and
 never again — for that content.
 
-The same primitive serves failure capture (`patch-failures/`, verbatim
-body + incident record) and fixture capture (`prompt-captures/`, verbatim
+The same primitive serves failure capture (`log/patch-failures/`, verbatim
+body + incident record) and fixture capture (`log/prompt-captures/`, verbatim
 `.raw.md` plus its masked `.md` sibling — the normalization is already
 computed for the digest, so materializing it doubles as a low-noise diff
 target); only the directory layout and the promotion path differ.
