@@ -40,10 +40,11 @@ def _rotate_if_needed():
     spec = ctx.options.jsonl_path
     append = spec.startswith("+")
     path = datetime.today().strftime(spec[1:] if append else spec)
-    if path == _current_path:
+    if path == _current_path and _fp is not None:
         return
     if _fp is not None:
         _fp.close()
+        _fp = None
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     _fp = open(path, "a" if append else "w", buffering=1)
     _current_path = path
