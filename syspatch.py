@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import re
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from incidents import CAPTURE_DIR, Incident, capture_uncaught, report_issues
+from shapes import shape_of
 
 # Matches $ALLCAPS placeholders in templates (trailing digits allowed:
 # $LINES1/$LINES2 are distinct placeholders of the LINES type)
@@ -214,6 +216,65 @@ def apply_patches(
     return text
 
 
+# --- aggregate strip-rate tripwire ---
+
+KB_DIR = Path(__file__).parent / "system-prompts.kb"
+STRIP_RULE = "_strip-rate"
+
+
+def _fixture_version(path: Path) -> tuple[int, ...]:
+    release = path.stem.removeprefix("v").split("-")[0]
+    return tuple(int(part) for part in release.split("."))
+
+
+@functools.lru_cache(maxsize=1)
+def strip_floors(patches: tuple[Patch, ...]) -> dict[str, int]:
+    """Minimum bytes the patch set must strip from a live body, per prompt
+    shape: half of what it strips from the newest promoted fixture of that
+    shape (newest by version, then size, so a full capture beats a `-scope`
+    partial). Halving absorbs session-optional content a fixture carries
+    but a minimal live session doesn't (gitStatus, additional dirs); an
+    upstream rewrite leaves only the shape-independent patches firing, far
+    below any floor. Cached per patch set -- Patch stores templates as
+    strings, so value-equal loads share one entry; a fixture promotion
+    mid-process needs a proxy restart to be seen."""
+    newest: dict[str, tuple[tuple, str]] = {}
+    for path in KB_DIR.glob("v*.md"):
+        text = path.read_text()
+        shape = shape_of(text)
+        if shape.startswith("?"):
+            continue
+        key = (_fixture_version(path), len(text))
+        if shape not in newest or key > newest[shape][0]:
+            newest[shape] = (key, text)
+    assert newest, (KB_DIR, "no classifiable fixtures")
+    return {
+        shape: (len(text) - len(apply_patches(text, patches, capture_dir=None))) // 2
+        for shape, (_, text) in newest.items()
+    }
+
+
+def check_strip_floor(
+    original: str, patched: str, patches: tuple[Patch, ...], capture_dir: Path | None
+) -> None:
+    """The aggregate check no per-patch rule can provide: an upstream
+    rewrite sends every shape-scoped patch silently out of scope at once,
+    and per-patch loudness reports that as nothing (2026-08-04 incident,
+    see session.kb). A patched main body must strip at least its shape's
+    floor; a body matching no known shape is the same alarm one step
+    earlier."""
+    shape = shape_of(original)
+    floor = strip_floors(patches).get(shape)
+    stripped = len(original) - len(patched)
+    if floor is None:
+        issue = Incident(STRIP_RULE, f"unknown-shape-{shape}")
+    elif stripped < floor:
+        issue = Incident(STRIP_RULE, f"low-strip-{shape}-{stripped}B-floor-{floor}B")
+    else:
+        return
+    report_issues(original, [issue], capture_dir)
+
+
 # --- mitmproxy addon ---
 
 PATCHES_DIR = Path("~/.claude/system-prompt-patches.d").expanduser()
@@ -389,7 +450,10 @@ def _request(flow):
     patches = load_patches(PATCHES_DIR)
 
     if isinstance(system, str):
-        request["system"] = apply_patches(system, patches)
+        patched = apply_patches(system, patches)
+        request["system"] = patched
+        if BODY_MARKER in system:
+            check_strip_floor(system, patched, patches, CAPTURE_DIR)
     elif isinstance(system, list):
         bodies = locate_prompt_bodies(system)
         if len(bodies) != 1:
@@ -403,7 +467,10 @@ def _request(flow):
                 report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
             return
         body = bodies[0]
-        body["text"] = apply_patches(body["text"], patches)
+        original = body["text"]
+        patched = apply_patches(original, patches)
+        body["text"] = patched
+        check_strip_floor(original, patched, patches, CAPTURE_DIR)
     else:
         raise AssertionError(("unexpected system type", type(system)))
 

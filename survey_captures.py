@@ -15,16 +15,10 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
+from shapes import shape_of
+
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")
-
-# First matching heading wins; distinguishing headings per known shape.
-SHAPE_MARKERS = (
-    ("# Communicating with the user", "harness-fable"),
-    ("# Delivering work", "harness-opus"),
-    ("# Harness", "harness"),  # pre-split (< v2.1.221) Fable-class shape
-    ("# Doing tasks", "long-form"),
-)
 
 # Session-optional blocks worth surfacing when choosing which capture to
 # promote: fuller captures (more blocks) make better fixtures.
@@ -55,16 +49,6 @@ def parse_name(path: Path) -> Capture:
     version, model, digest = stem.rsplit("_", 2)
     assert version.startswith("v"), path
     return Capture(version.removeprefix("v"), model, digest, path)
-
-
-def shape_of(text: str) -> str:
-    for marker, shape in SHAPE_MARKERS:
-        if f"\n{marker}\n" in text or text.startswith(f"{marker}\n"):
-            return shape
-    first_heading = next(
-        (line for line in text.splitlines() if line.startswith("#")), "(none)"
-    )
-    return f"?{first_heading!r}"
 
 
 def blocks_of(text: str) -> str:

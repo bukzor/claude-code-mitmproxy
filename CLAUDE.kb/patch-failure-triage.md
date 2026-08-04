@@ -98,6 +98,28 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
   enough that its confirmation log was tolerable before it was unified
   with the subagent path onto the same `debug` line.
 
+### The `_strip-rate` rule (aggregate tripwire)
+
+Non-patch rule covering the one failure class per-patch loudness cannot:
+an upstream rewrite that sends every shape-scoped patch silently out of
+scope at once (the 2026-08-04 incident). After patching a main body,
+`check_strip_floor` requires it to have stripped at least its shape's
+floor -- half of what the current patch set strips from the newest
+promoted fixture of that shape (`strip_floors`, computed live, no
+recorded baseline to maintain). Two kinds:
+
+- `unknown-shape-...` -- the body matches no `shapes.py` marker: a new
+  prompt shape. Capture it properly (it's already in
+  `log/prompt-captures/`), promote a fixture, add patches, and add its
+  heading to `SHAPE_MARKERS`.
+- `low-strip-{shape}-{N}B-floor-{M}B` -- known shape, stripped less than
+  half its fixture's expectation: either the shape drifted wholesale
+  under a stable heading (promote + re-patch) or the fixture/patches
+  moved and the floor is stale (restart the proxy; floors cache per
+  process).
+
+Triage ends with `archive_incident` like any other rule.
+
 ### Split `match`/`search`, or single-file?
 
 - **Split (`search` narrower than `match`)** — use whenever a reliable
