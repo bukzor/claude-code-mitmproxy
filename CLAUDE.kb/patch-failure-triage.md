@@ -19,6 +19,17 @@ content-addressed, idempotent-on-disk mechanism, then re-raised — capture,
 not fail-soft. Same `_bodies`-style underscore-prefixed rule as
 `_locate-system-prompt`, so it can't collide with a patch name.
 
+One incident class needs no fix: a burst of `_uncaught-syspatch`
+`AssertionError`s whose messages name a patch directory in a half-created
+state ("missing match.md", "no *.md files in match.d/", missing
+replace.md). The proxy loads patches per-request from the live directory,
+so editing `~/.claude/system-prompt-patches.d/` while traffic flows makes
+every intermediate file state load-bearing for a moment; affected requests
+pass through unpatched (mitmproxy contains addon exceptions). Archive the
+incidents. To avoid causing them: build a new patch dir outside
+`system-prompt-patches.d/` and `mv` it in whole -- `mv` within a
+filesystem is atomic, `mkdir`-then-write is not.
+
 ## The match/search model
 
 Each patch has `match` (`match.md`, or `match.d/*.md` for ordered
