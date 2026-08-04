@@ -16,8 +16,7 @@ if (( DEBUG > 0 )); then
   set -x
 fi
 
-# Read .flow file(s) from args, replay through addon, stream JSONL to stdout
+# Replay a .flow file through the addon, stream JSONL to stdout.
 FLOW_FILE="${1:?usage: flow2jsonl.sh <traffic.flow>}"
 
-tail -f -c +0 "$FLOW_FILE" |
-  mitmdump -n -r - -s "$ADDON" -q
+mitmdump -n -r "$FLOW_FILE" -s "$ADDON" -q
