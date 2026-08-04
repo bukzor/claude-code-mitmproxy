@@ -15,7 +15,7 @@ Narrative in `../session.kb/`.
       when its `~`-relative dir is missing, so a wrong `$HOME` measures as a
       clean zero-strip run rather than failing. An empty patch set is never
       legitimate here — assert. Same for `load_tool_patches`
-- [ ] Re-establish ground truth after the v2.1.221 prompt rewrite —
+- [x] Re-establish ground truth after the v2.1.221 prompt rewrite —
       blocks every patch item below
   - [x] Identify the 27k `claude-sonnet-5` captures: the **old** shape,
         still served at v2.1.221, plus a ~130-line session-optional
@@ -23,11 +23,12 @@ Narrative in `../session.kb/`.
         new, sonnet-5 old), not version-wide
   - [x] Run `check_patches.py` against every v2.1.221 shape; record which
         patches match where — matrix in `session.kb/`
-  - [ ] Promote the v2.1.221 captures into `system-prompts.kb/` per the
-        pattern in git log — now needs all three model shapes, not just
-        long-form + `-harness`; record the naming in
-        `system-prompts.kb/CLAUDE.md`
-  - [ ] Run `check_dark_patches.py` against every promoted shape
+  - [x] Promote the v2.1.221 captures into `system-prompts.kb/` —
+        `v2.1.221.md` (sonnet long-form) + `-opus`/`-fable` model-scoped
+        variants (opus and fable turn out to be *different* new shapes);
+        naming recorded in `system-prompts.kb/CLAUDE.md`
+  - [x] Run `check_dark_patches.py` against every promoted shape —
+        warnings unchanged from baseline (the 2 known-explained v2.1.128)
 - [ ] Repair the two patches that still have a live target and miss it —
       the only items here that restore stripping rather than bookkeeping
   - [ ] `strip-git-status`: add `match.d/v2.1.221.md` — live block has a
@@ -38,15 +39,24 @@ Narrative in `../session.kb/`.
         Code uses Claude Opus with faster output (it does not downgrade to a
         smaller model). It can be toggled with /fast and is available on
         Opus 5/4.8."), and clear the UNVERIFIED caveat in its README
-- [ ] Sunset the patches whose target text is gone upstream — each gets
-      `upstream-removed.bool: true` and loses `replace.md`/`search*`, one
-      commit apiece. Before the new patches, so the tree stops lying about
-      what it strips. Scope is narrow: the old shape is still served to
-      sonnet-5, so only patches that match *no* live shape qualify
-  - [ ] `strip-tool-preference` (`# Using your tools`) — matches no shape
-  - [ ] `strip-output-efficiency` (`# Text output`) — matches no shape
-  - [ ] `strip-additional-dirs` — matches only the promoted v2.1.214
-        capture, no live shape; decide sunset vs. retarget before acting
+- [x] Sunset the patches whose target text is gone upstream — resolved
+      with zero commits: nothing qualified
+  - [x] `strip-tool-preference` — already sunset (committed
+        `upstream-removed.bool`, conformant layout); item was stale
+  - [x] `strip-output-efficiency` — same, already sunset
+  - [x] `strip-additional-dirs` — has a live target after all: the fuller
+        `b87` fable capture carries the additional-dirs block and the patch
+        HITs it (the matrix session's capture just lacked the optional
+        block). Keep unchanged
+- [ ] Classify the v2.1.221 haiku capture — a fourth live shape
+      (`# User's Current Configuration`, 22k, has gitStatus + scratchpad)
+      that no patch consideration covers; main-loop or auxiliary? Promote
+      it or teach `syscapture.py` to file it as auxiliary
+- [ ] Triage `~/.claude/system-prompt-patches.d/strip-help-feedback`'s
+      uncommitted 2026-07-13 change (search.md folded into match.md,
+      search.md deleted): behavior-neutral on all known fixtures but
+      reverses the c910062 loudness split for that patch, and no session
+      record explains it — commit with rationale or revert
 - [ ] Add patches for the v2.1.221 shape — mechanical ones first, the
       two rewrites last since they are opinion rather than drift
   - [ ] `strip-duplicate-parallel-tools`: the parallel-tool-call
