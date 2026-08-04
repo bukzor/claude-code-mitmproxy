@@ -1,5 +1,5 @@
 ---
-last-updated: 2026-07-11
+last-updated: 2026-08-04
 ---
 
 # claude-code-mitmproxy
@@ -42,7 +42,11 @@ can run for weeks without restarting.
   patch's own `upstream.md`.
 - `check_dark_patches.py` — per-patch match matrix across all kb captures;
   run after promoting a new capture to spot patches gone silently dark
-  (match misses are silent by design).
+  (match misses are silent by design). `--pattern TEXT` instead asks which
+  fixtures carry TEXT and whether the pipeline already strips it.
+- `survey_captures.py` — inventory of `log/prompt-captures/`: shape,
+  optional blocks, and promoted-yet per capture; the "someone looks" step
+  of the standing promotion duty.
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a jsonl
   capture (`log/traffic/*.jsonl`). Caution: the live proxy records requests

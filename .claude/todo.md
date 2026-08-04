@@ -84,7 +84,13 @@ requested it` line — strip one, decide which
 - [ ] Consider an aggregate-strip-rate check that fires when the total
       falls far below a recorded baseline — no per-patch rule can see a
       whole-document rewrite, since every individual miss is legitimately
-      silent. After the patches, so the baseline it records is a real one
+      silent. After the patches, so the baseline it records is a real one.
+      Design input (2026-08-04): must be **per-shape, across all promoted
+      live shapes** — a single global number is dominated by whichever
+      shape happened to be captured (live shapes strip at 9%/11%/16%), and
+      checking only the newest unsuffixed fixture would have missed this
+      exact incident (the sonnet long-form kept stripping fine while the
+      opus/fable shapes went dark)
 - [ ] Documentation debt from the rewrite — last, so it describes the
       finished state
   - [ ] `system-prompt-patches.d/README.md`: the "~32% of the long-form
