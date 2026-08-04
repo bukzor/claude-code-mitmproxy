@@ -50,6 +50,9 @@ cp prompt-captures/v<cc_version>_<model>_<digest>.raw.md system-prompts.kb/v<MAJ
 The masked `.md` sibling has `cwd`/`gitStatus`/etc. replaced with
 placeholders — useful for a quick diff, wrong for a fixture: `check_patches.py`
 needs pristine text so patch `match.md` anchors see real content.
+`prompt-captures/subagents/` holds subagent prompt bodies (Explore, Plan,
+claude-code-guide, ...) — captured for visibility, never patched, never
+promotion candidates; nothing there belongs in this collection.
 
 Append a `-<variant>`/`-<scope>` suffix per the naming rules above when it
 isn't the default long-form shape. Do **not** capture from `traffic.jsonl`

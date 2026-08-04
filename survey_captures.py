@@ -22,8 +22,8 @@ KB_DIR = Path("system-prompts.kb")
 SHAPE_MARKERS = (
     ("# Communicating with the user", "harness-fable"),
     ("# Delivering work", "harness-opus"),
+    ("# Harness", "harness"),  # pre-split (< v2.1.221) Fable-class shape
     ("# Doing tasks", "long-form"),
-    ("# User's Current Configuration", "config-form"),
 )
 
 # Session-optional blocks worth surfacing when choosing which capture to

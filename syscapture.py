@@ -11,6 +11,11 @@ swamps real prompt changes. digest is incidents.content_hash, so the same
 prompt re-seen across sessions and restarts writes and logs exactly once.
 Promote a capture's .raw.md into system-prompts.kb/ per that collection's
 CLAUDE.md -- check_patches.py needs the pristine, unmasked text.
+
+Subagent bodies (locate_subagent_body: Explore, Plan, claude-code-guide,
+...) are captured for the same visibility but land in the subagents/
+subdirectory: they are never patched, so they must not sit where the
+promotion duty (and survey_captures.py) enumerates promotion candidates.
 """
 from __future__ import annotations
 
@@ -39,20 +44,23 @@ def cc_version_of(system) -> str:
     return "unknown"
 
 
-def save_prompt(body: str, cc_version: str, model: str) -> Path | None:
+def save_prompt(
+    body: str, cc_version: str, model: str, directory: Path = PROMPTS_DIR
+) -> Path | None:
     """Write the raw body plus its normalized sibling once, keyed by
     content_hash; return the raw path when freshly written, None when this
     content was already captured under any name (the digest is the key --
     cc_version/model prefixes are provenance, so a version bump that leaves
-    the prompt text unchanged captures nothing)."""
+    the prompt text unchanged captures nothing). Dedup is per-directory:
+    main and subagent captures are separate namespaces."""
     digest = content_hash(body)
-    PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
-    if next(PROMPTS_DIR.glob(f"*_{digest}.raw.md"), None) is not None:
+    directory.mkdir(parents=True, exist_ok=True)
+    if next(directory.glob(f"*_{digest}.raw.md"), None) is not None:
         return None
     base_name = f"v{cc_version}_{model}_{digest}"
-    raw_path = PROMPTS_DIR / f"{base_name}.raw.md"
+    raw_path = directory / f"{base_name}.raw.md"
     raw_path.write_text(body)
-    (PROMPTS_DIR / f"{base_name}.md").write_text(normalize_body(body))
+    (directory / f"{base_name}.md").write_text(normalize_body(body))
     return raw_path
 
 
@@ -84,11 +92,10 @@ def _request(flow):
     system = request.get("system")
     if isinstance(system, str):
         bodies = [system] if BODY_MARKER in system else []
+        subagent_body = None
     elif isinstance(system, list):
         bodies = [item["text"] for item in locate_prompt_bodies(system)]
         subagent_body = locate_subagent_body(system)
-        if subagent_body is not None:
-            bodies.append(subagent_body)
     else:
         return
 
@@ -98,3 +105,7 @@ def _request(flow):
         saved = save_prompt(body, cc_version, model)
         if saved is not None:
             logging.info("captured new system prompt -> %s", saved)
+    if subagent_body is not None:
+        saved = save_prompt(subagent_body, cc_version, model, PROMPTS_DIR / "subagents")
+        if saved is not None:
+            logging.info("captured new subagent prompt -> %s", saved)
