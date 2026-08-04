@@ -30,6 +30,9 @@ outputs are day-sharded and restarts append instead of truncate:
   shapes, gotchas) — read the relevant one before touching that area.
 - `system-prompts.kb/` — captured system-prompt bodies per cc_version,
   used by `check_patches.py` for offline validation.
+- `session.kb/` — dated incident/session narratives (what happened, why
+  nothing was loud, what changed) — the durable record todo entries and
+  commit messages point into.
 - `.claude/todo.kb/` — strategic task breakdowns (per `Skill(llm-subtask)`).
 
 ## Standing maintenance
@@ -41,8 +44,9 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
-- Check `log/prompt-captures/` for cc_versions newer than the newest full-body
-  capture in `system-prompts.kb/`; promote per the pattern in git log (`cp`
-  newest raw long-form + harness, `check_patches.py`, `check_dark_patches.py`).
-  Promotion has no automatic trigger — additive drift is invisible to every
-  loud mechanism until someone looks.
+- Run `survey_captures.py` to spot captures newer than the promoted
+  fixtures; promote the fullest raw per shape (`cp` per
+  `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,
+  `check_dark_patches.py`). Promotion has no automatic trigger — additive
+  drift is invisible to every loud mechanism until someone looks; the
+  `_strip-rate` tripwire only catches subtractive/rewrite drift.

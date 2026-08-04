@@ -141,9 +141,11 @@ patch stayed stale for months.
 ## Concurrent prompt variants
 
 Anthropic serves structurally distinct prompt shapes concurrently at the
-same cc_version, correlated with model: a long-form prompt (`# System`,
-`# Doing tasks`, ...) on Sonnet-class models, and a short `# Harness`-style
-prompt (`system-prompts.kb/v2.1.199-harness.md`) on Fable-class models.
+same cc_version, correlated with model — since v2.1.221, three of them:
+the long-form (`# System`, `# Doing tasks`, ...) on sonnet-5, and two
+distinct `# Harness` shapes (opus gets `# Delivering work`/`# Corrections`,
+fable gets `# Communicating with the user`). `shapes.py` is the shared
+classifier; `system-prompts.kb/CLAUDE.md` records fixture naming.
 There is no variant registry — a long-form-only patch just anchors its
 `match.md` on a heading unique to that shape (e.g. `# Tone and style`,
 `# Doing tasks`, or `# System` for content in the un-headed preamble), with
