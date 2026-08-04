@@ -55,11 +55,13 @@ Narrative in `../session.kb/`.
       `prompt-captures/subagents/`; 21 existing pairs migrated (first
       line = SDK identity, no interactive marker). Takes effect at next
       proxy restart
-- [ ] Triage `~/.claude/system-prompt-patches.d/strip-help-feedback`'s
-      uncommitted 2026-07-13 change (search.md folded into match.md,
-      search.md deleted): behavior-neutral on all known fixtures but
-      reverses the c910062 loudness split for that patch, and no session
-      record explains it — commit with rationale or revert
+- [x] Triage `~/.claude/system-prompt-patches.d/strip-help-feedback`'s
+      uncommitted 2026-07-13 change: **reverted**. It undid the deliberate
+      c910062 loudness split (silent-miss forever vs loud in-scope miss)
+      with no record, no README, and no functional gain — behavior-neutral
+      on every fixture. Diff preserved at
+      `~/trash/2026-08-04-strip-help-feedback-uncommitted-jul13.diff`;
+      dark-matrix warnings unchanged (the 2 known v2.1.128)
 - [x] Add patches for the v2.1.221 shape — mechanical ones first, the
       two rewrites last since they are opinion rather than drift
   - [x] `strip-duplicate-parallel-tools` (dotfiles@0485a57). Premise
