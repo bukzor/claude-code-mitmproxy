@@ -49,9 +49,12 @@ can run for weeks without restarting.
   of the standing promotion duty.
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a jsonl
-  capture (`log/traffic/*.jsonl`). Caution: the live proxy records requests
-  *post-patch*, so bodies extracted from its output are contaminated —
-  kb captures come from `log/prompt-captures/` (see `syscapture.py`) instead.
+  capture (`log/traffic/*.jsonl`). The live proxy records requests
+  *post-patch*, which cuts both ways: bodies extracted here are
+  contaminated as kb fixtures (those come from `log/prompt-captures/`,
+  see `syscapture.py`) — but this is the only view of what a session
+  *actually received*, since `log/patch-failures/_bodies/` stores
+  pre-patch originals.
 
 ## Knowledge bases
 
@@ -66,5 +69,5 @@ can run for weeks without restarting.
 ## License
 
 Apache-2.0 (see `LICENSE`) — except the captured prompt bodies
-(`system-prompts.kb/`, `system.patched.md`), which are Anthropic's text
-reproduced for interoperability and research; see `NOTICE`.
+(`system-prompts.kb/`), which are Anthropic's text reproduced for
+interoperability and research; see `NOTICE`.
