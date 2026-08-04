@@ -1,24 +1,97 @@
 ---
 managed-by: Skill(llm-subtask)
 ---
+
 # Todo
 
-(2026-07-19 gc: 8 resolved items cleared — each verified against a git
-log commit, disposition recorded there, not repeated here. Newest:
-`33e0d07` regular maintenance, `6be04df`/`975f9c4`/`01115ff`
-subagent-prompt-coverage, `151e6f5`, `eb9e1d0`/`6a7d2ab`, `12c598c`,
-`b68c598`.)
+Use subtasks, not sections for organization. Ordered by intended completion.
+Narrative in `../session.kb/`.
 
+- [ ] `apply_patches` appends a trailing newline even when no patch
+      applies — unpatched bodies differ from stock by one byte. First
+      because it puts a `+1` on every `check_patches.py` delta, which is
+      exactly the measurement the work below depends on reading correctly
+- [ ] Re-establish ground truth after the v2.1.221 prompt rewrite —
+      blocks every patch item below
+  - [ ] Promote the v2.1.221 captures into `system-prompts.kb/` per the
+        pattern in git log, and record whether long-form and `-harness` are
+        now the same shape
+  - [ ] Determine whether the 27k `claude-sonnet-5` captures are a third
+        concurrently-served shape or just a large CLAUDE.md; if a shape,
+        document it in `system-prompts.kb/CLAUDE.md` — the sunsets below are
+        wrong if a live shape still carries the text
+  - [ ] Run `check_patches.py` and `check_dark_patches.py` against every
+        promoted v2.1.221 shape; record which patches match where
+- [ ] Repair the two patches that still have a live target and miss it —
+      the only items here that restore stripping rather than bookkeeping
+  - [ ] `strip-git-status`: add `match.d/v2.1.221.md` — live block has a
+        blank line after `gitStatus: $REST` (unlike v2.1.76) and no
+        `Git user:` line (unlike v2.1.128), so both variants miss
+  - [ ] `strip-fast-mode-info`: retarget from the `<fast_mode_info>` tag
+        to the unconditional `# Environment` bullet ("Fast mode for Claude
+        Code uses Claude Opus with faster output (it does not downgrade to a
+        smaller model). It can be toggled with /fast and is available on
+        Opus 5/4.8."), and clear the UNVERIFIED caveat in its README
+- [ ] Sunset the patches whose target text is gone upstream — each gets
+      `upstream-removed.bool: true` and loses `replace.md`/`search*`, one
+      commit apiece. Before the new patches, so the tree stops lying about
+      what it strips
+  - [ ] `strip-doing-tasks-bloat` (whole `# Doing tasks` section gone)
+  - [ ] `fix-tone-conciseness` (`# Tone and style` gone)
+  - [ ] `strip-tool-preference` (`# Using your tools` gone)
+  - [ ] `strip-output-efficiency` (`# Text output` gone)
+  - [ ] `strip-security-bloat`
+  - [ ] `strip-backwards-compat`
+  - [ ] `strip-additional-dirs`
+  - [ ] `strip-help-feedback`
+  - [ ] `strip-model-family`
+  - [ ] `strip-url-restriction`
+  - [ ] `strip-colon-before-tools`
+- [ ] Add patches for the v2.1.221 shape — mechanical ones first, the
+      two rewrites last since they are opinion rather than drift
+  - [ ] `strip-duplicate-parallel-tools`: the parallel-tool-call
+        directive appears in `# Harness` and again as the closing line;
+        strip the second
+  - [ ] `strip-agent-types-listing`: the injected agent-types block
+        contradicts the standing `Do not call the AgentTool unless the user
+requested it` line — strip one, decide which
+  - [ ] `strip-scratchpad-bloat`: `# Scratchpad Directory` spends five
+        bullets and an all-caps IMPORTANT on a one-sentence rule
+  - [ ] `condense-delivering-work`: ~450 words restating "do what was
+        asked, don't rescope, finish it, flag concerns once" five or six ways
+  - [ ] `condense-corrections`: ~250 words restating "correct errors that
+        matter, don't ruminate" seven ways
+- [ ] Extend `~/.claude/tool-description-patches.d/` past its two patches
+      (`Monitor`, `SendMessage`), neither served to opus-5 in the new shape
+  - [ ] Triage `log/patch-failures/tooldesc-Monitor`
+  - [ ] `EndConversation` stub: largest description served, and the
+        never-taken path; carries a full policy plus a subsection on
+        background forks calling it
+  - [ ] `Bash` trim: the git-convention block (commit trailers, PR body
+        footer, `gh` usage) loads every session including non-git ones
+  - [ ] `Agent` trim: fork/worktree/remote semantics load even when the
+        standing instruction forbids calling it
+- [ ] Consider an aggregate-strip-rate check that fires when the total
+      falls far below a recorded baseline — no per-patch rule can see a
+      whole-document rewrite, since every individual miss is legitimately
+      silent. After the patches, so the baseline it records is a real one
+- [ ] Documentation debt from the rewrite — last, so it describes the
+      finished state
+  - [ ] `system-prompt-patches.d/README.md`: the "~32% of the long-form
+        (15.0k → 10.2k)" stats are v2.1.199-era; restate against v2.1.221
+  - [ ] `system-prompts.kb/CLAUDE.md`: record the long-form/`# Harness`
+        convergence — the two-shape model that the README's `search.d/`
+        guidance assumes may no longer hold
+  - [ ] `CLAUDE.md`: `session.kb/` is a new top-level collection and is
+        not in the Collections list; add it or fold it into an existing one
 - [ ] Decide `system.patched.md`'s fate: tracked but v2.1.76-era stale;
-  regenerable, so delete (with matching `NOTICE`/README license edits) or
-  regenerate with a stated purpose
-- [ ] Trivia from 2026-07-12 review
-  - [ ] `apply_patches` appends a trailing newline even when no patch
-    applies — unpatched bodies differ from stock by one byte
-  - [ ] `flow2jsonl.sh` uses `tail -f` (never exits at EOF); README says
-    "replay" — fix whichever is wrong
-  - [ ] syspatch README testing example references defunct `system.md`
-    naming
+      regenerable, so delete (with matching `NOTICE`/README license edits) or
+      regenerate with a stated purpose
 - [ ] Decide `jsonl2sysprompt.sh`'s fate: its kb-capture job moved to
-  `syscapture.py` (and its output is post-patch contaminated); keep as a
-  jsonl-archaeology utility, or delete it and its README entry.
+      `syscapture.py` (and its output is post-patch contaminated); keep as a
+      jsonl-archaeology utility, or delete it and its README entry.
+- [ ] Remaining trivia from 2026-07-12 review
+  - [ ] `flow2jsonl.sh` uses `tail -f` (never exits at EOF); README says
+        "replay" — fix whichever is wrong
+  - [ ] syspatch README testing example references defunct `system.md`
+        naming
