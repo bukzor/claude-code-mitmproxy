@@ -26,7 +26,11 @@ def main():
     fixtures = [Path(arg) for arg in sys.argv[1:]] or sorted(
         p for p in KB_DIR.iterdir() if p.suffix == ".md" and p.name != "CLAUDE.md"
     )
+    # Templates ending "\n" need end-of-body to read as a line boundary --
+    # the same normalization apply_patches does before matching. Without it,
+    # a block at end-of-body shows as a false match miss here.
     texts = {fixture: fixture.read_text() for fixture in fixtures}
+    texts = {f: t if t.endswith("\n") else t + "\n" for f, t in texts.items()}
     patches = load_patches(PATCHES_DIR)
     assert patches, PATCHES_DIR
 
