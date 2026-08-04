@@ -153,7 +153,10 @@ def apply_patches(
     # Normalize trailing newline so templates ending with `\n` can match a
     # block that sits at end-of-body. Without this, `$LINES\n` backtracks
     # one line short when the body's final line has no trailing newline.
-    if not text.endswith("\n"):
+    # Undone before returning: leaving it makes an all-miss run differ from
+    # its input by a byte, which reads as a patch firing in the delta.
+    borrowed_newline = not text.endswith("\n")
+    if borrowed_newline:
         text += "\n"
     original = text
     issues: list[Incident] = []
@@ -184,6 +187,8 @@ def apply_patches(
         text = text[: target.start()] + patch.replace + text[target.end() :]
     if issues:
         report_issues(original, issues, capture_dir)
+    if borrowed_newline and text.endswith("\n"):
+        text = text[:-1]
     return text
 
 
