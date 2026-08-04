@@ -109,16 +109,15 @@ Narrative in `../session.kb/`.
   - [x] `Agent` trim (dotfiles@1643536): three live wordings (6.7k long
         form + two 1.6k short forms differing on fork support); stub is
         1.1k, prompt-writing guidance folded into the spawn must-read entry
-- [ ] Consider an aggregate-strip-rate check that fires when the total
-      falls far below a recorded baseline — no per-patch rule can see a
-      whole-document rewrite, since every individual miss is legitimately
-      silent. After the patches, so the baseline it records is a real one.
-      Design input (2026-08-04): must be **per-shape, across all promoted
-      live shapes** — a single global number is dominated by whichever
-      shape happened to be captured (live shapes strip at 9%/11%/16%), and
-      checking only the newest unsuffixed fixture would have missed this
-      exact incident (the sonnet long-form kept stripping fine while the
-      opus/fable shapes went dark)
+- [x] Aggregate strip-rate check (mitmproxy@6319f6d): runs **live** in
+      syspatch — offline-vs-fixtures can't see this class (fixtures were
+      stale while live traffic regressed). Per patched main body: classify
+      shape (`shapes.py`, shared with survey), require stripped bytes ≥
+      half the patch set's strip on that shape's newest promoted fixture
+      (floors computed in-process, no recorded baseline to maintain);
+      unknown shape fires one step earlier. Incidents under
+      `_strip-rate/`, triage doc updated. Verified: fixtures pass,
+      simulated rewrite and unknown heading both fire, live traffic clean
 - [ ] Documentation debt from the rewrite — last, so it describes the
       finished state
   - [ ] `system-prompt-patches.d/README.md`: the "~32% of the long-form
