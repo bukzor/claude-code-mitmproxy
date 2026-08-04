@@ -126,6 +126,18 @@ def _template_to_regex(template: str) -> re.Pattern[str]:
     return re.compile("".join(regex_parts), re.DOTALL)
 
 
+def _expand_replace(template: str, target: re.Match[str]) -> str:
+    """$NAME tokens in replace text re-emit what the search's same-named
+    placeholder captured -- the only way a rewrite can keep dynamic content
+    (session paths, branch names) it cannot know ahead of time. A name the
+    search didn't capture is a patch-config error, not drift: fail hard."""
+    parts = PLACEHOLDER_RE.split(template)
+    # parts alternates: [literal, name, literal, name, ..., literal]
+    return "".join(
+        part if i % 2 == 0 else target.group(part) for i, part in enumerate(parts)
+    )
+
+
 def _first_hit(text: str, templates: tuple[str, ...]) -> re.Match[str] | None:
     """Try each template against text in order, return the first `re.Match`,
     or None if none hit. Shared by match (applicability) and search (replace
@@ -193,7 +205,8 @@ def apply_patches(
                 issues.append(Incident(patch.name, "failed-to-match"))
                 continue
         assert patch.replace is not None  # invariant: only None when upstream_removed
-        text = text[: target.start()] + patch.replace + text[target.end() :]
+        replacement = _expand_replace(patch.replace, target)
+        text = text[: target.start()] + replacement + text[target.end() :]
     if issues:
         report_issues(original, issues, capture_dir)
     if borrowed_newline and text.endswith("\n"):
