@@ -11,7 +11,13 @@ it -- the real `apply_patches` pipeline runs patches in sequence against
 progressively-patched text, so an earlier patch can silently consume or
 alter the very span a later patch's match was written against. Raw-HIT +
 patched-MISS means that later patch is dead in practice even though this
-tool's raw-only check used to call it HIT."""
+tool's raw-only check used to call it HIT.
+
+`--pattern TEXT` swaps the per-patch rows for a single presence row: "-"
+(TEXT absent from the raw fixture), "STRIPPED" (present raw, gone after
+the full patch pipeline), or "SURVIVES" (present in both) -- for asking
+"which shapes carry this text, and do we already strip it?" before
+writing a patch."""
 from __future__ import annotations
 
 import sys
@@ -22,8 +28,22 @@ from syspatch import PATCHES_DIR, _first_hit, apply_patches, load_patches
 KB_DIR = Path("system-prompts.kb")
 
 
+def pattern_cell(pattern: str, raw: str, patched: str) -> str:
+    if pattern not in raw:
+        return "-"
+    elif pattern in patched:
+        return "SURVIVES"
+    else:
+        return "STRIPPED"
+
+
 def main():
-    fixtures = [Path(arg) for arg in sys.argv[1:]] or sorted(
+    args = sys.argv[1:]
+    pattern = None
+    if args[:1] == ["--pattern"]:
+        assert len(args) >= 2, "--pattern requires a value"
+        _, pattern, *args = args
+    fixtures = [Path(arg) for arg in args] or sorted(
         p for p in KB_DIR.iterdir() if p.suffix == ".md" and p.name != "CLAUDE.md"
     )
     # Templates ending "\n" need end-of-body to read as a line boundary --
@@ -33,6 +53,15 @@ def main():
     texts = {f: t if t.endswith("\n") else t + "\n" for f, t in texts.items()}
     patches = load_patches(PATCHES_DIR)
     assert patches, PATCHES_DIR
+
+    if pattern is not None:
+        live = tuple(p for p in patches if not p.upstream_removed)
+        row = {
+            f: pattern_cell(pattern, texts[f], apply_patches(texts[f], live, capture_dir=None))
+            for f in fixtures
+        }
+        print_matrix(fixtures, [(repr(pattern), row)])
+        return
 
     # cells[fixture, patch.name]: "-" (raw match miss, patch not applicable
     # here), "HIT" (applies for real, in pipeline order), or "SUBSUMED" (raw
@@ -60,13 +89,25 @@ def main():
                 # this matrix is trying to surface.
                 patched_so_far = apply_patches(patched_so_far, (patch,), capture_dir=None)
 
-    col_width = {f: max(len(f.stem), len("SUBSUMED")) for f in fixtures}
-    label_width = max(len(p.name) for p in patches) + len(" (sunset)")
+    rows = [
+        (
+            patch.name + (" (sunset)" if patch.upstream_removed else ""),
+            {fixture: cells[fixture, patch.name] for fixture in fixtures},
+        )
+        for patch in patches
+    ]
+    print_matrix(fixtures, rows)
+
+
+def print_matrix(fixtures: list[Path], rows: list[tuple[str, dict[Path, str]]]) -> None:
+    col_width = {
+        f: max(len(f.stem), max(len(row[f]) for _, row in rows)) for f in fixtures
+    }
+    label_width = max(len(label) for label, _ in rows)
     print(" " * label_width + "".join(f"  {f.stem:>{col_width[f]}}" for f in fixtures))
-    for patch in patches:
-        label = patch.name + (" (sunset)" if patch.upstream_removed else "")
-        row = "".join(f"  {cells[fixture, patch.name]:>{col_width[fixture]}}" for fixture in fixtures)
-        print(f"{label:{label_width}}{row}")
+    for label, row in rows:
+        cells = "".join(f"  {row[fixture]:>{col_width[fixture]}}" for fixture in fixtures)
+        print(f"{label:{label_width}}{cells}")
 
 
 if __name__ == "__main__":
