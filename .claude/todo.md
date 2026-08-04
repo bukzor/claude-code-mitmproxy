@@ -48,10 +48,13 @@ Narrative in `../session.kb/`.
         `b87` fable capture carries the additional-dirs block and the patch
         HITs it (the matrix session's capture just lacked the optional
         block). Keep unchanged
-- [ ] Classify the v2.1.221 haiku capture — a fourth live shape
-      (`# User's Current Configuration`, 22k, has gitStatus + scratchpad)
-      that no patch consideration covers; main-loop or auxiliary? Promote
-      it or teach `syscapture.py` to file it as auxiliary
+- [x] Classify the v2.1.221 haiku capture (mitmproxy@5c48772): it is the
+      claude-code-guide *subagent* prompt, deliberately captured via
+      `locate_subagent_body` but never patched — auxiliary, not a fifth
+      main shape. syscapture now files subagent bodies under
+      `prompt-captures/subagents/`; 21 existing pairs migrated (first
+      line = SDK identity, no interactive marker). Takes effect at next
+      proxy restart
 - [ ] Triage `~/.claude/system-prompt-patches.d/strip-help-feedback`'s
       uncommitted 2026-07-13 change (search.md folded into match.md,
       search.md deleted): behavior-neutral on all known fixtures but
