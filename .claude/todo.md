@@ -7,21 +7,27 @@ managed-by: Skill(llm-subtask)
 Use subtasks, not sections for organization. Ordered by intended completion.
 Narrative in `../session.kb/`.
 
-- [ ] `apply_patches` appends a trailing newline even when no patch
+- [x] `apply_patches` appends a trailing newline even when no patch
       applies — unpatched bodies differ from stock by one byte. First
       because it puts a `+1` on every `check_patches.py` delta, which is
       exactly the measurement the work below depends on reading correctly
+- [ ] Guard against the silent-empty patch set: `load_patches` returns `()`
+      when its `~`-relative dir is missing, so a shell without `$HOME`
+      measures as a clean zero-strip run rather than failing. An empty patch
+      set is never legitimate here — assert. Same for `load_tool_patches`
 - [ ] Re-establish ground truth after the v2.1.221 prompt rewrite —
       blocks every patch item below
+  - [x] Identify the 27k `claude-sonnet-5` captures: the **old** shape,
+        still served at v2.1.221, plus a ~130-line session-optional
+        `# auto memory` block. The rewrite is model-scoped (opus-5/fable-5
+        new, sonnet-5 old), not version-wide
+  - [x] Run `check_patches.py` against every v2.1.221 shape; record which
+        patches match where — matrix in `session.kb/`
   - [ ] Promote the v2.1.221 captures into `system-prompts.kb/` per the
-        pattern in git log, and record whether long-form and `-harness` are
-        now the same shape
-  - [ ] Determine whether the 27k `claude-sonnet-5` captures are a third
-        concurrently-served shape or just a large CLAUDE.md; if a shape,
-        document it in `system-prompts.kb/CLAUDE.md` — the sunsets below are
-        wrong if a live shape still carries the text
-  - [ ] Run `check_patches.py` and `check_dark_patches.py` against every
-        promoted v2.1.221 shape; record which patches match where
+        pattern in git log — now needs all three model shapes, not just
+        long-form + `-harness`; record the naming in
+        `system-prompts.kb/CLAUDE.md`
+  - [ ] Run `check_dark_patches.py` against every promoted shape
 - [ ] Repair the two patches that still have a live target and miss it —
       the only items here that restore stripping rather than bookkeeping
   - [ ] `strip-git-status`: add `match.d/v2.1.221.md` — live block has a
@@ -35,18 +41,12 @@ Narrative in `../session.kb/`.
 - [ ] Sunset the patches whose target text is gone upstream — each gets
       `upstream-removed.bool: true` and loses `replace.md`/`search*`, one
       commit apiece. Before the new patches, so the tree stops lying about
-      what it strips
-  - [ ] `strip-doing-tasks-bloat` (whole `# Doing tasks` section gone)
-  - [ ] `fix-tone-conciseness` (`# Tone and style` gone)
-  - [ ] `strip-tool-preference` (`# Using your tools` gone)
-  - [ ] `strip-output-efficiency` (`# Text output` gone)
-  - [ ] `strip-security-bloat`
-  - [ ] `strip-backwards-compat`
-  - [ ] `strip-additional-dirs`
-  - [ ] `strip-help-feedback`
-  - [ ] `strip-model-family`
-  - [ ] `strip-url-restriction`
-  - [ ] `strip-colon-before-tools`
+      what it strips. Scope is narrow: the old shape is still served to
+      sonnet-5, so only patches that match *no* live shape qualify
+  - [ ] `strip-tool-preference` (`# Using your tools`) — matches no shape
+  - [ ] `strip-output-efficiency` (`# Text output`) — matches no shape
+  - [ ] `strip-additional-dirs` — matches only the promoted v2.1.214
+        capture, no live shape; decide sunset vs. retarget before acting
 - [ ] Add patches for the v2.1.221 shape — mechanical ones first, the
       two rewrites last since they are opinion rather than drift
   - [ ] `strip-duplicate-parallel-tools`: the parallel-tool-call
