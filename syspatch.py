@@ -141,10 +141,19 @@ def _first_hit(text: str, templates: tuple[str, ...]) -> re.Match[str] | None:
 def load_patches(patches_dir: Path) -> tuple[Patch, ...]:
     """Every subdirectory of patches_dir is a patch: Patch.load asserts on a
     malformed one (missing match.md/match.d/) rather than this function
-    silently dropping it -- a config error, not out-of-scope."""
-    if not patches_dir.is_dir():
-        return ()
-    return tuple(Patch.load(child) for child in sorted(patches_dir.iterdir()) if child.is_dir())
+    silently dropping it -- a config error, not out-of-scope.
+
+    An absent directory or an empty result is likewise a config error, not
+    "nothing to do". PATCHES_DIR is `~`-relative, so a wrong $HOME resolves
+    it somewhere that doesn't exist; returning () there would make a broken
+    environment measure as a clean zero-strip run.
+    """
+    assert patches_dir.is_dir(), (patches_dir, "patches dir missing (wrong $HOME?)")
+    patches = tuple(
+        Patch.load(child) for child in sorted(patches_dir.iterdir()) if child.is_dir()
+    )
+    assert patches, (patches_dir, "no patches found")
+    return patches
 
 
 def apply_patches(

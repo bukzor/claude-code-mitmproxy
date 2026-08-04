@@ -11,10 +11,10 @@ Narrative in `../session.kb/`.
       applies — unpatched bodies differ from stock by one byte. First
       because it puts a `+1` on every `check_patches.py` delta, which is
       exactly the measurement the work below depends on reading correctly
-- [ ] Guard against the silent-empty patch set: `load_patches` returns `()`
-      when its `~`-relative dir is missing, so a shell without `$HOME`
-      measures as a clean zero-strip run rather than failing. An empty patch
-      set is never legitimate here — assert. Same for `load_tool_patches`
+- [x] Guard against the silent-empty patch set: `load_patches` returns `()`
+      when its `~`-relative dir is missing, so a wrong `$HOME` measures as a
+      clean zero-strip run rather than failing. An empty patch set is never
+      legitimate here — assert. Same for `load_tool_patches`
 - [ ] Re-establish ground truth after the v2.1.221 prompt rewrite —
       blocks every patch item below
   - [x] Identify the 27k `claude-sonnet-5` captures: the **old** shape,

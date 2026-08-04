@@ -54,10 +54,21 @@ class ToolPatch(NamedTuple):
 def load_tool_patches(patches_dir: Path) -> dict[str, ToolPatch]:
     """Every subdirectory of patches_dir is a patch: ToolPatch.load asserts on
     a malformed one (missing description.md) rather than this function
-    silently dropping it -- a config error, not out-of-scope."""
-    if not patches_dir.is_dir():
-        return {}
-    return {child.name: ToolPatch.load(child) for child in sorted(patches_dir.iterdir()) if child.is_dir()}
+    silently dropping it -- a config error, not out-of-scope.
+
+    An absent directory or an empty result is likewise a config error: the
+    path is `~`-relative, so a wrong $HOME resolves it somewhere that
+    doesn't exist, and returning {} there would read as "nothing to patch"
+    instead of failing.
+    """
+    assert patches_dir.is_dir(), (patches_dir, "patches dir missing (wrong $HOME?)")
+    patches = {
+        child.name: ToolPatch.load(child)
+        for child in sorted(patches_dir.iterdir())
+        if child.is_dir()
+    }
+    assert patches, (patches_dir, "no patches found")
+    return patches
 
 
 def apply_tool_patches(
