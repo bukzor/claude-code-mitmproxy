@@ -88,16 +88,27 @@ Narrative in `../session.kb/`.
   - [x] `condense-corrections` (dotfiles@7710992): ~250 → ~70 words, same
         design. Final v2.1.221 deltas: opus −4035 (37%), fable −2006
         (20%), sonnet −5102 (18%)
-- [ ] Extend `~/.claude/tool-description-patches.d/` past its two patches
+- [x] Extend `~/.claude/tool-description-patches.d/` past its two patches
       (`Monitor`, `SendMessage`), neither served to opus-5 in the new shape
-  - [ ] Triage `log/patch-failures/tooldesc-Monitor`
-  - [ ] `EndConversation` stub: largest description served, and the
-        never-taken path; carries a full policy plus a subsection on
-        background forks calling it
-  - [ ] `Bash` trim: the git-convention block (commit trailers, PR body
-        footer, `gh` usage) loads every session including non-git ones
-  - [ ] `Agent` trim: fork/worktree/remote semantics load even when the
-        standing instruction forbids calling it
+  - [x] Triage `log/patch-failures/tooldesc-Monitor`: upstream appended a
+        PushNotification tie-in paragraph, already covered by the
+        must-read entry — accepted the wording into `upstream.d/`
+        (dotfiles@ee49b6e), incident archived. Also triaged 9
+        `_uncaught-syspatch` AssertionErrors: transient half-created
+        patch dirs from this morning's live editing — archived,
+        prevention documented in `CLAUDE.kb/patch-failure-triage.md`
+        (mitmproxy@5e16828)
+  - [x] `EndConversation` stub (dotfiles@8285120): 4.5k -> 0.5k; full
+        escalation ladder moved to a new must-read.kb entry the stub
+        requires before any use or warning
+  - [x] `Bash` trim (dotfiles@4820ce5): four live wordings (harness x2,
+        classic long-form x2 -- the long form is ~10k, far bigger than the
+        git block alone); stub is 1.1k, keeps mechanics + git safety line,
+        defers conventions to must-read entries. The long form's commit/PR
+        walkthrough dropped -- it teaches flows the user's config overrides
+  - [x] `Agent` trim (dotfiles@1643536): three live wordings (6.7k long
+        form + two 1.6k short forms differing on fork support); stub is
+        1.1k, prompt-writing guidance folded into the spawn must-read entry
 - [ ] Consider an aggregate-strip-rate check that fires when the total
       falls far below a recorded baseline — no per-patch rule can see a
       whole-document rewrite, since every individual miss is legitimately
