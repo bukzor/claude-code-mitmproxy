@@ -29,16 +29,16 @@ Narrative in `../session.kb/`.
         naming recorded in `system-prompts.kb/CLAUDE.md`
   - [x] Run `check_dark_patches.py` against every promoted shape —
         warnings unchanged from baseline (the 2 known-explained v2.1.128)
-- [ ] Repair the two patches that still have a live target and miss it —
-      the only items here that restore stripping rather than bookkeeping
-  - [ ] `strip-git-status`: add `match.d/v2.1.221.md` — live block has a
-        blank line after `gitStatus: $REST` (unlike v2.1.76) and no
-        `Git user:` line (unlike v2.1.128), so both variants miss
-  - [ ] `strip-fast-mode-info`: retarget from the `<fast_mode_info>` tag
-        to the unconditional `# Environment` bullet ("Fast mode for Claude
-        Code uses Claude Opus with faster output (it does not downgrade to a
-        smaller model). It can be toggled with /fast and is available on
-        Opus 5/4.8."), and clear the UNVERIFIED caveat in its README
+- [x] Repair the two patches that still have a live target and miss it
+  - [x] `strip-git-status`: added `match.d/v2.1.221.md` (dotfiles@4d06228)
+        for the opus-5 shape. Correction to the premise: only opus missed —
+        the fable block is v2.1.128-shaped (has `Git user:`) and was being
+        stripped all along; its matrix "miss" was a `check_dark_patches.py`
+        false negative (no trailing-newline normalization, fixed @576dbd5)
+  - [x] `strip-fast-mode-info`: retargeted to the `# Environment` bullet
+        (dotfiles@0c9b06c) — match on the heading, `search.d/` variants for
+        the bullet (version tail as `$REST`) and the old v2.1.76 tag;
+        README caveat cleared, verified against all promoted fixtures
 - [x] Sunset the patches whose target text is gone upstream — resolved
       with zero commits: nothing qualified
   - [x] `strip-tool-preference` — already sunset (committed
