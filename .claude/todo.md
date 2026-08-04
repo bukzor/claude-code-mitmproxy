@@ -57,20 +57,32 @@ Narrative in `../session.kb/`.
       search.md deleted): behavior-neutral on all known fixtures but
       reverses the c910062 loudness split for that patch, and no session
       record explains it — commit with rationale or revert
-- [ ] Add patches for the v2.1.221 shape — mechanical ones first, the
+- [x] Add patches for the v2.1.221 shape — mechanical ones first, the
       two rewrites last since they are opinion rather than drift
-  - [ ] `strip-duplicate-parallel-tools`: the parallel-tool-call
-        directive appears in `# Harness` and again as the closing line;
-        strip the second
-  - [ ] `strip-agent-types-listing`: the injected agent-types block
-        contradicts the standing `Do not call the AgentTool unless the user
-requested it` line — strip one, decide which
-  - [ ] `strip-scratchpad-bloat`: `# Scratchpad Directory` spends five
-        bullets and an all-caps IMPORTANT on a one-sentence rule
-  - [ ] `condense-delivering-work`: ~450 words restating "do what was
-        asked, don't rescope, finish it, flag concerns once" five or six ways
-  - [ ] `condense-corrections`: ~250 words restating "correct errors that
-        matter, don't ruminate" seven ways
+  - [x] `strip-duplicate-parallel-tools` (dotfiles@0485a57). Premise
+        corrected: no captured body duplicates the directive — the closing
+        line seen in live sessions is the API-side tools preamble
+        (server-generated from the `tools` param, never in the request, so
+        unpatchable). The patch instead strips the in-prompt copy that
+        preamble duplicates: the harness bullet's trailing sentence
+        (opus/fable) and sonnet's whole ~380-char bullet (byte-stable
+        v2.1.76→221)
+  - [x] `strip-agent-prohibitions` (dotfiles@70d67e3). Premise corrected:
+        the agent-types listing rides in user-turn system-reminders, not
+        the system prompt — syspatch can't touch it. "Strip one, decide
+        which" was decided by reachability: stripped the opus-only
+        `Do not call the AgentTool`/workflows prohibition lines, which
+        also contradict standing user config
+  - [x] `strip-scratchpad-bloat` (dotfiles@88e946c): condensed to one
+        sentence + dynamic path, kept via replace-side `$NAME` expansion —
+        a new syspatch feature (mitmproxy@3cf4b8b; replace.md was
+        previously literal-only)
+  - [x] `condense-delivering-work` (dotfiles@7930800): ~450 → ~130 words,
+        every distinct instruction kept; verbatim search so upstream edits
+        are a loud miss prompting a re-condense
+  - [x] `condense-corrections` (dotfiles@7710992): ~250 → ~70 words, same
+        design. Final v2.1.221 deltas: opus −4035 (37%), fable −2006
+        (20%), sonnet −5102 (18%)
 - [ ] Extend `~/.claude/tool-description-patches.d/` past its two patches
       (`Monitor`, `SendMessage`), neither served to opus-5 in the new shape
   - [ ] Triage `log/patch-failures/tooldesc-Monitor`
