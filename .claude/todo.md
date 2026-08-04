@@ -118,23 +118,31 @@ Narrative in `../session.kb/`.
       unknown shape fires one step earlier. Incidents under
       `_strip-rate/`, triage doc updated. Verified: fixtures pass,
       simulated rewrite and unknown heading both fire, live traffic clean
-- [ ] Documentation debt from the rewrite — last, so it describes the
+- [x] Documentation debt from the rewrite — last, so it describes the
       finished state
-  - [ ] `system-prompt-patches.d/README.md`: the "~32% of the long-form
-        (15.0k → 10.2k)" stats are v2.1.199-era; restate against v2.1.221
-  - [ ] `system-prompts.kb/CLAUDE.md`: record the long-form/`# Harness`
-        convergence — the two-shape model that the README's `search.d/`
-        guidance assumes may no longer hold
-  - [ ] `CLAUDE.md`: `session.kb/` is a new top-level collection and is
-        not in the Collections list; add it or fold it into an existing one
-- [ ] Decide `system.patched.md`'s fate: tracked but v2.1.76-era stale;
-      regenerable, so delete (with matching `NOTICE`/README license edits) or
-      regenerate with a stated purpose
-- [ ] Decide `jsonl2sysprompt.sh`'s fate: its kb-capture job moved to
-      `syscapture.py` (and its output is post-patch contaminated); keep as a
-      jsonl-archaeology utility, or delete it and its README entry.
-- [ ] Remaining trivia from 2026-07-12 review
-  - [ ] `flow2jsonl.sh` uses `tail -f` (never exits at EOF); README says
-        "replay" — fix whichever is wrong
-  - [ ] syspatch README testing example references defunct `system.md`
-        naming
+  - [x] `system-prompt-patches.d/README.md`: stats restated against
+        v2.1.221 per-shape (opus 37%, fable 20%, sonnet 18%) with a
+        `_strip-rate` pointer (dotfiles@4a79670)
+  - [x] Shape-convergence note landed in
+        `CLAUDE.kb/patch-failure-triage.md` "Concurrent prompt variants"
+        (mitmproxy@30cd379) — `system-prompts.kb/CLAUDE.md` was already
+        accurate from the promotion work, so the triage doc was the one
+        still teaching the two-shape model
+  - [x] `CLAUDE.md`: `session.kb/` added to Collections; promotion bullet
+        rewritten around `survey_captures.py` and the `_strip-rate`
+        subtractive-only caveat (mitmproxy@30cd379)
+- [x] Decide `system.patched.md`'s fate: **deleted**, with `NOTICE`/README
+      license carve-outs trimmed to match. One commit ever (initial
+      import), regenerable by `check_patches.py` on demand, and no stated
+      purpose emerged in 7 months of drift
+- [x] Decide `jsonl2sysprompt.sh`'s fate: **kept** as a jsonl-archaeology
+      utility — post-patch output is the only view of the body a session
+      *actually received* (`_bodies/` stores pre-patch originals); README
+      entry now states that niche alongside the contamination caveat
+- [x] Remaining trivia from 2026-07-12 review
+  - [x] `flow2jsonl.sh`: README's "replay" was right — the live proxy
+        already writes day-sharded JSONL, so the script is an offline
+        converter. Dropped the `tail -f` pipe for a direct `mitmdump -r`;
+        verified it exits at EOF (150 records from the 2026-08-03 flow)
+  - [x] syspatch README testing example updated to `system-prompts.kb/`
+        naming and the newest-unsuffixed-capture default
