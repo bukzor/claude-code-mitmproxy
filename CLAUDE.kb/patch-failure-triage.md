@@ -11,8 +11,8 @@ The capture primitives (`content_hash`, `save_body`, `save_incident`, the
 `Incident` record) live in `incidents.py`, not `syspatch.py` — they're generic
 over what's being captured. `syspatch.py`'s `report_issues` is the
 patch-domain-specific caller (a body plus a list of match/search issues);
-`incidents.capture_uncaught` is the other caller, used by all three addon
-scripts (`syspatch.py`, `thinkpatch.py`, `flow2jsonl.py`) to wrap their
+`incidents.capture_uncaught` is the other caller, used by all four addon
+scripts (`syspatch.py`, `toolpatch.py`, `thinkpatch.py`, `flow2jsonl.py`) to wrap their
 mitmproxy hooks: any exception that escapes the hook body is captured under
 rule `_uncaught-{addon}` (kind = the exception's class name) via the same
 content-addressed, idempotent-on-disk mechanism, then re-raised — capture,
@@ -29,6 +29,22 @@ pass through unpatched (mitmproxy contains addon exceptions). Archive the
 incidents. To avoid causing them: build a new patch dir outside
 `system-prompt-patches.d/` and `mv` it in whole -- `mv` within a
 filesystem is atomic, `mkdir`-then-write is not.
+
+## Tool-description drift (`tooldesc-*`)
+
+A second patch domain shares this capture machinery: `toolpatch.py` swaps
+built-in tool descriptions for slim stubs, comparing the live text against
+the accepted wordings in
+`~/.claude/tool-description-patches.d/{Tool}/upstream.d/`. A mismatch still
+gets the stub -- it's self-contained -- but captures kind
+`changed-upstream` under rule `tooldesc-{Tool}`. Triage: diff
+`_bodies/{digest}.md` against the accepted wordings, fold anything worth
+keeping into `description.md` (or the `must-read.kb` entry it defers to),
+then add the captured body as a new `upstream.d/*.md` named for the axis
+that varies (model family, cc_version) -- wordings vary concurrently, so
+accumulate rather than replace. Verify with `./check_tool_patches.py`
+(expect zero warnings), then archive. Format and rationale: that
+directory's `README.md`.
 
 ## The match/search model
 
@@ -201,8 +217,11 @@ patch's job is done — sunset it, don't recreate it.
    `search.md` target simply didn't exist yet at that older version. Neither
    is a regression.
 3. Archive resolved incidents rather than deleting them outright:
-   `incidents.archive_incident(rule, digest, CAPTURE_DIR)` (digest is the
-   `{digest}.json` stem) moves it into `log/patch-failures/_archive/`, taking
+   `python3 -c 'from incidents import CAPTURE_DIR, archive_incident;
+   archive_incident(RULE, DIGEST, CAPTURE_DIR)'` from the repo root (digest
+   is the `{digest}.json` stem; plain `python3` -- `uv run` re-syncs `.venv`,
+   which the live proxy is running out of) moves it into
+   `log/patch-failures/_archive/`, taking
    the shared body along only once no other live incident still
    references it. This keeps a just-resolved incident inspectable for a
    while; `gc_patch_failures.py`, run periodically (not automatic),
