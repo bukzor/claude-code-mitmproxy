@@ -1,6 +1,6 @@
 ---
 why:
-  - ../020-goals.kb/ease-of-operation.md
+  - ease-of-operation
 ---
 
 # Rotation self-heals instead of trusting `_current_path` alone
