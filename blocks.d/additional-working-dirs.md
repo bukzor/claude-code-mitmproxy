@@ -1,0 +1,2 @@
+ - Additional working directories:
+$ADDDIRS

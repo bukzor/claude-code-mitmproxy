@@ -18,3 +18,19 @@ why:
    against older fixtures are expected, not regressions.
 4. On promotion, run `check_patches.py` (expect zero warnings) and
    `check_dark_patches.py` (expect no unexplained newly-dark patches).
+
+Step 2 has no automatic trigger — additive upstream drift is invisible
+to every loud mechanism until someone looks — so `survey_captures.py` is
+that look: one row per capture, with shape, session-optional blocks, and
+whether this exact body is already promoted.
+
+Beside each capture's digest the survey prints a *core* digest: the same
+hash taken after the session-optional blocks (`blocks.d/`) are stripped
+too. Rows sharing a core are the same prompt modulo which blocks that
+session happened to carry, so only an unseen core is worth hand-diffing.
+Stripping blocks is confined to this view and never reaches
+`content_hash` — see `content-addressed-capture.md` for why block
+presence has to stay in the capture identity. The per-row block flags
+*are* the names of the rules that fired, so flags and stripper cannot
+drift apart; a rule that stops matching drops its flag and moves the
+core digest at the same time.

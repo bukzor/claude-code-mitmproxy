@@ -5,215 +5,25 @@ from __future__ import annotations
 import functools
 import json
 import logging
-import re
 from pathlib import Path
-from typing import NamedTuple
 
-from incidents import CAPTURE_DIR, Incident, capture_uncaught, report_issues
+from incidents import CAPTURE_DIR, Incident, capture_uncaught, masks, report_issues
 from shapes import shape_of
-
-# Matches $ALLCAPS placeholders in templates (trailing digits allowed:
-# $LINES1/$LINES2 are distinct placeholders of the LINES type)
-PLACEHOLDER_RE = re.compile(r"\$([A-Z]+[0-9]*)")
-
-# Pattern for $LINES: one or more non-empty lines (no trailing newline)
-LINES_PATTERN = r"[^\n]+(?:\n[^\n]+)*"
-
-# Pattern for other placeholders: rest of line (possibly empty)
-DEFAULT_PATTERN = r"[^\n]*"
-
-
-class Patch(NamedTuple):
-    name: str
-    matches: tuple[str, ...]  # match.md/match.d: is this patch applicable here at all?
-    search: tuple[str, ...]  # search.md/search.d: exact text to replace; () means "whichever match template hit"
-    replace: str | None  # None when upstream_removed
-    upstream_removed: bool
-
-    @staticmethod
-    def load(directory: Path) -> Patch:
-        name = directory.name
-        replace_file = directory / "replace.md"
-
-        matches = _load_templates(directory, "match")
-        assert matches, (directory, "missing match.md or match.d/")
-        search = _load_templates(directory, "search")
-        upstream_removed = _read_bool(directory / "upstream-removed.bool")
-
-        if upstream_removed:
-            assert not replace_file.exists(), (
-                name,
-                "replace.md must be absent when upstream-removed",
-            )
-            assert not search, (
-                name,
-                "search.md/search.d is meaningless when upstream-removed (no replace happens)",
-            )
-            replace = None
-        else:
-            assert replace_file.exists(), (name, replace_file)
-            replace = replace_file.read_text()
-
-        return Patch(
-            name=name,
-            matches=matches,
-            search=search,
-            replace=replace,
-            upstream_removed=upstream_removed,
-        )
-
-
-def _load_templates(directory: Path, base_name: str) -> tuple[str, ...]:
-    """Load templates from `{base_name}.md` (single) or `{base_name}.d/*.md`
-    (alternatives, tried in sorted-filename order, first hit wins). Returns
-    () if neither is present -- callers decide whether that's required
-    (match) or an optional default (search)."""
-    single_file = directory / f"{base_name}.md"
-    multi_dir = directory / f"{base_name}.d"
-    has_file = single_file.is_file()
-    has_dir = multi_dir.is_dir()
-
-    assert not (has_file and has_dir), (
-        directory,
-        f"both {base_name}.md and {base_name}.d/ present",
-    )
-
-    if has_file:
-        return (single_file.read_text(),)
-    if not has_dir:
-        return ()
-
-    files = sorted(p for p in multi_dir.iterdir() if p.is_file() and p.suffix == ".md")
-    assert files, (multi_dir, f"no *.md files in {base_name}.d/")
-    return tuple(p.read_text() for p in files)
-
-
-def _read_bool(path: Path) -> bool:
-    if not path.exists():
-        return False
-    text = path.read_text().strip().lower()
-    match text:
-        case "true" | "1" | "yes":
-            return True
-        case "false" | "0" | "no" | "":
-            return False
-        case _:
-            raise AssertionError(("unexpected bool value", path, text))
-
-
-def _template_to_regex(template: str) -> re.Pattern[str]:
-    """Convert a template with $PLACEHOLDER tokens to a compiled regex.
-
-    Same-named placeholders must match the same text (backreference);
-    use distinct names for independent matches. Trailing digits vary the
-    name without changing the type: $LINES, $LINES2, ... each match one
-    or more non-empty lines; non-LINES names match the rest of the line
-    (possibly empty).
-    """
-    parts = PLACEHOLDER_RE.split(template)
-    # parts alternates: [literal, name, literal, name, ..., literal]
-    regex_parts: list[str] = []
-    seen: set[str] = set()
-
-    for i, part in enumerate(parts):
-        if i % 2 == 0:
-            regex_parts.append(re.escape(part))
-        elif part in seen:
-            regex_parts.append(f"(?P={part})")
-        else:
-            seen.add(part)
-            pattern = LINES_PATTERN if part.rstrip("0123456789") == "LINES" else DEFAULT_PATTERN
-            regex_parts.append(f"(?P<{part}>{pattern})")
-
-    return re.compile("".join(regex_parts), re.DOTALL)
-
-
-def _expand_replace(template: str, target: re.Match[str]) -> str:
-    """$NAME tokens in replace text re-emit what the search's same-named
-    placeholder captured -- the only way a rewrite can keep dynamic content
-    (session paths, branch names) it cannot know ahead of time. A name the
-    search didn't capture is a patch-config error, not drift: fail hard."""
-    parts = PLACEHOLDER_RE.split(template)
-    # parts alternates: [literal, name, literal, name, ..., literal]
-    return "".join(
-        part if i % 2 == 0 else target.group(part) for i, part in enumerate(parts)
-    )
-
-
-def _first_hit(text: str, templates: tuple[str, ...]) -> re.Match[str] | None:
-    """Try each template against text in order, return the first `re.Match`,
-    or None if none hit. Shared by match (applicability) and search (replace
-    target) -- both are "try these alternatives, first one wins"."""
-    for template in templates:
-        pattern = _template_to_regex(template)
-        m = pattern.search(text)
-        if m is not None:
-            return m
-    return None
-
-
-def load_patches(patches_dir: Path) -> tuple[Patch, ...]:
-    """Every subdirectory of patches_dir is a patch: Patch.load asserts on a
-    malformed one (missing match.md/match.d/) rather than this function
-    silently dropping it -- a config error, not out-of-scope.
-
-    An absent directory or an empty result is likewise a config error, not
-    "nothing to do". PATCHES_DIR is `~`-relative, so a wrong $HOME resolves
-    it somewhere that doesn't exist; returning () there would make a broken
-    environment measure as a clean zero-strip run.
-    """
-    assert patches_dir.is_dir(), (patches_dir, "patches dir missing (wrong $HOME?)")
-    patches = tuple(
-        Patch.load(child) for child in sorted(patches_dir.iterdir()) if child.is_dir()
-    )
-    assert patches, (patches_dir, "no patches found")
-    return patches
+from templates import Rule, apply_rules, load_rules
 
 
 def apply_patches(
-    text: str, patches: tuple[Patch, ...], capture_dir: Path | None = CAPTURE_DIR
+    text: str, patches: tuple[Rule, ...], capture_dir: Path | None = CAPTURE_DIR
 ) -> str:
-    # Normalize trailing newline so templates ending with `\n` can match a
-    # block that sits at end-of-body. Without this, `$LINES\n` backtracks
-    # one line short when the body's final line has no trailing newline.
-    # Undone before returning: leaving it makes an all-miss run differ from
-    # its input by a byte, which reads as a patch firing in the delta.
-    borrowed_newline = not text.endswith("\n")
-    if borrowed_newline:
-        text += "\n"
-    original = text
-    issues: list[Incident] = []
-    for patch in patches:
-        m = _first_hit(text, patch.matches)
-        if m is None:
-            # match didn't find its target: this patch isn't applicable here
-            # (wrong prompt variant, session-optional content absent,
-            # whatever). Always silent -- a non-match is not a failure, it's
-            # the mechanism by which a patch detects its own relevance.
-            continue
-        if patch.upstream_removed:
-            issues.append(Incident(patch.name, "matched-despite-upstream-removed"))
-            continue
-        if not patch.search:
-            target = m
-        else:
-            target = _first_hit(text, patch.search)
-            if target is None:
-                # match succeeded (we're in scope) but none of search's
-                # alternatives found their precise target -- always loud, no
-                # override. Unlike a match miss, this means the patch's own
-                # precondition holds yet its target vanished: a real
-                # drift/regression to triage.
-                issues.append(Incident(patch.name, "failed-to-match"))
-                continue
-        assert patch.replace is not None  # invariant: only None when upstream_removed
-        replacement = _expand_replace(patch.replace, target)
-        text = text[: target.start()] + replacement + text[target.end() :]
-    if issues:
-        report_issues(original, issues, capture_dir)
-    if borrowed_newline and text.endswith("\n"):
-        text = text[:-1]
-    return text
+    """`templates.apply_rules` plus this project's loudness policy: a patch
+    that proved itself in scope and then failed to find its target is an
+    incident, captured content-addressed so it warns exactly once. Which
+    misses are worth a warning is the caller's call, not the engine's --
+    masks run the same templates and are never loud."""
+    patched, misses = apply_rules(text, patches)
+    if misses:
+        report_issues(text, [Incident(*miss) for miss in misses], capture_dir)
+    return patched
 
 
 # --- aggregate strip-rate tripwire ---
@@ -228,14 +38,14 @@ def _fixture_version(path: Path) -> tuple[int, ...]:
 
 
 @functools.lru_cache(maxsize=1)
-def strip_floors(patches: tuple[Patch, ...]) -> dict[str, int]:
+def strip_floors(patches: tuple[Rule, ...]) -> dict[str, int]:
     """Minimum bytes the patch set must strip from a live body, per prompt
     shape: half of what it strips from the newest promoted fixture of that
     shape (newest by version, then size, so a full capture beats a `-scope`
     partial). Halving absorbs session-optional content a fixture carries
     but a minimal live session doesn't (gitStatus, additional dirs); an
     upstream rewrite leaves only the shape-independent patches firing, far
-    below any floor. Cached per patch set -- Patch stores templates as
+    below any floor. Cached per patch set -- Rule stores templates as
     strings, so value-equal loads share one entry; a fixture promotion
     mid-process needs a proxy restart to be seen."""
     newest: dict[str, tuple[tuple, str]] = {}
@@ -255,7 +65,7 @@ def strip_floors(patches: tuple[Patch, ...]) -> dict[str, int]:
 
 
 def check_strip_floor(
-    original: str, patched: str, patches: tuple[Patch, ...], capture_dir: Path | None
+    original: str, patched: str, patches: tuple[Rule, ...], capture_dir: Path | None
 ) -> None:
     """The aggregate check no per-patch rule can provide: an upstream
     rewrite sends every shape-scoped patch silently out of scope at once,
@@ -400,9 +210,14 @@ def render_system_blocks(system: list) -> str:
 def load(loader):
     """Called once at mitmproxy startup. Patches are re-read from disk on
     every request (see _request) so editing `*-patches.d/` takes effect
-    immediately -- this hook only logs what's configured at startup."""
+    immediately -- this hook only logs what's configured at startup.
+
+    Masks are the exception: they key the capture digest, so they compile
+    once here and a malformed one takes the proxy down at startup rather
+    than corrupting hashing per-request. Editing `masks.d/` needs a
+    restart, and `rekey_captures.py` to reconcile what's already on disk."""
     del loader  # unused
-    patches = load_patches(PATCHES_DIR)
+    patches = load_rules(PATCHES_DIR)
     logging.info("loaded %d system prompt patches", len(patches))
     for patch in patches:
         if patch.upstream_removed:
@@ -412,6 +227,7 @@ def load(loader):
         else:
             label = "match-only"
         logging.info("  %s (%s)", patch.name, label)
+    logging.info("loaded %d capture-digest masks", len(masks()))
 
 
 UNCAUGHT_RULE = "_uncaught-syspatch"
@@ -447,7 +263,9 @@ def _request(flow):
     if system is None:
         return
 
-    patches = load_patches(PATCHES_DIR)
+    # Re-read per request: editing `*-patches.d/` takes effect without a
+    # restart (`CLAUDE.kb/patches-reread-per-request.md`).
+    patches = load_rules(PATCHES_DIR)
 
     if isinstance(system, str):
         patched = apply_patches(system, patches)

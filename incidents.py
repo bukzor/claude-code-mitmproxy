@@ -4,14 +4,16 @@ idempotent on disk, keyed by content_hash, so a live proxy re-hitting the same
 failure on every request logs and writes exactly once."""
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import logging
-import re
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
+
+from templates import Template, apply_masks, load_masks
 
 # Gitignored; callers pass capture_dir=None to disable capture entirely
 # (offline callers like check_patches only want an in-process warning).
@@ -19,16 +21,10 @@ CAPTURE_DIR = Path(__file__).parent / "log" / "patch-failures"
 BODIES_DIRNAME = "_bodies"
 ARCHIVE_DIRNAME = "_archive"
 
-# Per-session-volatile regions that differ between otherwise-identical bodies
-# (cwd, scratchpad path, git status + recent commits, CLI build version).
-# Neutralized only for the dedup hash; the stored body keeps them verbatim
-# for diagnosis. A no-op on text with no such lines, e.g. a traceback.
-_VOLATILE_SUBS = (
-    (re.compile(r"\ngitStatus:.*", re.DOTALL), "\ngitStatus: $GIT_STATUS\n"),
-    (re.compile(r"(?m)^( - Primary working directory:).*"), r"\1 $CWD"),
-    (re.compile(r"(?m)^`/tmp/.*scratchpad`$"), "`$SCRATCHPAD`"),
-    (re.compile(r"\bcc_version=[^;]+"), "cc_version=$CC_VERSION"),
-)
+# In-repo, unlike the patches under ~/.claude: patches are one operator's
+# preferences, but masks define the capture system's identity function, and a
+# digest that varied with per-machine state wouldn't be content-addressed.
+MASKS_DIR = Path(__file__).parent / "masks.d"
 
 
 class Incident(NamedTuple):
@@ -36,14 +32,22 @@ class Incident(NamedTuple):
     kind: str
 
 
+@functools.cache
+def masks() -> tuple[Template, ...]:
+    """The compiled mask set, once per process. Patches are re-read per
+    request so edits go live immediately; masks can't be, because a digest
+    that changed mid-run would silently re-key everything captured after it.
+    `syspatch.load` calls this at startup so a malformed mask takes the proxy
+    down there, loudly, instead of at hash time."""
+    return load_masks(MASKS_DIR)
+
+
 def normalize_body(body: str) -> str:
     """Body with session-volatile regions (cwd, scratchpad path, git status,
-    cc_version) masked -- stable across sessions that ran the same content
-    differently. A no-op on text with no such lines, e.g. a traceback."""
-    normalized = body
-    for pattern, repl in _VOLATILE_SUBS:
-        normalized = pattern.sub(repl, normalized)
-    return normalized
+    memory paths, cc_version, ...) masked -- stable across sessions that ran
+    the same content differently. Which regions, exactly, is `masks.d/`. A
+    no-op on text with no such regions, e.g. a traceback."""
+    return apply_masks(body, masks())
 
 
 def content_hash(body: str) -> str:

@@ -1,6 +1,11 @@
 ---
 managed-by: Skill(llm-subtask)
-status: not-started
+status: done
+closeout: >-
+    Both tiers landed 2026-08-09 in ~3.5 SWEh: `masks.d/` (13 rules) +
+    `check_masks.py` for tier 1, `blocks.d/` (11 rules) + the survey `core`
+    column for tier 2, on a `templates.py` extracted from `syspatch.py`.
+    See "Outcome" below for two corrections to the criteria as written.
 required-reading:
     - design/040-design.kb/content-addressed-capture.md
     - design/040-design.kb/template-patch-model.md
@@ -91,49 +96,67 @@ per-request.
 
 ## Implementation Steps
 
-- [ ] Docs first: update `design/040-design.kb/content-addressed-capture.md`
+- [x] Docs first: update `design/040-design.kb/content-addressed-capture.md`
       (masking mechanism becomes template rules) and
       `template-patch-model.md` (model gains a second consumer)
-- [ ] Extract template engine from `syspatch.py` into a shared module;
+- [x] Extract template engine from `syspatch.py` into a shared module;
       `syspatch` behavior unchanged
-- [ ] Port the 4 `_VOLATILE_SUBS` masks to in-repo rule dirs; delete
+- [x] Port the 4 `_VOLATILE_SUBS` masks to in-repo rule dirs; delete
       `_VOLATILE_SUBS`. cc_version may need a `$TOKEN`-type placeholder
       (non-whitespace run, `;`-delimited here) — add it to the engine and
       format README if so
-- [ ] Add tier-1 masks: adddirs items, `# Memory` / auto-memory paths,
+- [x] Add tier-1 masks: adddirs items, `# Memory` / auto-memory paths,
       bg-job tmp path, `[1m]` suffix, `(1M context)`
-- [ ] Wire `incidents.normalize_body` to the compiled rules (load-time
+- [x] Wire `incidents.normalize_body` to the compiled rules (load-time
       compilation, fail-fast)
-- [ ] Mask validation: assert each mask matches the fixtures it should
+- [x] Mask validation: assert each mask matches the fixtures it should
       (extend `check_patches.py` or sibling checker); a mask matching no
       fixture is loud (dark-mask)
-- [ ] Regenerate masked `.md` siblings in `log/prompt-captures/` from
+- [x] Regenerate masked `.md` siblings in `log/prompt-captures/` from
       `.raw.md`; move superseded-digest duplicates to `trash/`
-- [ ] Tier 2: block-strip rule set + core-digest column in
+- [x] Tier 2: block-strip rule set + core-digest column in
       `survey_captures.py`; derive `BLOCK_MARKERS` from it
-- [ ] Rerun `check_patches.py`, `check_dark_patches.py`, and
+- [x] Rerun `check_patches.py`, `check_dark_patches.py`, and
       `survey_captures.py`; confirm post-v2.1.221 captures collapse
-
-## Open Questions
-
-- Rule directory naming/layout: one `normalize.d/` vs `masks.d/` +
-  `blocks.d/` for the two tiers?
-- Can mask rules reference/share match templates with the strip patches
-  that target the same regions, or is duplication cleaner? (Lean:
-  duplicate; cross-tree coupling to `~/.claude` is worse.)
-- Old captures keyed under pre-change digests: regenerate index, trash, or
-  leave? (Re-keying means each known body re-captures once when next seen.)
 
 ## Success Criteria
 
-- [ ] `_VOLATILE_SUBS` is gone; all masking flows through template rules
-- [ ] Recomputing digests over existing raws collapses the known noise
+- [x] `_VOLATILE_SUBS` is gone; all masking flows through template rules
+- [x] Recomputing digests over existing raws collapses the known noise
       pairs (e.g. `2.1.224.062` fable ≡ `v2.1.221-fable` fixture body; the
-      three 2.1.221 automem sonnet captures ≡ one)
-- [ ] A deliberately broken mask is caught offline by the checker, not by
+      three 2.1.221 automem sonnet captures ≡ one) — *the second pair is a
+      tier-2 criterion, see Outcome*
+- [x] A deliberately broken mask is caught offline by the checker, not by
       digest churn in production
-- [ ] Survey answers "any new prompt copy since the fixtures?" from the
+- [x] Survey answers "any new prompt copy since the fixtures?" from the
       core-digest column alone, no hand-diffing
+
+## Outcome
+
+Landed as `templates.py` (engine, shared by `syspatch.py`, `incidents.py`,
+`survey_captures.py`), `masks.d/` + `check_masks.py`, `blocks.d/` + the
+survey `core` column, and `rekey_captures.py` for the existing store
+(70→46 main captures, 23→21 subagent). Behavior-preservation proved by
+diffing `check_patches.py` and `check_dark_patches.py` output against a
+HEAD worktree: byte-identical.
+
+The three open questions resolved as: two rule dirs, one per tier
+(`masks.d/`, `blocks.d/`); duplicate rather than share templates with the
+`~/.claude` strip patches; re-key the store in place, with the caveat that
+the proxy must be restarted first or it re-captures every renamed body
+under the old scheme.
+
+Two corrections to the plan above:
+
+- **The automem-sonnet criterion was mis-tiered.** Those three captures do
+  not collapse under masking and should not: they differ by real prompt
+  content (a TaskCreate line, two Agent-tool lines, an "enough information
+  to act" paragraph) that varies *within* build 8fd. That makes them
+  session-conditional *blocks*, so they collapse at tier 2 instead — all
+  three now share core `baa2cb7dd3e2`.
+- **`BLOCK_MARKERS` was not derived from the rules; it was dissolved into
+  them.** `strip_blocks` returns the names of the rules that fired, so the
+  survey's flags *are* the stripper's output and cannot drift from it.
 
 ## Notes
 

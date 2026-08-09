@@ -4,9 +4,12 @@ mitmproxy watches every `-s` script's mtime and reloads it in-process
 when it changes -- there is no "the running process is insulated from
 edits on disk" assumption available while `proxy.sh` is up. This applies
 to `syscapture.py`, `syspatch.py`, `toolpatch.py`, `thinkpatch.py`,
-`flow2jsonl.py` specifically (the `-s` scripts); modules they import
-(`incidents.py`, `syspatch.py`'s helpers) aren't watched directly, but
-editing a watched script re-executes its `import` statements.
+`flow2jsonl.py` specifically (the `-s` scripts). Modules they import
+(`incidents.py`, `templates.py`, `shapes.py`) are not watched, and the
+reload does not refresh them either: re-running an `import` statement
+rebinds a name from `sys.modules` rather than re-executing the module,
+so their module-level state -- `incidents.masks()`'s cache, notably --
+survives every hot-reload. Editing those needs a real restart.
 
 Observed 2026-07-25 while reworking `flow2jsonl.py`'s output-path
 handling on an already-running proxy: mid-edit, the live process's TUI

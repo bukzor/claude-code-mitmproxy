@@ -23,7 +23,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from syspatch import PATCHES_DIR, _first_hit, apply_patches, load_patches
+from syspatch import PATCHES_DIR, apply_patches
+from templates import first_hit, load_rules
 
 KB_DIR = Path("system-prompts.kb")
 
@@ -51,7 +52,7 @@ def main():
     # a block at end-of-body shows as a false match miss here.
     texts = {fixture: fixture.read_text() for fixture in fixtures}
     texts = {f: t if t.endswith("\n") else t + "\n" for f, t in texts.items()}
-    patches = load_patches(PATCHES_DIR)
+    patches = load_rules(PATCHES_DIR)
     assert patches, PATCHES_DIR
 
     if pattern is not None:
@@ -72,9 +73,9 @@ def main():
     for fixture in fixtures:
         patched_so_far = texts[fixture]
         for patch in patches:
-            if _first_hit(texts[fixture], patch.matches) is None:
+            if first_hit(texts[fixture], patch.matches) is None:
                 cells[fixture, patch.name] = "-"
-            elif _first_hit(patched_so_far, patch.matches) is not None:
+            elif first_hit(patched_so_far, patch.matches) is not None:
                 cells[fixture, patch.name] = "HIT"
             else:
                 cells[fixture, patch.name] = "SUBSUMED"

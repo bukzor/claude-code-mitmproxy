@@ -1,0 +1,2 @@
+# Scratchpad Directory
+$SCRATCHPADBLOCK

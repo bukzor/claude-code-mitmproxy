@@ -1,0 +1,4 @@
+Status:
+$GITSTATUSLINES
+
+Recent commits:

@@ -1,5 +1,5 @@
 ---
-last-updated: 2026-08-04
+last-updated: 2026-08-09
 ---
 
 # claude-code-mitmproxy
@@ -46,7 +46,17 @@ can run for weeks without restarting.
   fixtures carry TEXT and whether the pipeline already strips it.
 - `survey_captures.py` — inventory of `log/prompt-captures/`: shape,
   optional blocks, and promoted-yet per capture; the "someone looks" step
-  of the standing promotion duty.
+  of the standing promotion duty. Its `core` column is the digest with
+  session-optional blocks stripped too, so an unseen core -- and only an
+  unseen core -- means upstream shipped new prompt copy.
+- `check_masks.py` -- offline validation of `masks.d/`: every mask is
+  exercised by some fixture, masking is idempotent, and no two fixtures
+  collapse to one digest. Mask misses are silent in production, so this is
+  the only thing standing between a typo and every session minting a fresh
+  digest.
+- `rekey_captures.py` -- renames `log/prompt-captures/` entries to their
+  digests under the current masks, trashing duplicates that collapse. Run
+  after editing `masks.d/`, with the proxy restarted first.
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a jsonl
   capture (`log/traffic/*.jsonl`). The live proxy records requests
@@ -55,6 +65,19 @@ can run for weeks without restarting.
   see `syscapture.py`) — but this is the only view of what a session
   *actually received*, since `log/patch-failures/_bodies/` stores
   pre-patch originals.
+
+## Rule sets
+
+Patches live in `~/.claude/` because they encode one operator's
+preferences. Two rule sets live in-repo instead, sharing the patch
+template language and its compiler (`templates.py`):
+
+- `masks.d/` -- neutralizes session-volatile content (cwd, memory paths,
+  model-id suffixes) before hashing, so a capture's digest is a property of
+  the prompt rather than of the session that saw it.
+- `blocks.d/` -- deletes whole session-optional sections, for
+  `survey_captures.py`'s core-digest column only. Never part of the
+  capture digest: whether a body carried `# Memory` is itself content.
 
 ## Knowledge bases
 

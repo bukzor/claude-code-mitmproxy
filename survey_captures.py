@@ -15,22 +15,13 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
+from incidents import content_hash, normalize_body
 from shapes import shape_of
+from templates import Template, load_templates, strip_blocks
 
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")
-
-# Session-optional blocks worth surfacing when choosing which capture to
-# promote: fuller captures (more blocks) make better fixtures.
-BLOCK_MARKERS = (
-    ("gitStatus:", "git"),
-    ("Git user:", "gituser"),
-    ("Additional working directories", "adddirs"),
-    ("# Memory", "mem"),
-    ("# auto memory", "automem"),
-    ("# Scratchpad Directory", "scratch"),
-    ("# Background Session", "bgjob"),
-)
+BLOCKS_DIR = Path(__file__).parent / "blocks.d"
 
 
 class Capture(NamedTuple):
@@ -52,16 +43,16 @@ def parse_name(path: Path) -> Capture:
     return Capture(version.removeprefix("v"), model, digest, path)
 
 
-def blocks_of(text: str) -> str:
-    # "#"-markers are headings and must match a whole line -- substring
-    # matching would false-positive on subheadings like "## Memory and
-    # other forms of persistence".
-    lines = set(text.splitlines())
-    return ",".join(
-        flag
-        for marker, flag in BLOCK_MARKERS
-        if (marker in lines if marker.startswith("#") else marker in text)
-    )
+def core_of(text: str, blocks: tuple[Template, ...]) -> tuple[str, str]:
+    """The capture's (core digest, session-optional blocks it carries).
+
+    The core digest is what's left once every block this session happened to
+    switch on is deleted: two captures share it exactly when they carry the
+    same prompt copy, whatever their sessions differed on. Blocks are stripped
+    from the masked body, so a block template can be written against the
+    tokens masks leave behind instead of the volatile text they replaced."""
+    stripped, present = strip_blocks(normalize_body(text), blocks)
+    return content_hash(stripped), ",".join(present)
 
 
 def promoted_as(text: str, kb_texts: dict[str, str]) -> str:
@@ -83,18 +74,24 @@ def main() -> None:
         if p.suffix == ".md" and p.name != "CLAUDE.md"
     }
 
-    header = ("version", "model", "digest", "bytes", "shape", "promoted", "blocks")
-    rows = [header]
+    blocks = load_templates(BLOCKS_DIR)
+
+    header = (
+        "version", "model", "digest", "core", "bytes", "shape", "promoted", "blocks"
+    )
+    rows: list[tuple[str, ...]] = [header]
     for capture in sorted(captures, key=lambda c: c.sort_key):
         text = capture.path.read_text()
+        core, present = core_of(text, blocks)
         rows.append((
             capture.version,
             capture.model.removeprefix("claude-"),
             capture.digest,
+            core,
             str(len(text)),
             shape_of(text),
             promoted_as(text, kb_texts),
-            blocks_of(text),
+            present,
         ))
 
     widths = [max(len(row[i]) for row in rows) for i in range(len(header))]

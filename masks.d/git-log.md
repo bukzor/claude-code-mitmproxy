@@ -1,0 +1,2 @@
+Recent commits:
+$GITLOGLINES

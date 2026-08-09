@@ -1,0 +1,1 @@
+ (`$JOBTMPDIR`) for any temporary files (scripts, query files, intermediate outputs) instead of `/tmp`

@@ -1,0 +1,1 @@
+cc_version=$CCVERSION; cc_entrypoint=

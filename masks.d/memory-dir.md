@@ -1,0 +1,1 @@
+You have a persistent file-based memory at `$MEMORYDIR`. This directory already exists

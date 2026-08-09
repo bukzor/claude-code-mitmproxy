@@ -1,0 +1,1 @@
+You have a persistent, file-based memory system at `$AUTOMEMORYDIR`. This directory already exists

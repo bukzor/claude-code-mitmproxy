@@ -35,6 +35,12 @@ outputs are day-sharded and restarts append instead of truncate:
   commit messages point into.
 - `.claude/todo.kb/` — strategic task breakdowns (per `Skill(llm-subtask)`).
 
+Two in-repo rule sets share the patch template language, each with its own
+`README.md`: `masks.d/` neutralizes session-volatile *content* for
+`incidents.content_hash` (validate with `check_masks.py`; after editing,
+restart the proxy and run `rekey_captures.py`), and `blocks.d/` deletes
+session-optional *blocks* for `survey_captures.py`'s core-digest column only.
+
 ## Standing maintenance
 
 Always implicitly appended to the todo list (recurring, not a literal
@@ -44,9 +50,10 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
-- Run `survey_captures.py` to spot captures newer than the promoted
-  fixtures; promote the fullest raw per shape (`cp` per
+- Run `survey_captures.py` to spot captures whose *core* digest matches no
+  promoted fixture; promote the fullest raw per shape (`cp` per
   `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,
-  `check_dark_patches.py`). Promotion has no automatic trigger — additive
-  drift is invisible to every loud mechanism until someone looks; the
-  `_strip-rate` tripwire only catches subtractive/rewrite drift.
+  `check_dark_patches.py`, `check_masks.py`). Promotion has no automatic
+  trigger — additive drift is invisible to every loud mechanism until
+  someone looks; the `_strip-rate` tripwire only catches
+  subtractive/rewrite drift.

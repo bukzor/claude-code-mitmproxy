@@ -1,0 +1,1 @@
+Git user: $GITUSER

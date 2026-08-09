@@ -18,5 +18,16 @@ stable structure like section headings; `search` (the precise text to
 replace) carries the exact wording. Drift *within* an asserted scope is
 loud, while out-of-scope absence stays silent.
 
+Template compilation lives in `templates.py`, imported by every
+consumer: `syspatch.py` for the prompt patches, `incidents.py` for the
+capture-digest masks (`content-addressed-capture.md`), and
+`survey_captures.py` for the block strippers (`fixture-lifecycle.md`).
+Applying a rule set *returns* its unapplied rules rather than reporting
+them, so the caller owns the loudness decision — which is what lets one
+format serve a mechanism whose misses are loud and ones whose misses are
+silent by construction.
+
 Normative format specs: `~/.claude/system-prompt-patches.d/README.md`
-and `~/.claude/tool-description-patches.d/README.md`.
+and `~/.claude/tool-description-patches.d/README.md`; the in-repo rule
+sets (`masks.d/`, `blocks.d/`) use the same format and document their
+own deviations in their `README.md`.

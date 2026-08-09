@@ -6,7 +6,8 @@ import re
 import sys
 from pathlib import Path
 
-from syspatch import apply_patches, load_patches
+from syspatch import apply_patches
+from templates import load_rules
 
 DEFAULT_PATCHES_DIR = Path("~/.claude/system-prompt-patches.d").expanduser()
 KB_DIR = Path("system-prompts.kb")
@@ -34,7 +35,7 @@ def main():
 
     assert system_file.exists(), system_file
     text = system_file.read_text()
-    patches = load_patches(patches_dir)
+    patches = load_rules(patches_dir)
     result = apply_patches(text, patches, capture_dir=None)
 
     delta = len(result) - len(text)
