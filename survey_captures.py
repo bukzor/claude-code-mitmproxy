@@ -29,6 +29,7 @@ BLOCK_MARKERS = (
     ("# Memory", "mem"),
     ("# auto memory", "automem"),
     ("# Scratchpad Directory", "scratch"),
+    ("# Background Session", "bgjob"),
 )
 
 
