@@ -37,6 +37,11 @@ outputs are day-sharded and restarts append instead of truncate:
   shapes, gotchas) — read the relevant one before touching that area.
 - `system-prompts.kb/` — captured system-prompt bodies per cc_version,
   used by `check_patches.py` for offline validation.
+- `keying.claims.kb/` — the contestable commitments about what may key
+  what, per `Skill(llm-claims-kb)`; entry point `keying.claims.md`. Read
+  before changing how anything is named, deduped, or memoized. Where it
+  overlaps `design/`, design.kb states the behavior and a claim says why
+  that behavior is forced.
 - `session.kb/` — dated incident/session narratives (what happened, why
   nothing was loud, what changed) — the durable record todo entries and
   commit messages point into.
@@ -47,6 +52,8 @@ Two in-repo rule sets share the patch template language, each with its own
 `incidents.masked_hash` (validate with `check_masks.py`; an edit needs no
 follow-up -- nothing stored is named by a masked digest), and `blocks.d/` deletes
 session-optional *blocks* for `survey_captures.py`'s core-digest column only.
+`check_laws.py` validates the algebra both rest on -- masking idempotent and
+only ever coarsening, block deletion independent of load order.
 
 ## Standing maintenance
 
@@ -57,6 +64,9 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
+- Run `check_laws.py` after any `masks.d/` or `blocks.d/` edit; it is the
+  only detector for a broken law, which otherwise yields a well-formed
+  digest answering a different question than the one asked.
 - Run `survey_captures.py` to spot captures whose *core* digest matches no
   promoted fixture; promote the fullest raw per shape (`cp` per
   `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,

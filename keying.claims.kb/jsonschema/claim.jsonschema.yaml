@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=https://json-schema.org/draft-07/schema
+$schema: "http://json-schema.org/draft-07/schema#"
+title: claim-ledger claim frontmatter
+description: >
+  One claim per file. The body states the claim and its reasons;
+  frontmatter carries the ledger label and the standing. Shared by
+  every theory in a ledger -- the theories differ in ontology, not in
+  shape.
+type: object
+additionalProperties: false
+required:
+  - label
+  - standing
+properties:
+  label:
+    description: >-
+      Stable ledger label -- names the locus of contention, not the
+      current conclusion, so it survives revision. Upper snake case;
+      no label may be a prefix of another, since sigils trail the
+      label and `grep LABEL` has to stay unambiguous.
+    type: string
+    pattern: "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+  standing:
+    description: >-
+      The sigil, spelled out -- it signs the judge: bare (no judge
+      needed -- a checkable fact, or follows from its premises) |
+      open (?, no one's yet) | agent (+, the agent's call, veto
+      invited) | user (!, the user's call)
+    type: string
+    enum: [bare, open, agent, user]
+  why:
+    description: >-
+      The arrows (`<-`), structured: references to the claims whose
+      collapse would make you revisit this one. Motivation, not
+      entailment -- nothing checks that this claim follows from them.
+      In file-per-claim form this field is the arrows' one canonical
+      home; prose mentions are non-normative. Entries are bare
+      references -- file-relative paths to claim files, or ledger
+      labels for claims living in one-line ledgers -- never carrying a
+      copied sigil: standing lives at the definition site only, and
+      the warrant-mix view is computed, not stored. (Prior art:
+      llm-design-kb `why:`.)
+    type: array
+    minItems: 1
+    items:
+      type: string
+  authority:
+    description: >-
+      The act that settled this claim's standing, where the sigil
+      alone is too coarse -- who or what one would appeal to: a named
+      ruling, literature (with citation), ... Meaningless on open
+      claims.
+    type: string
+  verify:
+    description: >-
+      Re-runnable check that certifies the claim -- the CHECK of
+      `certified(CHECK)`; a certified claim's standing is bare, the
+      check standing where a judge would. A verify that cannot yet
+      run is acceptance debt: the claim is decided but unbuilt.
+    type: string

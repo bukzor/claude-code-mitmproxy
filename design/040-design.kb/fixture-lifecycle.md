@@ -33,7 +33,10 @@ blocks that session happened to carry, so only an unseen core is worth
 hand-diffing.
 Stripping blocks is confined to this view and never reaches
 `masked_hash` — see `content-addressed-capture.md` for why block
-presence has to stay in the capture identity. The per-row block flags
-*are* the names of the rules that fired, so flags and stripper cannot
-drift apart; a rule that stops matching drops its flag and moves the
-core digest at the same time.
+presence has to stay in the capture identity. The per-row block flags are
+the names of the rules that fired, so a rule that stops matching drops its
+flag and moves the core digest together. The flags are unreliable where two
+block spans overlap -- one rule's `$...BLOCK` can contain another's, and
+the first to run takes the credit. The core digest is unaffected, since the
+same bytes go either way
+(`keying.claims.kb/this-proxy.kb/block-flags-are-an-artifact.md`).

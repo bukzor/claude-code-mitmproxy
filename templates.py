@@ -247,11 +247,14 @@ def load_masks(masks_dir: Path) -> tuple[Template, ...]:
     return masks
 
 
-def _borrow_newline(text: str) -> tuple[str, bool]:
+def borrow_newline(text: str) -> tuple[str, bool]:
     """Templates ending in `\\n` must be able to match a block that sits at
     end-of-body; without a trailing newline `$LINES\\n` backtracks one line
     short. Callers undo this before returning -- leaving it makes an all-miss
-    run differ from its input by a byte, which reads as a rule firing."""
+    run differ from its input by a byte, which reads as a rule firing.
+
+    Public because measuring where a rule *would* match has to be done against
+    the same text the appliers below see, off-by-one newline included."""
     if text.endswith("\n"):
         return text, False
     return text + "\n", True
@@ -261,7 +264,7 @@ def apply_rules(text: str, rules: tuple[Rule, ...]) -> tuple[str, list[Miss]]:
     """Apply each rule at most once, in order, returning the rewritten text
     and the rules that didn't apply cleanly. A `match` miss is not a Miss:
     that's the mechanism by which a rule detects its own irrelevance."""
-    text, borrowed = _borrow_newline(text)
+    text, borrowed = borrow_newline(text)
     misses: list[Miss] = []
     for rule in rules:
         m = first_hit(text, rule.matches)
@@ -299,7 +302,7 @@ def strip_blocks(text: str, blocks: tuple[Template, ...]) -> tuple[str, list[str
     block rule answers "would this body be the same if the session hadn't
     switched this on?", so the result must be byte-identical to a body that
     never carried the block."""
-    text, borrowed = _borrow_newline(text)
+    text, borrowed = borrow_newline(text)
     present = []
     for block in blocks:
         stripped = template_to_regex(block.template).sub("", text)
@@ -320,7 +323,7 @@ def apply_masks(text: str, masks: tuple[Template, ...]) -> str:
     same session paths per block, and one surviving copy is enough to fork
     the digest. And the template is emitted verbatim, never expanded, which
     is what makes a mask unable to delete text it didn't capture."""
-    text, borrowed = _borrow_newline(text)
+    text, borrowed = borrow_newline(text)
     for mask in masks:
         text = template_to_regex(mask.template).sub(
             lambda _hit, template=mask.template: template, text

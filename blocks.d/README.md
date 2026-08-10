@@ -22,14 +22,27 @@ leave behind rather than the volatile text they replaced -- `git-status.md` is
 a dozen literal lines because `$GITBRANCH` and friends are already tokens by
 the time it runs.
 
-## Order-independent
+## Order-independent deletion, order-dependent reporting
 
-Every block is tried against the result of the previous ones, but no rule may
+Every block is tried against the result of the previous ones, and no rule may
 *depend* on an earlier rule having fired: the set is loaded in filename order,
-which is alphabetical and carries no meaning. Where a block has an optional
-part, write both whole forms and let one of them miss -- `git-status.md` and
-`git-status-with-user.md` are mutually exclusive, and which one hit is the
-survey's report of whether `Git user:` was there.
+which is alphabetical and carries no meaning. What that order may not change
+is the *stripped text*, and it does not -- `check_laws.py` asserts it,
+exhaustively over the orders that could matter.
+
+What the order does change today is which rule gets *credited*. A `$...BLOCK`
+runs to end of body when its section is last, so it can swallow a following
+section that has no `# ` heading of its own; one block's span then contains
+another's, and whichever runs first reports the hit while the other finds
+nothing left. In subagent captures `scratchpad` swallows `gitStatus:` exactly
+this way. The same bytes go either way, so only the survey's flag column is
+wrong. Which repair this gets is undecided --
+`keying.claims.kb/this-proxy.kb/the-block-overrun-fix-is-unmade.md`.
+
+Where a block has an optional part, write both whole forms and let one of
+them miss -- `git-status.md` and `git-status-with-user.md` are mutually
+exclusive, and which one hit is the survey's report of whether `Git user:`
+was there.
 
 ## Deleting must leave the absent form byte-for-byte
 
