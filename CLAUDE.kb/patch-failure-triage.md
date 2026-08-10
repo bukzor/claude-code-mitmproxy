@@ -217,12 +217,13 @@ patch's job is done — sunset it, don't recreate it.
    `search.md` target simply didn't exist yet at that older version. Neither
    is a regression.
 3. Archive resolved incidents rather than deleting them outright:
-   `python3 -c 'from incidents import CAPTURE_DIR, archive_incident;
-   archive_incident(RULE, DIGEST, CAPTURE_DIR)'` from the repo root (digest
-   is the `{digest}.json` stem; plain `python3` -- `uv run` re-syncs `.venv`,
-   which the live proxy is running out of) moves it into
-   `log/patch-failures/_archive/`, taking
-   the shared body along only once no other live incident still
-   references it. This keeps a just-resolved incident inspectable for a
-   while; `gc_patch_failures.py`, run periodically (not automatic),
-   reclaims anything left archived past its retention window.
+   `python3 -c 'import incidents; incidents.archive_incident(RULE, DIGEST,
+   incidents.CAPTURE_DIR)'` from the repo root (digest is the
+   `{digest}.json` stem; qualified import, never `from incidents import`,
+   per `reloading-a-live-proxy.md`; plain `python3` -- `uv run` re-syncs
+   `.venv`, which the live proxy is running out of) moves it into
+   `log/patch-failures/_archive/`, taking the shared body along only once
+   no other live incident still references it. This keeps a just-resolved
+   incident inspectable for a while; `gc_patch_failures.py`, run
+   periodically (not automatic), reclaims anything left archived past its
+   retention window.
