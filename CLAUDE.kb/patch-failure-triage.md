@@ -3,11 +3,11 @@
 `log/patch-failures/` (gitignored) captures system-prompt bodies where a patch
 didn't apply cleanly. An incident is one body, content-addressed: the verbatim
 body at `_bodies/{digest}.md`, and one record per `(rule, kind)` at
-`{rule}/{digest}.json`. `digest` is `incidents.content_hash()` — the body with
+`{rule}/{digest}.json`. `digest` is `incidents.masked_hash()` — the body with
 its per-session environment (cwd, scratchpad path, git status) neutralized, so
 the same prompt dedups to a single incident across sessions and proxy restarts.
 
-The capture primitives (`content_hash`, `save_body`, `save_incident`, the
+The capture primitives (`masked_hash`, `save_body`, `save_incident`, the
 `Incident` record) live in `incidents.py`, not `syspatch.py` — they're generic
 over what's being captured. `syspatch.py`'s `report_issues` is the
 patch-domain-specific caller (a body plus a list of match/search issues);
@@ -81,7 +81,7 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
   exactly one block starting with the prompt-body marker
   (`\nYou are an interactive agent`); the request passed through unpatched.
   The captured body is the whole list flattened: text blocks verbatim (so
-  `content_hash` dedup still neutralizes session-volatile regions), non-text
+  `masked_hash` dedup still neutralizes session-volatile regions), non-text
   blocks as JSON, with `=== system[i] ===` separators. Usual causes: the
   marker text drifted upstream, or a non-Claude-Code request shape.
 

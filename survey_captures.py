@@ -27,7 +27,7 @@ BLOCKS_DIR = Path(__file__).parent / "blocks.d"
 class Capture(NamedTuple):
     version: str  # cc_version incl. build tag, e.g. "2.1.221.b87"
     model: str
-    digest: str
+    raw: str  # digest of the body as sent -- the capture's identity and name
     path: Path
 
     @property
@@ -38,9 +38,9 @@ class Capture(NamedTuple):
 
 def parse_name(path: Path) -> Capture:
     stem = path.name.removesuffix(".raw.md")
-    version, model, digest = stem.rsplit("_", 2)
+    version, model, raw = stem.rsplit("_", 2)
     assert version.startswith("v"), path
-    return Capture(version.removeprefix("v"), model, digest, path)
+    return Capture(version.removeprefix("v"), model, raw, path)
 
 
 def core_of(text: str, blocks: tuple[templates.Template, ...]) -> tuple[str, str]:
@@ -52,7 +52,7 @@ def core_of(text: str, blocks: tuple[templates.Template, ...]) -> tuple[str, str
     from the masked body, so a block template can be written against the
     tokens masks leave behind instead of the volatile text they replaced."""
     stripped, present = templates.strip_blocks(incidents.normalize_body(text), blocks)
-    return incidents.content_hash(stripped), ",".join(present)
+    return incidents.digest_of(stripped), ",".join(present)
 
 
 def promoted_as(text: str, kb_texts: dict[str, str]) -> str:
@@ -77,7 +77,7 @@ def main() -> None:
     blocks = templates.load_templates(BLOCKS_DIR)
 
     header = (
-        "version", "model", "digest", "core", "bytes", "shape", "promoted", "blocks"
+        "version", "model", "raw", "core", "bytes", "shape", "promoted", "blocks"
     )
     rows: list[tuple[str, ...]] = [header]
     for capture in sorted(captures, key=lambda c: c.sort_key):
@@ -86,7 +86,7 @@ def main() -> None:
         rows.append((
             capture.version,
             capture.model.removeprefix("claude-"),
-            capture.digest,
+            capture.raw,
             core,
             str(len(text)),
             shapes.shape_of(text),

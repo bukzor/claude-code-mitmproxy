@@ -50,7 +50,7 @@ def main():
 
     by_digest: dict[str, list[Path]] = {}
     for path, text in masked.items():
-        by_digest.setdefault(incidents.content_hash(text), []).append(path)
+        by_digest.setdefault(incidents.digest_of(text), []).append(path)
     collisions = {d: ps for d, ps in by_digest.items() if len(ps) > 1}
     # Every fixture is a distinct prompt body, so a shared digest means a mask
     # swallowed real prompt copy -- e.g. a model-id placeholder wide enough to

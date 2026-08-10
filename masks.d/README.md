@@ -10,7 +10,7 @@ placeholder's captured text becomes the placeholder's own name:
     template  - Primary working directory: $CWD
     masked    - Primary working directory: $CWD
 
-`incidents.content_hash` hashes the masked text, so two sessions that ran
+`incidents.masked_hash` hashes the masked text, so two sessions that ran
 the same prompt from different directories dedup to one capture.
 
 ## Why these live here and not in `~/.claude/`
@@ -55,8 +55,8 @@ region, promote a capture of it first (`system-prompts.kb/CLAUDE.md`).
 
 Masks go live like patches do: `incidents.masks()` re-reads this
 directory per call, so a running proxy picks up an edit on the next
-request and no restart is needed. Run `rekey_captures.py` to bring
-`log/prompt-captures/` back in step under the new digests -- order
-doesn't matter, proxy and script read the same files. Why this isn't the
-mid-run re-keying hazard it looks like:
-`CLAUDE.kb/patches-reread-per-request.md`.
+request and no restart is needed. Nothing else to run: capture names are
+raw digests that an edit cannot invalidate, and `syscapture.py` rebuilds
+its dedup index whenever the mask set it last built against stops
+comparing equal. Why this isn't the mid-run re-keying hazard it looks
+like: `CLAUDE.kb/patches-reread-per-request.md`.

@@ -7,7 +7,7 @@ why:
 # Content-addressed capture
 
 One mechanism (`incidents.py`) backs every "loud, exactly once": the
-captured body is keyed by `content_hash` — sha256 over the text with
+captured body is keyed by `masked_hash` — sha256 over the text with
 session-volatile regions (cwd, gitStatus, scratchpad path, cc_version,
 …) masked — and both the body file and each per-rule record are
 write-once by that key. Masking makes the key stable across sessions;
@@ -44,4 +44,44 @@ The same primitive serves failure capture (`log/patch-failures/`, verbatim
 body + incident record) and fixture capture (`log/prompt-captures/`, verbatim
 `.raw.md` plus its masked `.md` sibling — the normalization is already
 computed for the digest, so materializing it doubles as a low-noise diff
-target); only the directory layout and the promotion path differ.
+target). They differ in the promotion path, the directory layout, and how
+many keys they need.
+
+## Identity and equivalence are separate keys
+
+`masked_hash` answers "is this the same content, modulo how this session
+happened to differ?" — and its answer moves whenever `masks.d/` does. That
+is exactly what a *dedup* key should do and exactly what a *file name* must
+not: naming stored artifacts by a mutable policy's output invalidates a
+whole directory on every edit to that policy.
+
+`log/prompt-captures/` is where that bites, because it is the curated store
+— surveyed, promoted from, diffed by hand. So its two questions get two
+keys:
+
+- **Identity** is `digest_of` over the body exactly as sent. It names the
+  file, and no mask edit can invalidate it. The store is append-only in
+  consequence: nothing is renamed, and no observation is discarded to free
+  up a name.
+- **Equivalence** is `masked_hash`, demoted to an in-memory set of the
+  masked digests already on disk, which `syscapture.py` derives from the
+  `.raw.md` files themselves. The set is cached against the mask set it was
+  taken under, and that mask set is re-read per request anyway, so a
+  `masks.d/` edit invalidates the cache by inequality — no separate
+  staleness signal to compute, no command to remember. Rebuilding reads the
+  whole store and costs tens of milliseconds, once per proxy start and once
+  per mask edit; the same pass rewrites any masked `.md` sibling whose text
+  the edit changed.
+
+The index is derived, never stored, so the raw bodies stay the single
+durable input and nothing on disk can contradict them. The cost is that a
+capture dropped into the directory by hand mid-run is invisible until the
+next rebuild — acceptable, since the directory is written by the proxy.
+
+`log/patch-failures/` keeps one key, and the asymmetry is deliberate.
+Nothing surveys it and nothing promotes from it, so a name there is only
+ever read by the record pointing at it — and a record and its body are
+written together under one digest, so the pair stays internally consistent
+whatever masks later become. The one thing a mask edit changes is that a
+still-live failure warns once more, which is the right answer: you changed
+what "the same failure" means.

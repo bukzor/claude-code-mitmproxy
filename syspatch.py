@@ -204,7 +204,7 @@ def _is_auxiliary_block(item) -> bool:
 
 def render_system_blocks(system: list) -> str:
     """Flatten a content-blocks `system` list into one capture body: text
-    blocks verbatim (so content_hash still neutralizes session-volatile
+    blocks verbatim (so masking still neutralizes session-volatile
     regions), anything else as JSON, with per-block separators."""
     parts = []
     for i, item in enumerate(system):
@@ -223,8 +223,8 @@ def load(loader):
 
     Masks are re-read the same way, but compiling them here too is not
     redundant: a malformed one takes the proxy down at startup rather than
-    at hash time. Editing `masks.d/` needs no restart, only
-    `rekey_captures.py` to reconcile what's already on disk."""
+    at hash time. Editing `masks.d/` needs no restart and no follow-up: no
+    stored name depends on the mask set, and what does re-derives itself."""
     del loader  # unused
     patches = templates.load_rules(PATCHES_DIR)
     logging.info("loaded %d system prompt patches", len(patches))

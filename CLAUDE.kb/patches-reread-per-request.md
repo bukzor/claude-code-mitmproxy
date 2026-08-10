@@ -29,9 +29,11 @@ editor's sight. On 2026-08-09 the restart itself minted duplicate
 old-scheme captures within seconds of coming up. What actually must not
 happen is a *single* body split across two mask sets, and that is
 enforced at the call sites instead: each masks once and threads the
-resulting digest through (`incidents.digest_of_masked`). So edit a mask
-and run `rekey_captures.py`, in either order -- proxy and script read
-the same files.
+resulting text through (`incidents.digest_of`). So edit a mask and
+there is nothing else to do -- `log/prompt-captures/` is named by raw
+digests no mask edit can move, and its dedup index re-derives itself
+the first time the mask set stops comparing equal
+(`design/040-design.kb/content-addressed-capture.md`).
 
 A stat-keyed cache was the obvious middle road and isn't worth it.
 Fingerprinting `masks.d/` costs 390us of `stat`, loading it costs 658us,

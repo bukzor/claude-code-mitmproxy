@@ -11,7 +11,7 @@ copy, whatever their sessions differed on. The question that answers is "has
 upstream shipped new prompt text?", which is the trigger for promoting a
 fixture (`system-prompts.kb/CLAUDE.md`).
 
-They are never part of `incidents.content_hash`. Block *presence* is content:
+They are never part of `incidents.masked_hash`. Block *presence* is content:
 a capture that carries `# Memory` is a different observation from one that
 doesn't, and first-seen-wins dedup would throw the fuller one away.
 

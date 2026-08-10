@@ -1,7 +1,13 @@
 """Content-addressed capture for addon incidents: shared by syspatch.py's
 patch-application issues and any addon hook's uncaught exceptions. Capture is
-idempotent on disk, keyed by content_hash, so a live proxy re-hitting the same
-failure on every request logs and writes exactly once."""
+idempotent on disk, keyed by masked_hash, so a live proxy re-hitting the same
+failure on every request logs and writes exactly once.
+
+Also the home of the two digests every store here is keyed by, since masking
+defines both: `digest_of` over a body as sent identifies that observation
+forever, `masked_hash` identifies its equivalence class under today's
+`masks.d/`. Which store uses which, and why they differ:
+`design/040-design.kb/content-addressed-capture.md`."""
 from __future__ import annotations
 
 import hashlib
@@ -33,16 +39,18 @@ class Incident(NamedTuple):
 
 def masks() -> tuple[templates.Template, ...]:
     """The compiled mask set, re-read per call exactly as patches are: an edit
-    is live on the next request, with no restart, and the proxy never disagrees
-    with `rekey_captures.py` about what a digest should be. Deliberately
-    uncached -- a dozen-odd small files load in ~0.7ms against the ~1ms of
-    masking that has to happen anyway, and a cache keyed on their file stats
-    had to stat every one of them to decide, netting a quarter of a
-    millisecond. Callers
-    mask a given body against one `masks()` result (see `digest_of_masked`), so
-    re-reading can't split one body across two mask sets. `syspatch.load` calls
-    this at startup so a malformed mask takes the proxy down there rather than
-    first surfacing mid-run as an `_uncaught-syspatch` incident."""
+    is live on the next request, with no restart, and nothing anywhere holds a
+    stale opinion about what a digest should be. Deliberately uncached -- a
+    dozen-odd small files load in ~0.7ms against the ~1ms of masking that has
+    to happen anyway, and a cache keyed on their file stats had to stat every
+    one of them to decide, netting a quarter of a millisecond. Callers mask a
+    given body against one `masks()` result (see `masked_hash`), so re-reading
+    can't split one body across two mask sets. The returned value doubles as
+    the cache key for anything derived from the whole mask set, so a caller
+    holding one knows by inequality when its derivation went stale.
+    `syspatch.load` calls this at startup so a malformed mask takes the proxy
+    down there rather than first surfacing mid-run as an `_uncaught-syspatch`
+    incident."""
     return templates.load_masks(MASKS_DIR)
 
 
@@ -54,26 +62,27 @@ def normalize_body(body: str) -> str:
     return templates.apply_masks(body, masks())
 
 
-def digest_of_masked(masked: str) -> str:
-    """Digest of a body that is already masked. Callers that also want the
-    masked text should go through here rather than calling `normalize_body` and
-    `content_hash` separately: two calls read `masks.d/` twice, and an edit
-    landing between them would file a body under a digest computed from a
-    different mask set."""
-    return hashlib.sha256(masked.encode()).hexdigest()[:12]
+def digest_of(text: str) -> str:
+    """Every store's key, at the width every capture name and incident record
+    uses. Deliberately indifferent to whether the text was masked: choosing
+    what to pass is the identity/equivalence split, not this function's
+    business."""
+    return hashlib.sha256(text.encode()).hexdigest()[:12]
 
 
-def content_hash(body: str) -> str:
-    """Hash identifying the captured text, stable across sessions: see
-    normalize_body for what's masked before hashing, so the same content
-    dedups to a single incident instead of one per session that happened to
-    run it differently."""
-    return digest_of_masked(normalize_body(body))
+def masked_hash(body: str) -> str:
+    """Digest of the body's equivalence class -- the same content sent by two
+    sessions that differed only in cwd, git status or scratchpad path hashes
+    once. Moves whenever `masks.d/` does, which is why it keys dedup and
+    incident records but never a `log/prompt-captures/` filename. A caller that
+    also wants the masked text should mask once and hand the result to
+    `digest_of`, so one body can't be split across two mask sets."""
+    return digest_of(normalize_body(body))
 
 
 def save_body(body: str, digest: str, capture_dir: Path) -> Path:
     """Store the offending body once at capture_dir/_bodies/{digest}.md, where
-    digest is its content_hash. No-op if already present. The file holds the
+    digest is its masked_hash. No-op if already present. The file holds the
     verbatim body (one representative session's environment); the digest keys
     its content, so it is not a checksum of the bytes on disk."""
     bodies_dir = capture_dir / BODIES_DIRNAME
@@ -158,7 +167,7 @@ def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -
             logging.warning("patch %r %s", issue.rule, issue.kind)
         return
 
-    digest = content_hash(body)
+    digest = masked_hash(body)
     save_body(body, digest, capture_dir)
     for issue in issues:
         saved = save_incident(issue, digest, capture_dir)
@@ -177,7 +186,7 @@ def capture_uncaught(rule: str, exc: BaseException, capture_dir: Path | None) ->
     if capture_dir is None:
         logging.warning("%s: uncaught %s", rule, type(exc).__name__)
         return
-    digest = content_hash(body)
+    digest = masked_hash(body)
     save_body(body, digest, capture_dir)
     saved = save_incident(Incident(rule, type(exc).__name__), digest, capture_dir)
     if saved is not None:

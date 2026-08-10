@@ -26,7 +26,7 @@ can run for weeks without restarting.
 
 | Addon | What it does |
 | --- | --- |
-| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `log/prompt-captures/`, as a content-addressed `.raw.md` / `.md` pair (verbatim / hash-masked, the latter a low-noise diff target). This is where new `system-prompts.kb/` captures come from (promote the `.raw.md`). |
+| `syscapture.py` | Records each unique system-prompt body — pristine, pre-patch (it loads before `syspatch.py`; addon hooks run in load order) — to gitignored `log/prompt-captures/`, as a `.raw.md` / `.md` pair (verbatim / masked, the latter a low-noise diff target) named by the raw body's digest and deduplicated by the masked one. This is where new `system-prompts.kb/` captures come from (promote the `.raw.md`). |
 | `syspatch.py` | Rewrites the system prompt using modular patch directories from `~/.claude/system-prompt-patches.d/` (format and rationale in that directory's README). A patch whose in-scope target has drifted warns loudly and captures the offending body under `log/patch-failures/` for triage — see `CLAUDE.kb/patch-failure-triage.md`. |
 | `toolpatch.py` | Replaces built-in tool descriptions with slim stubs from `~/.claude/tool-description-patches.d/` (format in that directory's README). Upstream drift warns loudly and captures like a syspatch failure. |
 | `thinkpatch.py` | Restores summarized thinking on Opus 4.7+: strips the `redact-thinking-*` beta header **and** sets `thinking.display=summarized` (both required — see `CLAUDE.kb/thinking-display.md`). |
@@ -54,9 +54,6 @@ can run for weeks without restarting.
   collapse to one digest. Mask misses are silent in production, so this is
   the only thing standing between a typo and every session minting a fresh
   digest.
-- `rekey_captures.py` -- renames `log/prompt-captures/` entries to their
-  digests under the current masks, trashing duplicates that collapse. Run
-  after editing `masks.d/`, with the proxy restarted first.
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a jsonl
   capture (`log/traffic/*.jsonl`). The live proxy records requests
