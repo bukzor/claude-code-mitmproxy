@@ -53,7 +53,10 @@ region, promote a capture of it first (`system-prompts.kb/CLAUDE.md`).
 
 ## Editing
 
-Masks compile once at proxy start, unlike patches, which are re-read per
-request: a digest that changed mid-run would silently re-key everything
-captured after it. After editing, restart the proxy and run
-`rekey_captures.py` to bring `log/prompt-captures/` back in step.
+Masks go live like patches do: `incidents.masks()` re-reads this
+directory per call, so a running proxy picks up an edit on the next
+request and no restart is needed. Run `rekey_captures.py` to bring
+`log/prompt-captures/` back in step under the new digests -- order
+doesn't matter, proxy and script read the same files. Why this isn't the
+mid-run re-keying hazard it looks like:
+`CLAUDE.kb/patches-reread-per-request.md`.

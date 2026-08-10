@@ -212,10 +212,10 @@ def load(loader):
     every request (see _request) so editing `*-patches.d/` takes effect
     immediately -- this hook only logs what's configured at startup.
 
-    Masks are the exception: they key the capture digest, so they compile
-    once here and a malformed one takes the proxy down at startup rather
-    than corrupting hashing per-request. Editing `masks.d/` needs a
-    restart, and `rekey_captures.py` to reconcile what's already on disk."""
+    Masks are re-read the same way, but compiling them here too is not
+    redundant: a malformed one takes the proxy down at startup rather than
+    at hash time. Editing `masks.d/` needs no restart, only
+    `rekey_captures.py` to reconcile what's already on disk."""
     del loader  # unused
     patches = load_rules(PATCHES_DIR)
     logging.info("loaded %d system prompt patches", len(patches))

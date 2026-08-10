@@ -24,7 +24,7 @@ import logging
 import re
 from pathlib import Path
 
-from incidents import CAPTURE_DIR, capture_uncaught, content_hash, normalize_body
+from incidents import CAPTURE_DIR, capture_uncaught, digest_of_masked, normalize_body
 from syspatch import BODY_MARKER, locate_prompt_bodies, locate_subagent_body
 
 PROMPTS_DIR = Path(__file__).parent / "log" / "prompt-captures"
@@ -53,14 +53,15 @@ def save_prompt(
     cc_version/model prefixes are provenance, so a version bump that leaves
     the prompt text unchanged captures nothing). Dedup is per-directory:
     main and subagent captures are separate namespaces."""
-    digest = content_hash(body)
+    masked = normalize_body(body)
+    digest = digest_of_masked(masked)
     directory.mkdir(parents=True, exist_ok=True)
     if next(directory.glob(f"*_{digest}.raw.md"), None) is not None:
         return None
     base_name = f"v{cc_version}_{model}_{digest}"
     raw_path = directory / f"{base_name}.raw.md"
     raw_path.write_text(body)
-    (directory / f"{base_name}.md").write_text(normalize_body(body))
+    (directory / f"{base_name}.md").write_text(masked)
     return raw_path
 
 

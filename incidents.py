@@ -4,7 +4,6 @@ idempotent on disk, keyed by content_hash, so a live proxy re-hitting the same
 failure on every request logs and writes exactly once."""
 from __future__ import annotations
 
-import functools
 import hashlib
 import json
 import logging
@@ -32,13 +31,17 @@ class Incident(NamedTuple):
     kind: str
 
 
-@functools.cache
 def masks() -> tuple[Template, ...]:
-    """The compiled mask set, once per process. Patches are re-read per
-    request so edits go live immediately; masks can't be, because a digest
-    that changed mid-run would silently re-key everything captured after it.
-    `syspatch.load` calls this at startup so a malformed mask takes the proxy
-    down there, loudly, instead of at hash time."""
+    """The compiled mask set, re-read per call exactly as patches are: an edit
+    is live on the next request, with no restart, and the proxy never disagrees
+    with `rekey_captures.py` about what a digest should be. Deliberately
+    uncached -- fifteen small files load in ~0.7ms against the ~1ms of masking
+    that has to happen anyway, and a cache keyed on their file stats had to
+    stat all fifteen to decide, netting a quarter of a millisecond. Callers
+    mask a given body against one `masks()` result (see `digest_of_masked`), so
+    re-reading can't split one body across two mask sets. `syspatch.load` calls
+    this at startup so a malformed mask takes the proxy down there rather than
+    first surfacing mid-run as an `_uncaught-syspatch` incident."""
     return load_masks(MASKS_DIR)
 
 
@@ -50,12 +53,21 @@ def normalize_body(body: str) -> str:
     return apply_masks(body, masks())
 
 
+def digest_of_masked(masked: str) -> str:
+    """Digest of a body that is already masked. Callers that also want the
+    masked text should go through here rather than calling `normalize_body` and
+    `content_hash` separately: two calls read `masks.d/` twice, and an edit
+    landing between them would file a body under a digest computed from a
+    different mask set."""
+    return hashlib.sha256(masked.encode()).hexdigest()[:12]
+
+
 def content_hash(body: str) -> str:
     """Hash identifying the captured text, stable across sessions: see
     normalize_body for what's masked before hashing, so the same content
     dedups to a single incident instead of one per session that happened to
     run it differently."""
-    return hashlib.sha256(normalize_body(body).encode()).hexdigest()[:12]
+    return digest_of_masked(normalize_body(body))
 
 
 def save_body(body: str, digest: str, capture_dir: Path) -> Path:

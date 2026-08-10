@@ -10,10 +10,11 @@ sibling, and sets aside the duplicates a coarser mask has merged -- keeping
 the earliest-versioned capture of each digest, which is the one syscapture's
 first-seen-wins rule would have kept.
 
-Restart the proxy first. A running proxy still masks with the old rules, and
-its "already captured?" check is a glob for the digest in the filename -- so
-every capture this renames looks new to it, and it re-writes the body under
-the old scheme the next time that prompt crosses the wire.
+No restart needed, and no ordering to get right: a running proxy re-reads
+masks.d/ when it changes, so it and this script agree on every digest. A
+prompt crossing the wire between the edit and this run just writes itself
+under the new name, and the merge pass sets aside the old-scheme file it
+duplicates.
 
 Dry-run by default; `--apply` performs it. Duplicates move to trash/, never
 deleted: a capture is a unique historical observation, not a build product."""

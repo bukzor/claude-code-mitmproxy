@@ -19,10 +19,22 @@ sees it, no restart, no triage-ordering to remember. `load()` still
 runs at startup but only to log what's configured; it no longer feeds
 request handling.
 
-`masks.d/` is the deliberate exception: `incidents.masks()` is
-`functools.cache`d, so a live proxy serves the mask set it started with.
-Re-reading masks per request would re-key content mid-run -- the same
-body hashing differently before and after the edit, which is the one
-thing content-addressing may not do. Editing a mask therefore *needs* a
-restart, and until it happens the proxy keeps writing captures under the
-old digests (`rekey_captures.py` cleans up after).
+`masks.d/` follows the same rule, and used not to. `incidents.masks()`
+was `functools.cache`d, so a live proxy served the mask set it started
+with. Masks *are* the digest function, and the argument was that
+re-reading them per request would re-key content mid-run -- the one
+thing content-addressing may not do. That argument doesn't survive
+contact: a restart re-keys just the same, only later and out of the
+editor's sight. On 2026-08-09 the restart itself minted duplicate
+old-scheme captures within seconds of coming up. What actually must not
+happen is a *single* body split across two mask sets, and that is
+enforced at the call sites instead: each masks once and threads the
+resulting digest through (`incidents.digest_of_masked`). So edit a mask
+and run `rekey_captures.py`, in either order -- proxy and script read
+the same files.
+
+A stat-keyed cache was the obvious middle road and isn't worth it.
+Fingerprinting `masks.d/` costs 390us of `stat`, loading it costs 658us,
+and the masking those files then do costs ~1ms regardless: the cache
+nets a quarter of a millisecond, once per request, for an extra function
+and a parameter that exists only to be a cache key.

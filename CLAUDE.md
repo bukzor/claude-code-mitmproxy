@@ -37,8 +37,8 @@ outputs are day-sharded and restarts append instead of truncate:
 
 Two in-repo rule sets share the patch template language, each with its own
 `README.md`: `masks.d/` neutralizes session-volatile *content* for
-`incidents.content_hash` (validate with `check_masks.py`; after editing,
-restart the proxy and run `rekey_captures.py`), and `blocks.d/` deletes
+`incidents.content_hash` (validate with `check_masks.py`; after editing, run
+`rekey_captures.py`), and `blocks.d/` deletes
 session-optional *blocks* for `survey_captures.py`'s core-digest column only.
 
 ## Standing maintenance
