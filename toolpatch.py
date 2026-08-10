@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import Mapping, NamedTuple
 
-from incidents import CAPTURE_DIR, Incident, capture_uncaught, report_issues
+import incidents
 
 PATCHES_DIR = Path("~/.claude/tool-description-patches.d").expanduser()
 
@@ -74,7 +74,7 @@ def load_tool_patches(patches_dir: Path) -> dict[str, ToolPatch]:
 def apply_tool_patches(
     tools: list,
     patches: Mapping[str, ToolPatch],
-    capture_dir: Path | None = CAPTURE_DIR,
+    capture_dir: Path | None = incidents.CAPTURE_DIR,
 ) -> None:
     """Mutate `tools` in place: replace each patched tool's description with
     its slim stub. A live description that no longer matches upstream.md still
@@ -90,8 +90,8 @@ def apply_tool_patches(
             continue
         live = tool["description"].rstrip("\n")
         if live not in patch.upstreams:
-            issue = Incident(f"tooldesc-{patch.name}", "changed-upstream")
-            report_issues(live, [issue], capture_dir)
+            issue = incidents.Incident(f"tooldesc-{patch.name}", "changed-upstream")
+            incidents.report_issues(live, [issue], capture_dir)
         tool["description"] = patch.replacement
 
 
@@ -121,7 +121,7 @@ def request(flow):
     try:
         _request(flow)
     except Exception as exc:
-        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
         raise
 
 

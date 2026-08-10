@@ -7,22 +7,25 @@ import json
 import logging
 from pathlib import Path
 
-from incidents import CAPTURE_DIR, Incident, capture_uncaught, masks, report_issues
-from shapes import shape_of
-from templates import Rule, apply_rules, load_rules
+import incidents
+import shapes
+import templates
 
 
 def apply_patches(
-    text: str, patches: tuple[Rule, ...], capture_dir: Path | None = CAPTURE_DIR
+    text: str,
+    patches: tuple[templates.Rule, ...],
+    capture_dir: Path | None = incidents.CAPTURE_DIR,
 ) -> str:
     """`templates.apply_rules` plus this project's loudness policy: a patch
     that proved itself in scope and then failed to find its target is an
     incident, captured content-addressed so it warns exactly once. Which
     misses are worth a warning is the caller's call, not the engine's --
     masks run the same templates and are never loud."""
-    patched, misses = apply_rules(text, patches)
+    patched, misses = templates.apply_rules(text, patches)
     if misses:
-        report_issues(text, [Incident(*miss) for miss in misses], capture_dir)
+        issues = [incidents.Incident(*miss) for miss in misses]
+        incidents.report_issues(text, issues, capture_dir)
     return patched
 
 
@@ -38,7 +41,7 @@ def _fixture_version(path: Path) -> tuple[int, ...]:
 
 
 @functools.lru_cache(maxsize=1)
-def strip_floors(patches: tuple[Rule, ...]) -> dict[str, int]:
+def strip_floors(patches: tuple[templates.Rule, ...]) -> dict[str, int]:
     """Minimum bytes the patch set must strip from a live body, per prompt
     shape: half of what it strips from the newest promoted fixture of that
     shape (newest by version, then size, so a full capture beats a `-scope`
@@ -46,12 +49,13 @@ def strip_floors(patches: tuple[Rule, ...]) -> dict[str, int]:
     but a minimal live session doesn't (gitStatus, additional dirs); an
     upstream rewrite leaves only the shape-independent patches firing, far
     below any floor. Cached per patch set -- Rule stores templates as
-    strings, so value-equal loads share one entry; a fixture promotion
-    mid-process needs a proxy restart to be seen."""
+    strings, so value-equal loads share one entry; a fixture promoted
+    mid-process is picked up by `touch reload.py`, which rebuilds this
+    module and the cache with it."""
     newest: dict[str, tuple[tuple, str]] = {}
     for path in KB_DIR.glob("v*.md"):
         text = path.read_text()
-        shape = shape_of(text)
+        shape = shapes.shape_of(text)
         if shape.startswith("?"):
             continue
         key = (_fixture_version(path), len(text))
@@ -65,7 +69,10 @@ def strip_floors(patches: tuple[Rule, ...]) -> dict[str, int]:
 
 
 def check_strip_floor(
-    original: str, patched: str, patches: tuple[Rule, ...], capture_dir: Path | None
+    original: str,
+    patched: str,
+    patches: tuple[templates.Rule, ...],
+    capture_dir: Path | None,
 ) -> None:
     """The aggregate check no per-patch rule can provide: an upstream
     rewrite sends every shape-scoped patch silently out of scope at once,
@@ -73,16 +80,18 @@ def check_strip_floor(
     see session.kb). A patched main body must strip at least its shape's
     floor; a body matching no known shape is the same alarm one step
     earlier."""
-    shape = shape_of(original)
+    shape = shapes.shape_of(original)
     floor = strip_floors(patches).get(shape)
     stripped = len(original) - len(patched)
     if floor is None:
-        issue = Incident(STRIP_RULE, f"unknown-shape-{shape}")
+        issue = incidents.Incident(STRIP_RULE, f"unknown-shape-{shape}")
     elif stripped < floor:
-        issue = Incident(STRIP_RULE, f"low-strip-{shape}-{stripped}B-floor-{floor}B")
+        issue = incidents.Incident(
+            STRIP_RULE, f"low-strip-{shape}-{stripped}B-floor-{floor}B"
+        )
     else:
         return
-    report_issues(original, [issue], capture_dir)
+    incidents.report_issues(original, [issue], capture_dir)
 
 
 # --- mitmproxy addon ---
@@ -217,7 +226,7 @@ def load(loader):
     at hash time. Editing `masks.d/` needs no restart, only
     `rekey_captures.py` to reconcile what's already on disk."""
     del loader  # unused
-    patches = load_rules(PATCHES_DIR)
+    patches = templates.load_rules(PATCHES_DIR)
     logging.info("loaded %d system prompt patches", len(patches))
     for patch in patches:
         if patch.upstream_removed:
@@ -227,7 +236,7 @@ def load(loader):
         else:
             label = "match-only"
         logging.info("  %s (%s)", patch.name, label)
-    logging.info("loaded %d capture-digest masks", len(masks()))
+    logging.info("loaded %d capture-digest masks", len(incidents.masks()))
 
 
 UNCAUGHT_RULE = "_uncaught-syspatch"
@@ -241,7 +250,7 @@ def request(flow):
     try:
         _request(flow)
     except Exception as exc:
-        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
         raise
 
 
@@ -265,13 +274,13 @@ def _request(flow):
 
     # Re-read per request: editing `*-patches.d/` takes effect without a
     # restart (`CLAUDE.kb/patches-reread-per-request.md`).
-    patches = load_rules(PATCHES_DIR)
+    patches = templates.load_rules(PATCHES_DIR)
 
     if isinstance(system, str):
         patched = apply_patches(system, patches)
         request["system"] = patched
         if BODY_MARKER in system:
-            check_strip_floor(system, patched, patches, CAPTURE_DIR)
+            check_strip_floor(system, patched, patches, incidents.CAPTURE_DIR)
     elif isinstance(system, list):
         bodies = locate_prompt_bodies(system)
         if len(bodies) != 1:
@@ -281,14 +290,17 @@ def _request(flow):
                 # happy to see this every time, only if we go looking.
                 logging.debug("non-interactive request: no prompt body to patch; ok")
             else:
-                issue = Incident(LOCATOR_RULE, f"found-{len(bodies)}-prompt-bodies")
-                report_issues(render_system_blocks(system), [issue], CAPTURE_DIR)
+                kind = f"found-{len(bodies)}-prompt-bodies"
+                issue = incidents.Incident(LOCATOR_RULE, kind)
+                incidents.report_issues(
+                    render_system_blocks(system), [issue], incidents.CAPTURE_DIR
+                )
             return
         body = bodies[0]
         original = body["text"]
         patched = apply_patches(original, patches)
         body["text"] = patched
-        check_strip_floor(original, patched, patches, CAPTURE_DIR)
+        check_strip_floor(original, patched, patches, incidents.CAPTURE_DIR)
     else:
         raise AssertionError(("unexpected system type", type(system)))
 

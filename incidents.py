@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
-from templates import Template, apply_masks, load_masks
+import templates
 
 # Gitignored; callers pass capture_dir=None to disable capture entirely
 # (offline callers like check_patches only want an in-process warning).
@@ -31,18 +31,19 @@ class Incident(NamedTuple):
     kind: str
 
 
-def masks() -> tuple[Template, ...]:
+def masks() -> tuple[templates.Template, ...]:
     """The compiled mask set, re-read per call exactly as patches are: an edit
     is live on the next request, with no restart, and the proxy never disagrees
     with `rekey_captures.py` about what a digest should be. Deliberately
-    uncached -- fifteen small files load in ~0.7ms against the ~1ms of masking
-    that has to happen anyway, and a cache keyed on their file stats had to
-    stat all fifteen to decide, netting a quarter of a millisecond. Callers
+    uncached -- a dozen-odd small files load in ~0.7ms against the ~1ms of
+    masking that has to happen anyway, and a cache keyed on their file stats
+    had to stat every one of them to decide, netting a quarter of a
+    millisecond. Callers
     mask a given body against one `masks()` result (see `digest_of_masked`), so
     re-reading can't split one body across two mask sets. `syspatch.load` calls
     this at startup so a malformed mask takes the proxy down there rather than
     first surfacing mid-run as an `_uncaught-syspatch` incident."""
-    return load_masks(MASKS_DIR)
+    return templates.load_masks(MASKS_DIR)
 
 
 def normalize_body(body: str) -> str:
@@ -50,7 +51,7 @@ def normalize_body(body: str) -> str:
     memory paths, cc_version, ...) masked -- stable across sessions that ran
     the same content differently. Which regions, exactly, is `masks.d/`. A
     no-op on text with no such regions, e.g. a traceback."""
-    return apply_masks(body, masks())
+    return templates.apply_masks(body, masks())
 
 
 def digest_of_masked(masked: str) -> str:

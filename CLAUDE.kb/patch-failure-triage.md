@@ -131,7 +131,7 @@ recorded baseline to maintain). Two kinds:
 - `low-strip-{shape}-{N}B-floor-{M}B` -- known shape, stripped less than
   half its fixture's expectation: either the shape drifted wholesale
   under a stable heading (promote + re-patch) or the fixture/patches
-  moved and the floor is stale (restart the proxy; floors cache per
+  moved and the floor is stale (`touch reload.py`; floors cache per
   process).
 
 Triage ends with `archive_incident` like any other rule.

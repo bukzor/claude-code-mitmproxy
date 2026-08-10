@@ -15,9 +15,9 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-from incidents import content_hash, normalize_body
-from shapes import shape_of
-from templates import Template, load_templates, strip_blocks
+import incidents
+import shapes
+import templates
 
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")
@@ -43,7 +43,7 @@ def parse_name(path: Path) -> Capture:
     return Capture(version.removeprefix("v"), model, digest, path)
 
 
-def core_of(text: str, blocks: tuple[Template, ...]) -> tuple[str, str]:
+def core_of(text: str, blocks: tuple[templates.Template, ...]) -> tuple[str, str]:
     """The capture's (core digest, session-optional blocks it carries).
 
     The core digest is what's left once every block this session happened to
@@ -51,8 +51,8 @@ def core_of(text: str, blocks: tuple[Template, ...]) -> tuple[str, str]:
     same prompt copy, whatever their sessions differed on. Blocks are stripped
     from the masked body, so a block template can be written against the
     tokens masks leave behind instead of the volatile text they replaced."""
-    stripped, present = strip_blocks(normalize_body(text), blocks)
-    return content_hash(stripped), ",".join(present)
+    stripped, present = templates.strip_blocks(incidents.normalize_body(text), blocks)
+    return incidents.content_hash(stripped), ",".join(present)
 
 
 def promoted_as(text: str, kb_texts: dict[str, str]) -> str:
@@ -74,7 +74,7 @@ def main() -> None:
         if p.suffix == ".md" and p.name != "CLAUDE.md"
     }
 
-    blocks = load_templates(BLOCKS_DIR)
+    blocks = templates.load_templates(BLOCKS_DIR)
 
     header = (
         "version", "model", "digest", "core", "bytes", "shape", "promoted", "blocks"
@@ -89,7 +89,7 @@ def main() -> None:
             capture.digest,
             core,
             str(len(text)),
-            shape_of(text),
+            shapes.shape_of(text),
             promoted_as(text, kb_texts),
             present,
         ))

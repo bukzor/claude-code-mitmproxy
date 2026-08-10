@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 
-from incidents import CAPTURE_DIR, capture_uncaught
+import incidents
 
 REDACT_BETA = "redact-thinking-2026-02-12"
 UNCAUGHT_RULE = "_uncaught-thinkpatch"
@@ -73,5 +73,5 @@ def request(flow):
         _patch_anthropic_beta(flow)
         _patch_thinking_body(flow)
     except Exception as exc:
-        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
         raise

@@ -14,6 +14,13 @@ Claude Code traffic. Entry point: `proxy.sh`. Patches the system prompt
 pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
 (`flow2jsonl.py`).
 
+Code and config both go live without a restart: mitmproxy re-executes an
+edited `-s` addon on its own, and `touch reload.py` re-executes the shared
+modules those addons import. That is why every local import in this repo is
+`import x`, never `from x import y` -- `reload.py` asserts it, and
+`CLAUDE.kb/reloading-a-live-proxy.md` explains why a from-import would
+silently stop reloading.
+
 ## Generated output
 
 Everything the proxy or its tooling writes at runtime is gitignored and

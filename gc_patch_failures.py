@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-from incidents import ARCHIVE_DIRNAME, CAPTURE_DIR
+import incidents
 
 DEFAULT_RETENTION_DAYS = 30
 
@@ -46,7 +46,8 @@ def main():
     dry_run = "--dry-run" in sys.argv[1:]
     retention_days = float(args[0]) if args else DEFAULT_RETENTION_DAYS
 
-    removed = gc(CAPTURE_DIR / ARCHIVE_DIRNAME, retention_days, dry_run=dry_run)
+    archive = incidents.CAPTURE_DIR / incidents.ARCHIVE_DIRNAME
+    removed = gc(archive, retention_days, dry_run=dry_run)
 
     verb = "would remove" if dry_run else "removed"
     for path in removed:

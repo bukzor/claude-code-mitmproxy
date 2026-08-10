@@ -11,8 +11,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from incidents import MASKS_DIR, content_hash, normalize_body
-from templates import load_masks, template_to_regex
+import incidents
+import templates
 
 KB_DIR = Path("system-prompts.kb")
 
@@ -26,8 +26,8 @@ def main():
     texts = {p: t if t.endswith("\n") else t + "\n" for p, t in texts.items()}
 
     unwitnessed = []
-    for mask in load_masks(MASKS_DIR):
-        pattern = template_to_regex(mask.template)
+    for mask in templates.load_masks(incidents.MASKS_DIR):
+        pattern = templates.template_to_regex(mask.template)
         hits = [p for p, text in texts.items() if pattern.search(text)]
         if not hits:
             unwitnessed.append(mask.name)
@@ -38,16 +38,19 @@ def main():
         "or promote a fixture that exercises it",
     )
 
-    masked = {p: normalize_body(text) for p, text in texts.items()}
+    masked = {p: incidents.normalize_body(text) for p, text in texts.items()}
     for path, text in masked.items():
         # The replacement is the template verbatim, so a mask matches its own
         # output; a second pass that changes anything means some mask isn't
         # the identity rewrite the format promises.
-        assert normalize_body(text) == text, (path, "masking is not idempotent")
+        assert incidents.normalize_body(text) == text, (
+            path,
+            "masking is not idempotent",
+        )
 
     by_digest: dict[str, list[Path]] = {}
     for path, text in masked.items():
-        by_digest.setdefault(content_hash(text), []).append(path)
+        by_digest.setdefault(incidents.content_hash(text), []).append(path)
     collisions = {d: ps for d, ps in by_digest.items() if len(ps) > 1}
     # Every fixture is a distinct prompt body, so a shared digest means a mask
     # swallowed real prompt copy -- e.g. a model-id placeholder wide enough to

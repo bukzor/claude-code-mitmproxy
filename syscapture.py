@@ -24,8 +24,8 @@ import logging
 import re
 from pathlib import Path
 
-from incidents import CAPTURE_DIR, capture_uncaught, digest_of_masked, normalize_body
-from syspatch import BODY_MARKER, locate_prompt_bodies, locate_subagent_body
+import incidents
+import syspatch
 
 PROMPTS_DIR = Path(__file__).parent / "log" / "prompt-captures"
 UNCAUGHT_RULE = "_uncaught-syscapture"
@@ -53,8 +53,8 @@ def save_prompt(
     cc_version/model prefixes are provenance, so a version bump that leaves
     the prompt text unchanged captures nothing). Dedup is per-directory:
     main and subagent captures are separate namespaces."""
-    masked = normalize_body(body)
-    digest = digest_of_masked(masked)
+    masked = incidents.normalize_body(body)
+    digest = incidents.digest_of_masked(masked)
     directory.mkdir(parents=True, exist_ok=True)
     if next(directory.glob(f"*_{digest}.raw.md"), None) is not None:
         return None
@@ -69,7 +69,7 @@ def request(flow):
     try:
         _request(flow)
     except Exception as exc:
-        capture_uncaught(UNCAUGHT_RULE, exc, CAPTURE_DIR)
+        incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
         raise
 
 
@@ -92,11 +92,11 @@ def _request(flow):
 
     system = request.get("system")
     if isinstance(system, str):
-        bodies = [system] if BODY_MARKER in system else []
+        bodies = [system] if syspatch.BODY_MARKER in system else []
         subagent_body = None
     elif isinstance(system, list):
-        bodies = [item["text"] for item in locate_prompt_bodies(system)]
-        subagent_body = locate_subagent_body(system)
+        bodies = [item["text"] for item in syspatch.locate_prompt_bodies(system)]
+        subagent_body = syspatch.locate_subagent_body(system)
     else:
         return
 

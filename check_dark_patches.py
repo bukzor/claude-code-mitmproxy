@@ -23,8 +23,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from syspatch import PATCHES_DIR, apply_patches
-from templates import first_hit, load_rules
+import syspatch
+import templates
 
 KB_DIR = Path("system-prompts.kb")
 
@@ -52,13 +52,17 @@ def main():
     # a block at end-of-body shows as a false match miss here.
     texts = {fixture: fixture.read_text() for fixture in fixtures}
     texts = {f: t if t.endswith("\n") else t + "\n" for f, t in texts.items()}
-    patches = load_rules(PATCHES_DIR)
-    assert patches, PATCHES_DIR
+    patches = templates.load_rules(syspatch.PATCHES_DIR)
+    assert patches, syspatch.PATCHES_DIR
 
     if pattern is not None:
         live = tuple(p for p in patches if not p.upstream_removed)
         row = {
-            f: pattern_cell(pattern, texts[f], apply_patches(texts[f], live, capture_dir=None))
+            f: pattern_cell(
+                pattern,
+                texts[f],
+                syspatch.apply_patches(texts[f], live, capture_dir=None),
+            )
             for f in fixtures
         }
         print_matrix(fixtures, [(repr(pattern), row)])
@@ -73,9 +77,9 @@ def main():
     for fixture in fixtures:
         patched_so_far = texts[fixture]
         for patch in patches:
-            if first_hit(texts[fixture], patch.matches) is None:
+            if templates.first_hit(texts[fixture], patch.matches) is None:
                 cells[fixture, patch.name] = "-"
-            elif first_hit(patched_so_far, patch.matches) is not None:
+            elif templates.first_hit(patched_so_far, patch.matches) is not None:
                 cells[fixture, patch.name] = "HIT"
             else:
                 cells[fixture, patch.name] = "SUBSUMED"
@@ -88,7 +92,9 @@ def main():
                 # removed" -- expected on any pre-removal fixture (see
                 # check_patches.py's latest_capture docstring), not a defect
                 # this matrix is trying to surface.
-                patched_so_far = apply_patches(patched_so_far, (patch,), capture_dir=None)
+                patched_so_far = syspatch.apply_patches(
+                    patched_so_far, (patch,), capture_dir=None
+                )
 
     rows = [
         (

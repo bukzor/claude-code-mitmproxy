@@ -24,6 +24,7 @@ mitmproxy \
   --mode "reverse:https://api.anthropic.com" \
   --listen-port "$PORT" \
   -w "$FLOW_FILE" \
+  -s "${SCRIPT_DIR}/reload.py" \
   -s "${SCRIPT_DIR}/syscapture.py" \
   -s "${SCRIPT_DIR}/syspatch.py" \
   -s "${SCRIPT_DIR}/toolpatch.py" \

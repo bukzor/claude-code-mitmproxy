@@ -25,7 +25,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from incidents import content_hash, normalize_body
+import incidents
 
 PROMPTS_DIR = Path(__file__).parent / "log" / "prompt-captures"
 TRASH_DIR = Path(__file__).parent / "trash"
@@ -42,7 +42,7 @@ def plan_directory(directory: Path) -> list[tuple[str, str | None]]:
     for raw in sorted(directory.glob("*.raw.md")):
         m = NAME_RE.match(raw.name)
         assert m, raw
-        digest = content_hash(raw.read_text())
+        digest = incidents.content_hash(raw.read_text())
         old_base = raw.name.removesuffix(".raw.md")
         if digest in claimed:
             plan.append((old_base, None))
@@ -75,7 +75,9 @@ def rekey(directory: Path, plan: list[tuple[str, str | None]], trash: Path) -> N
         if new_base != old_base:
             raw = raw.rename(directory / f"{new_base}.raw.md")
             masked.unlink(missing_ok=True)
-        (directory / f"{new_base}.md").write_text(normalize_body(raw.read_text()))
+        (directory / f"{new_base}.md").write_text(
+            incidents.normalize_body(raw.read_text())
+        )
 
 
 def main():
