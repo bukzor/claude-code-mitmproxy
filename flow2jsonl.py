@@ -3,12 +3,16 @@
 `jsonl_path` (default /dev/stdout) is strftime-formatted and reopened when
 the formatted string changes; prefix with "+" for append mode. Mirrors
 mitmproxy's own save_stream_file option -- design/040-design.kb/
-ease-of-operation.kb/ has the why.
+ease-of-operation.kb/ has the why, including why a day roll also spawns
+compress_traffic.py over the shards it just finished.
 
     mitmproxy ... -s flow2jsonl.py --set jsonl_path=+traffic/%Y-%m-%d.jsonl
 """
 import base64
+import gzip
 import json
+import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import IO, Optional
@@ -18,9 +22,13 @@ from mitmproxy import ctx, http
 import incidents
 
 UNCAUGHT_RULE = "_uncaught-flow2jsonl"
+COMPRESSOR = Path(__file__).with_name("compress_traffic.py")
+COMPRESSOR_LOG = Path(__file__).with_name("log") / "compress_traffic.log"
 
 _fp: Optional[IO[str]] = None
 _current_path: Optional[str] = None
+_rolled_over = False
+_compressor: Optional[subprocess.Popen] = None
 
 
 def load(loader):
@@ -36,7 +44,7 @@ def load(loader):
 def _rotate_if_needed():
     """Reopen the output file when today's formatted jsonl_path differs from
     the currently open one."""
-    global _fp, _current_path
+    global _fp, _current_path, _rolled_over
     spec = ctx.options.jsonl_path
     append = spec.startswith("+")
     path = datetime.today().strftime(spec[1:] if append else spec)
@@ -45,6 +53,7 @@ def _rotate_if_needed():
     if _fp is not None:
         _fp.close()
         _fp = None
+        _rolled_over = True  # a finished shard, not a reopen of the live one
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     _fp = open(path, "a" if append else "w", buffering=1)
     _current_path = path
@@ -58,12 +67,36 @@ def done():
     _current_path = None
 
 
+def _compress_finished_shards():
+    """Spawn compress_traffic.py over every shard nobody holds open.
+
+    Called at the end of the response hook rather than at the rotation
+    itself, which is what makes yesterday's `.flow` eligible: mitmproxy's
+    Save addon owns that file and rotates it from its own response hook,
+    ahead of this script's. See
+    design/040-design.kb/ease-of-operation.kb/compression-at-rotation.md.
+    """
+    global _compressor
+    if _compressor is not None and _compressor.poll() is None:
+        return  # yesterday's run is still going; don't stack them
+    COMPRESSOR_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with COMPRESSOR_LOG.open("a") as log:
+        log.write(f"--- {datetime.today():%Y-%m-%d %H:%M:%S}\n")
+        log.flush()
+        _compressor = subprocess.Popen(
+            [sys.executable, str(COMPRESSOR)],
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,  # outlives a Ctrl-C on the proxy
+        )
+
+
 def _default(obj):
     """json.dumps default handler for bytes."""
     if not isinstance(obj, bytes):
         raise TypeError(type(obj))
     try:
-        import gzip
         obj = gzip.decompress(obj)
     except gzip.BadGzipFile:
         pass
@@ -90,9 +123,13 @@ def request(flow: http.HTTPFlow):
 
 
 def response(flow: http.HTTPFlow):
+    global _rolled_over
     try:
         assert flow.response is not None
         _emit({"phase": "response", "data": flow.response.get_state()})
+        if _rolled_over:
+            _rolled_over = False
+            _compress_finished_shards()
     except Exception as exc:
         incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
         raise

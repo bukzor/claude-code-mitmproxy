@@ -23,11 +23,13 @@ sync, commit, or attach this directory.
 """
 from __future__ import annotations
 
+import fcntl
 import subprocess
 import sys
 from pathlib import Path
 
 TRAFFIC_DIR = Path(__file__).resolve().parent / "log" / "traffic"
+LOCK_PATH = TRAFFIC_DIR / ".compress.lock"
 SUFFIXES = (".jsonl", ".flow")
 DEFAULT_LEVEL = 16
 CHUNK_BYTES = 1 << 20
@@ -120,6 +122,18 @@ def main():
     args = [a for a in sys.argv[1:] if a != "--dry-run"]
     dry_run = "--dry-run" in sys.argv[1:]
     level = int(args[0]) if args else DEFAULT_LEVEL
+
+    # flow2jsonl.py fires one of these at every day roll, so a hand-run can
+    # collide with it. Both would write the same .zst, and the round-trip check
+    # would then reject an interleaved archive for both -- sparing the
+    # originals, but leaving a corrupt .zst that makes every later run skip
+    # that day as already done.
+    lock = LOCK_PATH.open("w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("another run holds the lock; leaving it to that one", file=sys.stderr)
+        return
 
     busy = held_open()
     total_before = total_after = 0

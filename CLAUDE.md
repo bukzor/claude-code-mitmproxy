@@ -64,11 +64,11 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
-- Run `compress_traffic.py` occasionally; `log/traffic/` is the only output here
-  that grows without bound, and it compresses 13-57x because every turn resends
-  the conversation prefix. Compressing is the answer instead of a retention
-  window. It skips shards a running process still holds open, so the current day
-  survives a run made while the proxy is up.
+- `compress_traffic.py` needs no scheduling: `flow2jsonl.py` spawns it at each
+  day roll, and it skips shards a process still holds open, so running it by
+  hand at any time is safe too. Check `log/compress_traffic.log` if
+  `log/traffic/` starts growing anyway -- that is the only place its failures
+  land.
 - Run `check_laws.py` after any `masks.d/` or `blocks.d/` edit; it is the
   only detector for a broken law, which otherwise yields a well-formed
   digest answering a different question than the one asked.
