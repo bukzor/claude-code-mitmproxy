@@ -38,6 +38,19 @@ was there. `background-session-*.md` are three such forms. Keep no form a
 prefix of another: both would match, the shorter would leave a fragment
 behind, and `check_laws.py` would fail on the resulting overlap.
 
+Whole forms only work while the alternatives are few. Where the parts are
+*independently* optional the count is the powerset, so split instead: one
+rule per part, plus one for the frame that holds them.
+`# Session-specific guidance` is a heading over five independently
+switchable bullets, and it is six rules -- `session-specific-guidance.md`
+is the heading and its leading blank line, the other five are bare list
+lines. The heading rule matches the heading whether or not any bullet is
+still there, so it does not depend on the bullet rules having fired; the
+spans are merely adjacent, and adjacent deletions commute as freely as
+distant ones. An unruled sixth bullet would survive without its heading,
+which is ugly and loud -- the core digest moves and the survey shows a core
+matching no fixture -- rather than quiet and wrong.
+
 ## Write the prose out; there is no whole-section hole
 
 Templates here are literal, with holes only for what a session varies inside

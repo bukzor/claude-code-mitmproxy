@@ -1,6 +1,12 @@
 ---
 managed-by: Skill(llm-subtask)
-status: open
+status: done
+closeout: >-
+    Landed 2026-08-10 in ~15m as option (2), which turned out to cost
+    nothing -- the premise that it weakens the order-free invariant was
+    wrong; see "Resolution". Three new rules; the seven v2.1.226 fable and
+    opus captures collapsed onto two cores, both already promoted. Corpus
+    cores 34 -> 27, unpromoted 26 -> 21.
 required-reading:
     - blocks.d/README.md
     - keying.claims.kb/this-proxy.kb/block-spans-are-disjoint.md
@@ -86,14 +92,37 @@ Three ways out, none free:
    that keeps every current invariant, at the price of a permanent
    two-population split in the survey.
 
-Recommendation is (2): the invariant it weakens is a means, and the end it
-serves -- a stripped body that does not depend on load order -- survives
-confluence intact. But this is a ruling, not a detail.
+## Resolution: (2), and it weakens nothing
+
+The stated cost of (2) was imaginary. A heading rule does not have to
+inspect what the bullet rules left behind -- `\n# Session-specific
+guidance\n` matches the heading line whether or not bullets follow it, and
+its span is *adjacent* to the first bullet's rather than overlapping it.
+Adjacent deletions commute exactly as freely as distant ones, so the rule
+set stays order-free and `check_laws.py`'s disjointness assertion passes
+unchanged. The error was reading "this rule only makes sense alongside the
+others" (a design coupling, and real) as "this rule depends on another
+having fired" (an order dependency, and false).
+
+So: `session-specific-guidance.md` for the heading plus its leading blank
+line, `skill-invocation.md` and `agent-tool-fork.md` for the two unruled
+bullets, joining the three that already existed. The convention note is in
+`blocks.d/README.md`: independently optional parts split into one rule per
+part plus one for the frame, because whole forms would be the powerset.
 
 ## Acceptance
 
-- [ ] Decide the heading question above.
-- [ ] Rules written; `python3 check_laws.py` clean.
-- [ ] `python3 survey_captures.py` shows `6d925e39d43a` collapsed onto
-      `64d5cd7cf412`, and the two `2.1.226.167` fable rows onto one core.
-- [ ] `blocks.d/README.md` updated if the invariant moved.
+- [x] Decide the heading question above.
+- [x] Rules written; `python3 check_laws.py` clean.
+- [x] Stronger than the survey check below: for all 55 masked captures,
+      stripping the six section rules yields byte-for-byte what the same
+      body with no section at all would be.
+- [x] `python3 survey_captures.py` -- the three `2.1.226.872`/`.8c5` fable
+      rows now share `6d925e39d43a` (promoted `v2.1.226-fable`) and the
+      four opus rows share `0e2098db0005` (promoted `v2.1.226-opus`).
+- [x] `blocks.d/README.md` gained the split-vs-whole-forms rule.
+
+Still unpromoted at v2.1.226 and untouched by this: `749564b55c22` (the
+two `2.1.226.167` fable rows -- a different build from the promoted
+`.872`, so possibly a real copy change) and `751d9ae396cb` (haiku
+long-form, covered by the standing promotion item on `todo.md`).
