@@ -11,7 +11,10 @@ into back-references. Measured on 200 MiB samples:
 
 So the answer to "the captures are eating the disk" is to keep every byte,
 compressed, rather than to set a retention window. Level 16 is the default
-because it sits near the -19 ratio at a fraction of the cost.
+because it sits near the -19 ratio at a fraction of the cost. Two threads
+rather than -T0: on 300 MiB of capture, 8 threads peak at 475 MiB RSS
+against 279 MiB for two, and this runs unattended on a swapless machine
+where nothing is waiting on it.
 
 Reading one back: `zstd -dc --long log/traffic/2026-08-09.jsonl.zst | jq ...`.
 flow2jsonl.sh and jsonl2sysprompt.sh take a path and know nothing about .zst,
@@ -24,6 +27,7 @@ sync, commit, or attach this directory.
 from __future__ import annotations
 
 import fcntl
+import os
 import subprocess
 import sys
 from datetime import date, datetime
@@ -33,6 +37,7 @@ TRAFFIC_DIR = Path(__file__).resolve().parent / "log" / "traffic"
 LOCK_PATH = TRAFFIC_DIR / ".compress.lock"
 SUFFIXES = (".jsonl", ".flow")
 DEFAULT_LEVEL = 16
+THREADS = 2
 CHUNK_BYTES = 1 << 20
 
 
@@ -123,10 +128,20 @@ def replace_with_archive(capture: Path, level: int) -> tuple[int, int]:
     partial = archive.with_name(archive.name + ".part")
     subprocess.run(
         # -f to overwrite the .part an earlier interrupted run left behind
-        ["zstd", f"-{level}", "-T0", "--long", "-q", "-f", "-o", str(partial), str(capture)],
+        ["zstd", f"-{level}", f"-T{THREADS}", "--long", "-q", "-f",
+         "-o", str(partial), str(capture)],
         check=True,
     )
-    assert matches_decompressed(partial, capture), (partial, capture)
+    with partial.open("rb") as written:
+        # The compare below is served from the page cache, so on its own it
+        # says nothing about what reached the disk -- and the original is
+        # deleted on the strength of it. fsync first, then compare, covers
+        # both a wrong archive and one that never landed.
+        os.fsync(written.fileno())
+    if not matches_decompressed(partial, capture):
+        # Never an assert: -O would compile out the one check standing
+        # between a bad archive and unlink() of the only copy.
+        raise RuntimeError(f"{partial} does not decompress to {capture}")
     partial.replace(archive)
     capture.unlink()
     return before, archive.stat().st_size
@@ -150,15 +165,24 @@ def main():
         return
 
     busy = held_open()
+    failures = 0
     total_before = total_after = 0
     for capture in compressible(TRAFFIC_DIR):
         size = capture.stat().st_size
-        if capture in busy:
+        if capture.resolve() in busy:  # resolve: log/ may be a symlink someday
             print(f"skip {capture.name}: open by a running process", flush=True)
         elif dry_run:
             print(f"would compress {capture.name} ({human(size)})", flush=True)
         else:
-            before, after = replace_with_archive(capture, level)
+            try:
+                before, after = replace_with_archive(capture, level)
+            except Exception as exc:
+                # One capture that will not archive must not retire the rest.
+                # It sorts first on every future run too, so aborting here
+                # would strand every later shard behind it permanently.
+                print(f"FAIL {capture.name}: {exc!r}", file=sys.stderr, flush=True)
+                failures += 1
+                continue
             total_before += before
             total_after += after
             print(
@@ -174,6 +198,8 @@ def main():
             f" {human(total_before - total_after)} reclaimed)",
             file=sys.stderr,
         )
+    if failures:
+        raise SystemExit(f"{failures} capture(s) left uncompressed")
 
 
 if __name__ == "__main__":
