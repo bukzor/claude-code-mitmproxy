@@ -20,15 +20,14 @@ from pathlib import Path
 from typing import NamedTuple
 
 # Matches $ALLCAPS placeholders in templates (trailing digits allowed:
-# $LINES1/$LINES2 are distinct placeholders of the LINES type)
-PLACEHOLDER_RE = re.compile(r"\$([A-Z]+[0-9]*)")
+# $LINES1/$LINES2 are distinct placeholders of the LINES type). A trailing
+# underscore disqualifies the name, so shell-style literals the prompt itself
+# contains -- `$CLAUDE_JOB_DIR` -- stay literal instead of parsing as a $CLAUDE
+# hole that swallows the rest of the line.
+PLACEHOLDER_RE = re.compile(r"\$([A-Z]+[0-9]*)(?![A-Z0-9_])")
 
 # Pattern for $LINES: one or more non-empty lines (no trailing newline)
 LINES_PATTERN = r"[^\n]+(?:\n[^\n]+)*"
-
-# Pattern for $...BLOCK: the rest of a top-level section -- any text, blank
-# lines included, stopping before the next "# " heading (or end of body).
-BLOCK_PATTERN = r"(?:(?!\n# ).)*"
 
 # Pattern for other placeholders: rest of line (possibly empty)
 DEFAULT_PATTERN = r"[^\n]*"
@@ -133,10 +132,7 @@ def _read_bool(path: Path) -> bool:
 
 
 def placeholder_pattern(name: str) -> str:
-    base = name.rstrip("0123456789")
-    if base.endswith("BLOCK"):
-        return BLOCK_PATTERN
-    elif base.endswith("LINES"):
+    if name.rstrip("0123456789").endswith("LINES"):
         return LINES_PATTERN
     else:
         return DEFAULT_PATTERN
@@ -148,10 +144,14 @@ def template_to_regex(template: str) -> re.Pattern[str]:
     Same-named placeholders must match the same text (backreference); use
     distinct names for independent matches. The name's suffix (ignoring
     trailing digits) picks what it matches: LINES is one or more non-empty
-    lines, BLOCK is the rest of a top-level section, anything else is the
-    rest of the line. The type is a suffix rather than the whole name because
-    a mask's placeholder name is what a reader sees in the masked text, so it
-    has to be able to say what was masked.
+    lines, anything else is the rest of the line. The type is a suffix rather
+    than the whole name because a mask's placeholder name is what a reader
+    sees in the masked text, so it has to be able to say what was masked.
+
+    Both types are bounded by structure they cannot cross -- a line break, a
+    blank line -- so the literal on either side of a hole is a delimiter that
+    always exists. A hole that could cross blank lines would have no such
+    bound; see `load_templates` for why none is offered.
     """
     parts = PLACEHOLDER_RE.split(template)
     # parts alternates: [literal, name, literal, name, ..., literal]
@@ -228,23 +228,15 @@ def load_templates(directory: Path) -> tuple[Template, ...]:
         # body. Requiring an anchor is what makes "rewrite every hit" safe.
         literals = "".join(PLACEHOLDER_RE.split(template.template)[::2])
         assert literals.strip(), (template.name, "all placeholder: no anchor text")
+        # $...BLOCK used to mean "the rest of this top-level section", which it
+        # approximated as "up to the next `# ` heading" -- a right-hand
+        # delimiter that does not exist when the section is last, leaving a
+        # bare `.*` that swallowed whatever followed. No delimiter can bound a
+        # hole that crosses blank lines, so the type is gone rather than fixed:
+        # write the section's prose out and let a reworded one miss.
+        blocks = [n for n in PLACEHOLDER_RE.findall(template.template) if "BLOCK" in n]
+        assert not blocks, (template.name, blocks, "$...BLOCK no longer exists")
     return templates
-
-
-def load_masks(masks_dir: Path) -> tuple[Template, ...]:
-    """Templates from masks_dir, rejecting the one placeholder type a mask
-    must not have: $...BLOCK spans a whole section, so a mask carrying one
-    would swap real prose for a token instead of neutralizing a value, and
-    the digest would stop noticing copy it is supposed to notice."""
-    masks = load_templates(masks_dir)
-    for mask in masks:
-        wide = [
-            name
-            for name in PLACEHOLDER_RE.findall(mask.template)
-            if placeholder_pattern(name) == BLOCK_PATTERN
-        ]
-        assert not wide, (mask.name, wide, "a mask may not span a whole block")
-    return masks
 
 
 def borrow_newline(text: str) -> tuple[str, bool]:

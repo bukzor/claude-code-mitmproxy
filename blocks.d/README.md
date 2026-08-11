@@ -22,37 +22,44 @@ leave behind rather than the volatile text they replaced -- `git-status.md` is
 a dozen literal lines because `$GITBRANCH` and friends are already tokens by
 the time it runs.
 
-## Order-independent deletion, order-dependent reporting
+## Deletions never overlap, so order cannot matter
 
 Every block is tried against the result of the previous ones, and no rule may
 *depend* on an earlier rule having fired: the set is loaded in filename order,
-which is alphabetical and carries no meaning. What that order may not change
-is the *stripped text*, and it does not -- `check_laws.py` asserts it,
-exhaustively over the orders that could matter.
-
-What the order does change today is which rule gets *credited*. A `$...BLOCK`
-runs to end of body when its section is last, so it can swallow a following
-section that has no `# ` heading of its own; one block's span then contains
-another's, and whichever runs first reports the hit while the other finds
-nothing left. In subagent captures `scratchpad` swallows `gitStatus:` exactly
-this way. The same bytes go either way, so only the survey's flag column is
-wrong. Which repair this gets is undecided --
-`keying.claims.kb/this-proxy.kb/the-block-overrun-fix-is-unmade.md`.
+which is alphabetical and carries no meaning. `check_laws.py` asserts the
+stronger property that makes that safe -- on every body on disk, no two rules'
+spans intersect. Disjoint deletions commute, so both the stripped text and the
+reported flags come out the same whatever order the directory loads in.
 
 Where a block has an optional part, write both whole forms and let one of
 them miss -- `git-status.md` and `git-status-with-user.md` are mutually
 exclusive, and which one hit is the survey's report of whether `Git user:`
-was there.
+was there. `background-session-*.md` are three such forms. Keep no form a
+prefix of another: both would match, the shorter would leave a fragment
+behind, and `check_laws.py` would fail on the resulting overlap.
+
+## Write the prose out; there is no whole-section hole
+
+Templates here are literal, with holes only for what a session varies inside
+one line or one paragraph. There is no placeholder meaning "the rest of this
+section". `$...BLOCK` used to be one and was removed: its right-hand
+delimiter was the next `# ` heading, a last section has none, and it ran to
+end of body swallowing whatever followed
+(`keying.claims.kb/this-proxy.kb/no-hole-may-cross-a-blank-line.md`).
+
+So a section's rule is a transcript of that section, copied out of a masked
+capture rather than typed. Upstream rewording therefore *breaks* the rule
+instead of being absorbed by it, which is the point: the block stops
+matching, its text stays in the core digest, and the survey shows a core
+matching no fixture. Recopy the template from a current capture and re-run
+`check_laws.py`.
 
 ## Deleting must leave the absent form byte-for-byte
 
 A block rule's promise is that stripping it yields what a session that never
-switched it on would have sent. Templates therefore span the block's blank-line
-separators too: `# Memory\n$MEMORYBLOCK\n` consumes the heading, the body, and
-the blank line before the next heading. A `$...BLOCK` placeholder matches the
-rest of a top-level section (stopping before the next `# ` heading), which is
-why these stay short and survive upstream rewording inside a section.
-
-The corollary is a blind spot, and it's deliberate: copy that changes *inside*
-a session-optional section doesn't move the core digest. The full `digest`
-column still sees it, and the fixture is where that text is kept.
+switched it on would have sent, so a template spans the blank line that
+separates its block from the neighbouring one. A `# ` section takes that
+separator on the *leading* side -- the template starts with `\n` and ends
+after its own last content line -- because a block taking its trailing
+separator would contend with the block after it for the same newline. A
+list-item block (`- ...`) sits inside a list and has no separator to take.

@@ -53,7 +53,7 @@ Two in-repo rule sets share the patch template language, each with its own
 follow-up -- nothing stored is named by a masked digest), and `blocks.d/` deletes
 session-optional *blocks* for `survey_captures.py`'s core-digest column only.
 `check_laws.py` validates the algebra both rest on -- masking idempotent and
-only ever coarsening, block deletion independent of load order.
+only ever coarsening, block deletions never overlapping.
 
 ## Standing maintenance
 

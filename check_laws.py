@@ -7,9 +7,8 @@ session noise" and a core digest mean "same prompt copy". Nothing at proxy
 time notices when one stops holding: a broken law yields a well-formed digest
 that answers a different question than the one asked. This is the detector.
 
-Usage: check_laws.py -- asserts the laws that must hold, warns about the
-divergence that is still an open design question (block flags, see
-`keying.claims.kb/this-proxy.kb/`).
+Usage: check_laws.py -- asserts every law; any output but `ok` lines is a
+failure.
 """
 from __future__ import annotations
 
@@ -22,11 +21,6 @@ import templates
 CAPTURES_DIR = Path(__file__).parent / "log" / "prompt-captures"
 KB_DIR = Path(__file__).parent / "system-prompts.kb"
 BLOCKS_DIR = Path(__file__).parent / "blocks.d"
-
-# Orders are enumerated over the overlapping rules only, so this bounds a
-# factorial. Tripping it means blocks have grown genuinely tangled, which is
-# news in itself and should stop the check rather than degrade it to a sample.
-MAX_CONTESTED = 5
 
 
 def load_corpus() -> dict[str, str]:
@@ -90,75 +84,36 @@ def block_spans(text: str, blocks) -> dict[str, list[tuple[int, int]]]:
     }
 
 
-def contested_blocks(spans: dict[str, list[tuple[int, int]]]) -> set[str]:
-    """Names of the rules whose deletion span overlaps another rule's.
-
-    Rules with disjoint spans commute outright: deleting disjoint substrings
-    removes the same bytes and credits the same rules whatever the order. So
-    the contested rules are the *only* ones whose relative order can change
-    anything, which is what lets the check below enumerate orders exhaustively
-    instead of sampling them. A sample here would be the very thing this file
-    exists to rule out -- a check that can pass while the law is false.
-    """
-    contested: set[str] = set()
+def overlapping_blocks(spans: dict[str, list[tuple[int, int]]]) -> set[str]:
+    """Names of the rules whose deletion span overlaps another rule's."""
+    overlapping: set[str] = set()
     for (a, a_spans), (b, b_spans) in itertools.combinations(spans.items(), 2):
         if any(
             a0 < b1 and b0 < a1 for a0, a1 in a_spans for b0, b1 in b_spans
         ):
-            contested.update((a, b))
-    return contested
+            overlapping.update((a, b))
+    return overlapping
 
 
-def check_block_confluence(bodies: dict[str, str], blocks) -> None:
-    """Block stripping must not depend on the order the blocks load in: that
-    order is alphabetical and carries no meaning, so a core digest that moved
-    with it would be an artifact of a filename.
+def check_blocks_disjoint(bodies: dict[str, str], blocks) -> None:
+    """No two block rules may delete overlapping bytes.
 
-    The stripped text is asserted. Which rules report having fired is only
-    warned about: where spans overlap, whichever rule runs first takes the
-    credit, and choosing the fix is an open design question.
+    Disjoint deletions commute, so this one property carries both halves of
+    what `blocks.d/README.md` promises: the stripped text is the same whatever
+    order the directory loads in -- that order is alphabetical and carries no
+    meaning, so a core digest moving with it would be an artifact of a
+    filename -- and the reported flags name every rule that was really there
+    rather than whichever ran first.
+
+    Asserted, not warned about. Overlap is how a rule once took credit for a
+    section it never matched, and the placeholder that let it reach that far
+    is gone; a fresh overlap means the reach came back by another route.
     """
-    contested_bodies = 0
-    flag_divergent = []
     for name, body in sorted(bodies.items()):
-        masked = incidents.normalize_body(body)
-        borrowed, _ = templates.borrow_newline(masked)
-        contested = contested_blocks(block_spans(borrowed, blocks))
-        if not contested:
-            continue
-        contested_bodies += 1
-        head = tuple(b for b in blocks if b.name in contested)
-        rest = tuple(b for b in blocks if b.name not in contested)
-        assert len(head) <= MAX_CONTESTED, (name, contested, "too many to enumerate")
-        base_text, base_present = templates.strip_blocks(masked, blocks)
-        for order in itertools.permutations(head):
-            text, present = templates.strip_blocks(masked, order + rest)
-            assert text == base_text, (
-                name, [b.name for b in order], "core digest depends on block order"
-            )
-            if sorted(present) != sorted(base_present):
-                flag_divergent.append((name, sorted(contested)))
-                break
-    print(
-        f"block confluence ok  {len(bodies)} bodies, "
-        f"{contested_bodies} with overlapping spans"
-    )
-    report_flag_divergence(flag_divergent, len(bodies))
-
-
-def report_flag_divergence(divergent: list, total: int) -> None:
-    """Not an assertion: the stripped text is right, only the reported rule
-    names are ambiguous, and the choice between bounding the block pattern,
-    forbidding overlap, and reporting all claimants is unmade."""
-    if not divergent:
-        return
-    print(
-        f"WARNING: block flags depend on load order for {len(divergent)} of "
-        f"{total} bodies; see keying.claims.kb/this-proxy.kb/"
-        f"block-flags-are-an-artifact.md"
-    )
-    for name, contested in divergent[:3]:
-        print(f"  {','.join(contested)}  {Path(name).name}")
+        masked, _ = templates.borrow_newline(incidents.normalize_body(body))
+        overlapping = overlapping_blocks(block_spans(masked, blocks))
+        assert not overlapping, (name, sorted(overlapping), "block spans overlap")
+    print(f"blocks disjoint ok  {len(bodies)} bodies")
 
 
 def main() -> None:
@@ -167,7 +122,7 @@ def main() -> None:
     blocks = templates.load_templates(BLOCKS_DIR)
     check_idempotent(bodies, masks)
     check_monotone(bodies, masks)
-    check_block_confluence(bodies, blocks)
+    check_blocks_disjoint(bodies, blocks)
 
 
 if __name__ == "__main__":

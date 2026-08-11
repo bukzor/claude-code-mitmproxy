@@ -51,7 +51,7 @@ def masks() -> tuple[templates.Template, ...]:
     `syspatch.load` calls this at startup so a malformed mask takes the proxy
     down there rather than first surfacing mid-run as an `_uncaught-syspatch`
     incident."""
-    return templates.load_masks(MASKS_DIR)
+    return templates.load_templates(MASKS_DIR)
 
 
 def normalize_body(body: str) -> str:

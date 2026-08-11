@@ -5,7 +5,7 @@ why:
     - ../obligation.kb/observability-ranks.md
     - ../obligation.kb/prefer-dissolving-to-checking.md
     - ../obligation.kb/price-of-dissolving.md
-    - ../this-proxy.kb/the-block-overrun-fix-is-unmade.md
+    - ../this-proxy.kb/no-hole-may-cross-a-blank-line.md
 ---
 
 # Question 3: What Does "One Fewer Thing That Can Be Silently Wrong" Claim?
@@ -38,19 +38,21 @@ than the check it replaced. The maxim is sound when the dissolution is
 cheap in representation, which for the split it was -- the identity key is
 *simpler* to read than the class key, not harder.
 
-**The uncomfortable finding.** This ledger's own live counter-instance is
-`BLOCK_FIX`: an invariant that two READMEs assert, that nothing checked,
-and that was false on a fifth of the corpus. It was found by writing the
+**The uncomfortable finding.** This ledger's own counter-instance was the
+block overrun: an invariant two READMEs asserted, that nothing checked, and
+that was false on a fifth of the corpus. It was found by writing the
 formalization -- by looking -- not by any loudness mechanism. The maxim
 tells you what to do with an invariant once you have noticed it and is
 silent about noticing, which is the harder half. Its real content, and the
 reason it is worth keeping, is the instruction to *count* the silent ones;
-in this repo that count went from unknown to one open item, and the
-counting did that, not the preference.
+in this repo that count went from unknown to one item, and the counting did
+that, not the preference.
 
 **Settled by** `RANK` (the order, and that it is only an order),
 `DISSOLVE` (the preference), `PRICE_OF_DISSOLVING` (the exception),
 `SILENT_DEFAULT` (why the count starts high).
 
-**Residue.** `BLOCK_FIX` is open, and the mechanism that surfaced it does
-not run on a schedule.
+**Residue.** The maxim came out ahead on its own counter-instance:
+`BOUNDED_HOLES` removed the construct rather than checking it, and
+`DISJOINT` checks what remains. What stays open is the noticing -- the
+mechanism that surfaced the defect still does not run on a schedule.

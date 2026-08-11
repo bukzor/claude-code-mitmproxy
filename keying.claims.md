@@ -82,10 +82,10 @@ is typical" not at all.
   over subsets -- becomes ill-typed. Paid for by checking `COARSEN`
   directly: the consequence, not the mechanism.
 - **Bodies as opaque strings.** Blocks see a body as a sequence of
-  sections, and that structure is exactly where the one live defect sits
-  (`FLAG_ARTIFACT`). The cost is that the bug is unstatable above
-  `this-proxy`: anyone reusing these claims on structured documents gets
-  no warning from them.
+  sections, and that structure is where the one measured defect sat: a hole
+  bounded by a section heading that need not exist (`BOUNDED_HOLES`). The
+  cost is that the bug was unstatable above `this-proxy`, so anyone reusing
+  these claims on structured documents gets no warning from them.
 - **The admissible rule sets as unbounded.** This is the premise doing all
   the work in `INJECTIVE`. It is history, not necessity -- a project that
   could honestly promise an append-only rule set would be entitled to the
@@ -107,7 +107,8 @@ is typical" not at all.
 3. **What the maxim claims** (`Q_SILENCE`) -- a real total order on
    failure modes, but not a lattice, and a preference with a stated
    exception. Its useful content is the instruction to *count* the silent
-   invariants; the counting, not the preference, is what found `BLOCK_FIX`.
+   invariants; the counting, not the preference, is what found the block
+   overrun that `BOUNDED_HOLES` then dissolved.
 
 ## Scanning
 

@@ -26,7 +26,7 @@ def main():
     texts = {p: t if t.endswith("\n") else t + "\n" for p, t in texts.items()}
 
     unwitnessed = []
-    for mask in templates.load_masks(incidents.MASKS_DIR):
+    for mask in templates.load_templates(incidents.MASKS_DIR):
         pattern = templates.template_to_regex(mask.template)
         hits = [p for p, text in texts.items() if pattern.search(text)]
         if not hits:
