@@ -19,16 +19,32 @@ content-addressed, idempotent-on-disk mechanism, then re-raised — capture,
 not fail-soft. Same `_bodies`-style underscore-prefixed rule as
 `_locate-system-prompt`, so it can't collide with a patch name.
 
-One incident class needs no fix: a burst of `_uncaught-syspatch`
-`AssertionError`s whose messages name a patch directory in a half-created
-state ("missing match.md", "no *.md files in match.d/", missing
-replace.md). The proxy loads patches per-request from the live directory,
-so editing `~/.claude/system-prompt-patches.d/` while traffic flows makes
-every intermediate file state load-bearing for a moment; affected requests
-pass through unpatched (mitmproxy contains addon exceptions). Archive the
-incidents. To avoid causing them: build a new patch dir outside
-`system-prompt-patches.d/` and `mv` it in whole -- `mv` within a
-filesystem is atomic, `mkdir`-then-write is not.
+One incident class needs no fix: **live-edit transients**, a short burst of
+`_uncaught-*` incidents timestamped within seconds of each other, whose
+cause is already gone from the working tree. Both halves of the reload
+story produce them, and both are archive-and-move-on.
+
+Data half: `_uncaught-syspatch` `AssertionError`s whose messages name a
+patch directory in a half-created state ("missing match.md", "no *.md
+files in match.d/", missing replace.md). The proxy loads patches
+per-request from the live directory, so editing
+`~/.claude/system-prompt-patches.d/` while traffic flows makes every
+intermediate file state load-bearing for a moment; affected requests pass
+through unpatched (mitmproxy contains addon exceptions). To avoid causing
+them: build a new patch dir outside `system-prompt-patches.d/` and `mv` it
+in whole -- `mv` within a filesystem is atomic, `mkdir`-then-write is not.
+
+Code half: `_uncaught-{addon}` `NameError`/`AttributeError` naming a symbol
+that no longer exists, from a mid-refactor save mitmproxy re-executed
+(2026-08-10: three `NameError: _rolled_over` in `flow2jsonl.py`, ten
+seconds apart, at three different line numbers -- three successive saves of
+one refactor). Confirm with `git log -S{symbol}`: a commit that removed it
+dates the burst, and the tree is coherent now. No `mv` trick applies here
+-- each save is a whole, syntactically valid file, incomplete only across
+the refactor -- so the burst simply ends when the refactor lands. Check
+what the hook had already done before it threw: these three had emitted
+their JSONL entry and died on the compressor trigger afterward, so no
+traffic went unrecorded.
 
 ## Tool-description drift (`tooldesc-*`)
 
@@ -135,6 +151,26 @@ recorded baseline to maintain). Two kinds:
   process).
 
 Triage ends with `archive_incident` like any other rule.
+
+### The `_compress-traffic` rule (capture retention)
+
+`compress_traffic.py` archives finished traffic shards and deletes the
+originals, so it reports its own failures instead of leaving them to an
+exit code: `flow2jsonl.py` spawns one child per shard it opens -- usually
+one per proxy lifetime -- so the parent that could read a returncode has
+already exited by the time there is one to read. Kind is the exception
+class, body is its traceback.
+
+Nothing is lost when this fires. The capture is kept, its unverified
+`.zst.part` is never published under the `.zst` name, and the sweep
+continues past it -- but that capture sorts first on every later run, so
+it keeps failing until fixed. Which shard and which stage is in
+`log/compress_traffic.log`, the only place the child's stdout goes.
+
+Usual causes: no `zstd` on PATH, a full disk (the archive needs ~2% of the
+capture beside it), an unreadable capture. `check_compression.py` re-runs
+the sweep offline against seeded captures, including the failure path.
+Archive when fixed, like any other rule.
 
 ### Split `match`/`search`, or single-file?
 

@@ -67,8 +67,9 @@ checkbox to clear):
 - `compress_traffic.py` needs no scheduling: `flow2jsonl.py` spawns it for every
   shard it opens, so every proxy start sweeps yesterday and earlier. It skips
   shards a process holds open or wrote today, so running it by hand at any time
-  is safe too. Check `log/compress_traffic.log` if `log/traffic/` starts growing
-  anyway -- that is the only place its failures land.
+  is safe too. Failures land as `_compress-traffic` incidents, with the detail
+  in `log/compress_traffic.log`; `check_compression.py` re-runs the whole sweep
+  offline against seeded captures.
 - Run `check_laws.py` after any `masks.d/` or `blocks.d/` edit; it is the
   only detector for a broken law, which otherwise yields a well-formed
   digest answering a different question than the one asked.

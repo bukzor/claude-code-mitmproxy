@@ -33,6 +33,17 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
+import incidents
+
+# Non-patch rule, underscore-prefixed like _locate-system-prompt so it cannot
+# collide with a patch name. The child reports its own failures because nothing
+# reads its exit code: flow2jsonl.py spawns one per shard it opens, which is
+# usually one per proxy lifetime, so the parent that could check a returncode
+# has already exited by the time there is one to check.
+FAILURE_RULE = "_compress-traffic"
+# check_compression.py sets this None -- the seam check_patches already uses to
+# exercise the machinery without leaving incidents for someone to triage.
+CAPTURE_DIR = incidents.CAPTURE_DIR
 TRAFFIC_DIR = Path(__file__).resolve().parent / "log" / "traffic"
 LOCK_PATH = TRAFFIC_DIR / ".compress.lock"
 SUFFIXES = (".jsonl", ".flow")
@@ -181,6 +192,7 @@ def main():
                 # It sorts first on every future run too, so aborting here
                 # would strand every later shard behind it permanently.
                 print(f"FAIL {capture.name}: {exc!r}", file=sys.stderr, flush=True)
+                incidents.capture_uncaught(FAILURE_RULE, exc, CAPTURE_DIR)
                 failures += 1
                 continue
             total_before += before
@@ -203,4 +215,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        # Same capture-then-re-raise contract the addon hooks use: a
+        # compressor that cannot start at all (no zstd, unreadable dir) is the
+        # failure most likely to go unnoticed, since its only other trace is a
+        # log nobody opens until log/traffic/ has grown back.
+        incidents.capture_uncaught(FAILURE_RULE, exc, CAPTURE_DIR)
+        raise
