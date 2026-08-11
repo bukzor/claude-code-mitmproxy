@@ -177,8 +177,8 @@ it keeps failing until fixed. Which shard and which stage is in
 `log/compress_traffic.log`, the only place the child's stdout goes.
 
 Usual causes: no `zstd` on PATH, a full disk (the archive needs ~2% of the
-capture beside it), an unreadable capture. `check_compression.py` re-runs
-the sweep offline against seeded captures, including the failure path.
+capture beside it), an unreadable capture. `tests/test_compression.py`
+re-runs the sweep offline against seeded captures, including this path.
 Archive when fixed, like any other rule.
 
 ### Split `match`/`search`, or single-file?
