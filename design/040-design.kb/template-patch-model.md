@@ -12,6 +12,14 @@ text survives upstream reformatting better than line-anchored diffs,
 stays readable as prose, and compiles to a regex only as an
 implementation detail.
 
+There are two hole types and no third: `$NAME` spans the rest of a line,
+`$...LINES` spans a run of non-blank lines. Both stop at structure they
+cannot consume — a line break, a blank line — so the literal on either
+side of a hole is a delimiter that always exists. A hole that could cross
+blank lines has no such bound and is not offered; `load_templates`
+rejects the one that used to be
+(`keying.claims.kb/this-proxy.kb/no-hole-may-cross-a-blank-line.md`).
+
 The `match`/`search` split is what makes earned silence expressible:
 `match` (is this patch applicable to this body at all?) anchors on
 stable structure like section headings; `search` (the precise text to
