@@ -11,7 +11,7 @@ Narrative in `../session.kb/`.
 - [x] <https:todo.kb/2026-08-10-000-Session-specific-guidance-bullets-are-unruled-core-digest-noise.md>
 - [ ] Promote a `long-form` fixture at v2.1.226 — newest promoted is
       `v2.1.223`, and the only 2.1.226 long-form capture
-      (`751d9ae396cb`, haiku) matches no fixture core.
+      (`eabc9284f582`, haiku) matches no fixture core.
 - [x] Decide whether `git-status` should strip a commit-less repo. Yes,
       and the fix was one character: `$LINES` now matches zero or more
       lines. The miss was never in `blocks.d/git-status.md` — its
