@@ -16,6 +16,14 @@ blank line. Both bounds always exist, so the literal on either side of a
 hole is a delimiter that is really there rather than one that is usually
 there.
 
+How many lines a hole may take is a separate question from what stops it,
+and the answer is zero or more: an empty region is a value the region can
+take, and an empty match still cannot cross the blank line. The one thing
+the relaxation costs is that a template of nothing but holes now matches
+the empty string -- every position in every body -- so `template_to_regex`
+requires literal non-whitespace somewhere, which is the same demand as
+"delimiters that are really there".
+
 `$...BLOCK` was the exception, and the only one. It meant "the rest of this
 top-level section" and approximated that as "up to the next `\n# `" -- a
 right-hand delimiter that does not exist when the section is the body's

@@ -20,6 +20,14 @@ blank lines has no such bound and is not offered; `load_templates`
 rejects the one that used to be
 (`keying.claims.kb/this-proxy.kb/no-hole-may-cross-a-blank-line.md`).
 
+Either type may match nothing, because emptiness is a value the region can
+take — a clean status, a repo with no commits — and a hole that cannot
+match it makes its whole template miss on a body that is not actually
+different. Allowing `$...LINES` zero lines does not relax its bound: an
+empty match still cannot cross a blank line. What it does require is that
+every template carry literal non-whitespace somewhere, or it would match
+the empty string at every position; `template_to_regex` asserts that.
+
 The `match`/`search` split is what makes earned silence expressible:
 `match` (is this patch applicable to this body at all?) anchors on
 stable structure like section headings; `search` (the precise text to

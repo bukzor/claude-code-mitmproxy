@@ -41,6 +41,14 @@ sit inside a placeholder. `(1M context)` and the `[1m]` model-ID suffix
 are removed by `model-id.md` only because its placeholders span the whole
 model name and ID.
 
+A `$...LINES` hole matches zero lines as readily as many, and that is the
+behavior a mask wants: a region that is empty this session -- a clean
+status, a repo with no commits -- masks to the placeholder's name in the
+space where nothing was, so "present but empty" and "present with
+content" reach the same masked text. Coarsening like that is always the
+admissible direction here; the failure mode worth fearing is a mask that
+misses and lets volatile text through.
+
 ## Loudness is offline
 
 A mask that stops matching is invisible in production -- the symptom is

@@ -26,8 +26,12 @@ from typing import NamedTuple
 # hole that swallows the rest of the line.
 PLACEHOLDER_RE = re.compile(r"\$([A-Z]+[0-9]*)(?![A-Z0-9_])")
 
-# Pattern for $LINES: one or more non-empty lines (no trailing newline)
-LINES_PATTERN = r"[^\n]+(?:\n[^\n]+)*"
+# Pattern for $LINES: zero or more non-empty lines (no trailing newline).
+# Zero, because an empty region is a value the region can take -- a repo with
+# no commits, a clean status -- and a hole that cannot match it makes its whole
+# template miss. A mask then writes its placeholder in where nothing was, so
+# "present but empty" and "present with content" reach the same canonical form.
+LINES_PATTERN = r"(?:[^\n]+(?:\n[^\n]+)*)?"
 
 # Pattern for other placeholders: rest of line (possibly empty)
 DEFAULT_PATTERN = r"[^\n]*"
@@ -143,7 +147,7 @@ def template_to_regex(template: str) -> re.Pattern[str]:
 
     Same-named placeholders must match the same text (backreference); use
     distinct names for independent matches. The name's suffix (ignoring
-    trailing digits) picks what it matches: LINES is one or more non-empty
+    trailing digits) picks what it matches: LINES is zero or more non-empty
     lines, anything else is the rest of the line. The type is a suffix rather
     than the whole name because a mask's placeholder name is what a reader
     sees in the masked text, so it has to be able to say what was masked.
@@ -167,6 +171,12 @@ def template_to_regex(template: str) -> re.Pattern[str]:
             seen.add(part)
             regex_parts.append(f"(?P<{part}>{placeholder_pattern(part)})")
 
+    # A template of nothing but holes matches the empty string, and every
+    # occurrence of that is every position in the body. Requiring an anchor is
+    # what makes "rewrite every hit" safe. Whitespace does not count: `$FOO\n`
+    # has a literal but still names every line.
+    literals = "".join(parts[::2])
+    assert literals.strip(), (template, "all placeholder: no anchor text")
     return re.compile("".join(regex_parts), re.DOTALL)
 
 
@@ -223,11 +233,6 @@ def load_templates(directory: Path) -> tuple[Template, ...]:
     assert files, (directory, "no templates found")
     templates = tuple(Template(p.stem, p.read_text()) for p in files)
     for template in templates:
-        # A template of nothing but placeholders matches the empty string
-        # everywhere, and every occurrence of that is every position in the
-        # body. Requiring an anchor is what makes "rewrite every hit" safe.
-        literals = "".join(PLACEHOLDER_RE.split(template.template)[::2])
-        assert literals.strip(), (template.name, "all placeholder: no anchor text")
         # $...BLOCK used to mean "the rest of this top-level section", which it
         # approximated as "up to the next `# ` heading" -- a right-hand
         # delimiter that does not exist when the section is last, leaving a
