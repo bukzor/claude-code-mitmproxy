@@ -32,6 +32,7 @@ def apply_patches(
 # --- aggregate strip-rate tripwire ---
 
 KB_DIR = Path(__file__).parent / "system-prompts.kb"
+BLOCKS_DIR = Path(__file__).parent / "blocks.d"
 STRIP_RULE = "_strip-rate"
 
 
@@ -43,15 +44,28 @@ def _fixture_version(path: Path) -> tuple[int, ...]:
 @functools.lru_cache(maxsize=1)
 def strip_floors(patches: tuple[templates.Rule, ...]) -> dict[str, int]:
     """Minimum bytes the patch set must strip from a live body, per prompt
-    shape: half of what it strips from the newest promoted fixture of that
-    shape (newest by version, then size, so a full capture beats a `-scope`
-    partial). Halving absorbs session-optional content a fixture carries
-    but a minimal live session doesn't (gitStatus, additional dirs); an
-    upstream rewrite leaves only the shape-independent patches firing, far
-    below any floor. Cached per patch set -- Rule stores templates as
-    strings, so value-equal loads share one entry; a fixture promoted
-    mid-process is picked up by `touch reload.py`, which rebuilds this
-    module and the cache with it."""
+    shape: half of what it strips from the *core* of the newest promoted
+    fixture of that shape -- the fixture with every session-optional block
+    (`blocks.d/`) deleted, which is the sparsest body that shape can take.
+    Newest by version, then size, so a full capture beats a `-scope`
+    partial.
+
+    Calibrating on the core is what keeps the floor underneath a minimal
+    live session. A fixture carries whatever blocks its capturing session
+    happened to switch on, and those can be most of what the patch set
+    strips: v2.1.227-fable strips 2295 bytes, 1485 of them block-dependent,
+    so the floor it used to imply (1147) sat above the 980 a git-less,
+    scratchpad-less fable session strips -- a tripwire that fires on
+    ordinary traffic, which is the noise `earned-silence` forbids. Halving
+    was meant to absorb that gap and cannot when the gap is over half. With
+    the blocks already gone, halving is headroom for genuine drift instead,
+    and an upstream rewrite still sends every shape-scoped patch dark, far
+    below any floor. `check_strip_floors.py` is the offline detector.
+
+    Cached per patch set -- Rule stores templates as strings, so
+    value-equal loads share one entry; a fixture promoted mid-process is
+    picked up by `touch reload.py`, which rebuilds this module and the
+    cache with it."""
     newest: dict[str, tuple[tuple, str]] = {}
     for path in KB_DIR.glob("v*.md"):
         text = path.read_text()
@@ -62,10 +76,18 @@ def strip_floors(patches: tuple[templates.Rule, ...]) -> dict[str, int]:
         if shape not in newest or key > newest[shape][0]:
             newest[shape] = (key, text)
     assert newest, (KB_DIR, "no classifiable fixtures")
-    return {
-        shape: (len(text) - len(apply_patches(text, patches, capture_dir=None))) // 2
-        for shape, (_, text) in newest.items()
-    }
+    blocks = templates.load_templates(BLOCKS_DIR)
+    floors: dict[str, int] = {}
+    for shape, (_, text) in newest.items():
+        # Masks first: block templates are written against the tokens masks
+        # leave behind (`blocks.d/README.md`).
+        core, _present = templates.strip_blocks(incidents.normalize_body(text), blocks)
+        # `apply_rules`, not `apply_patches`: a core body is synthetic, so a
+        # patch missing it is an artifact of the masking and the cuts, not
+        # evidence about upstream, and warning here would put that artifact
+        # in the log on every reload.
+        floors[shape] = (len(core) - len(templates.apply_rules(core, patches)[0])) // 2
+    return floors
 
 
 def check_strip_floor(

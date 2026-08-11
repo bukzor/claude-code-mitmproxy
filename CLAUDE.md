@@ -51,7 +51,9 @@ Two in-repo rule sets share the patch template language, each with its own
 `README.md`: `masks.d/` neutralizes session-volatile *content* for
 `incidents.masked_hash` (validate with `check_masks.py`; an edit needs no
 follow-up -- nothing stored is named by a masked digest), and `blocks.d/` deletes
-session-optional *blocks* for `survey_captures.py`'s core-digest column only.
+session-optional *blocks* to answer "what would a session that switched nothing
+on have sent?" -- `survey_captures.py`'s core-digest column offline, and the
+live `_strip-rate` floor (validate with `check_strip_floors.py`).
 `check_laws.py` validates the algebra both rest on -- masking idempotent and
 only ever coarsening, block deletions never overlapping.
 
@@ -72,11 +74,14 @@ checkbox to clear):
   offline against seeded captures.
 - Run `check_laws.py` after any `masks.d/` or `blocks.d/` edit; it is the
   only detector for a broken law, which otherwise yields a well-formed
-  digest answering a different question than the one asked.
+  digest answering a different question than the one asked. A `blocks.d/`
+  edit also moves every `_strip-rate` floor, so run `check_strip_floors.py`
+  with it.
 - Run `survey_captures.py` to spot captures whose *core* digest matches no
   promoted fixture; promote the fullest raw per shape (`cp` per
   `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,
-  `check_dark_patches.py`, `check_masks.py`). Promotion has no automatic
+  `check_dark_patches.py`, `check_masks.py`, `check_strip_floors.py`).
+  Promotion has no automatic
   trigger — additive drift is invisible to every loud mechanism until
   someone looks; the `_strip-rate` tripwire only catches
   subtractive/rewrite drift.

@@ -15,6 +15,7 @@ Every non-application is classified; the class decides the band:
 | tool description off-fixture | incident, warn once | the stub may now hide new upstream guidance |
 | no prompt body, recognized shape (aux/subagent) | `debug` log | expected on every Task-tool call |
 | no prompt body, unrecognized shape | incident, warn once | new request shape, or drifted body marker |
+| patched body strips less than its shape's floor | incident, warn once | the one miss no per-patch rule sees: every shape-scoped patch out of scope at once |
 | digest mask matches nothing | silent | masks run over tracebacks and subagent bodies too; finding nothing is the norm |
 
 Shape exemptions are recognized by form (billing header, identity line,
@@ -35,6 +36,14 @@ raw-only check would call it live (e.g. `strip-help-feedback` anchored
 its `match` on the same `# Doing tasks` heading that
 `strip-doing-tasks-bloat` deletes wholesale — always subsumed, fixed
 2026-07-13 by matching its own target text directly).
+
+The floor in that last row needs its own sweep, because a threshold set
+too high is indistinguishable in production from the drift it exists to
+catch. `check_strip_floors.py` asserts that no capture on disk strips
+less than its shape's floor: a floor above ordinary traffic makes every
+sparse session loud, which is precisely the noise `earned-silence`
+forbids. It is calibrated on fixture *cores* for that reason
+(`fixture-lifecycle.md`).
 
 Triage procedure for the loud cases:
 `../../CLAUDE.kb/patch-failure-triage.md`.

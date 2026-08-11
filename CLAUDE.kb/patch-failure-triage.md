@@ -136,19 +136,28 @@ Non-patch rule covering the one failure class per-patch loudness cannot:
 an upstream rewrite that sends every shape-scoped patch silently out of
 scope at once (the 2026-08-04 incident). After patching a main body,
 `check_strip_floor` requires it to have stripped at least its shape's
-floor -- half of what the current patch set strips from the newest
-promoted fixture of that shape (`strip_floors`, computed live, no
-recorded baseline to maintain). Two kinds:
+floor -- half of what the current patch set strips from the *core* of the
+newest promoted fixture of that shape, meaning that fixture with every
+`blocks.d/` block deleted (`strip_floors`, computed live, no recorded
+baseline to maintain). The core is what makes the floor safe: a fixture
+carries whatever blocks its capturing session happened to have, and
+half of a block-rich fixture can exceed what a sparse session strips at
+all -- promoting v2.1.227-fable put the raw-derived floor at 1147 against
+the 980 a git-less session strips. `check_strip_floors.py` is the
+detector; run it whenever you promote a fixture or edit `blocks.d/`.
+Two kinds:
 
 - `unknown-shape-...` -- the body matches no `shapes.py` marker: a new
   prompt shape. Capture it properly (it's already in
   `log/prompt-captures/`), promote a fixture, add patches, and add its
   heading to `SHAPE_MARKERS`.
 - `low-strip-{shape}-{N}B-floor-{M}B` -- known shape, stripped less than
-  half its fixture's expectation: either the shape drifted wholesale
-  under a stable heading (promote + re-patch) or the fixture/patches
-  moved and the floor is stale (`touch reload.py`; floors cache per
-  process).
+  half its fixture core's expectation: the shape drifted wholesale under
+  a stable heading (promote + re-patch), or the fixture/patches moved and
+  the floor is stale (`touch reload.py`; floors cache per process), or
+  `blocks.d/` is missing a rule for a block the fixture carries, which
+  leaves that block in the core and inflates the floor
+  (`check_strip_floors.py` names it).
 
 Triage ends with `archive_incident` like any other rule.
 

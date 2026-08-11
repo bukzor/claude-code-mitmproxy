@@ -4,12 +4,20 @@ One file per block, `<what-it-is>.md`, holding a template in the same
 language as the masks next door (`$PLACEHOLDER` holes in literal prose).
 Every hit is **deleted**, and the block's name is reported as present.
 
-Only `survey_captures.py` reads these. They produce its `core` column -- the
-digest of a body with every block this session happened to switch on removed
--- so two captures share a core digest exactly when they carry the same prompt
-copy, whatever their sessions differed on. The question that answers is "has
-upstream shipped new prompt text?", which is the trigger for promoting a
-fixture (`system-prompts.kb/CLAUDE.md`).
+`survey_captures.py` reads these for its `core` column -- the digest of a body
+with every block this session happened to switch on removed -- so two captures
+share a core digest exactly when they carry the same prompt copy, whatever
+their sessions differed on. The question that answers is "has upstream shipped
+new prompt text?", which is the trigger for promoting a fixture
+(`system-prompts.kb/CLAUDE.md`).
+
+`syspatch.strip_floors` reads them for the same "what would a session that
+switched nothing on have sent?" question, live: the `_strip-rate` floor is half
+of what the patch set strips from a fixture's core, because half of a
+block-rich fixture can be more than a sparse session strips in total. So these
+rules are load-bearing in the proxy, not just offline -- a block rule that
+stops matching inflates its shape's floor and turns ordinary sparse sessions
+into `low-strip` incidents. `check_strip_floors.py` is the detector.
 
 They are never part of `incidents.masked_hash`. Block *presence* is content:
 a capture that carries `# Memory` is a different observation from one that

@@ -31,9 +31,12 @@ masked body hashed again after the session-optional blocks (`blocks.d/`)
 are stripped too. Rows sharing a core are the same prompt modulo which
 blocks that session happened to carry, so only an unseen core is worth
 hand-diffing.
-Stripping blocks is confined to this view and never reaches
-`masked_hash` — see `content-addressed-capture.md` for why block
-presence has to stay in the capture identity. The per-row block flags are
+Stripping blocks never reaches `masked_hash` — see
+`content-addressed-capture.md` for why block presence has to stay in the
+capture identity — but it is not confined to this view: `strip_floors`
+calibrates the `_strip-rate` tripwire on a fixture's core for the same
+reason the survey digests one, so that what a session happened to switch
+on doesn't count as prompt copy. The per-row block flags are
 the names of the rules that fired, so a rule that stops matching drops its
 flag and moves the core digest together. Flags and core digest cannot
 disagree about which rule was there, because no two block rules delete
