@@ -26,6 +26,7 @@ from __future__ import annotations
 import fcntl
 import subprocess
 import sys
+from datetime import date, datetime
 from pathlib import Path
 
 TRAFFIC_DIR = Path(__file__).resolve().parent / "log" / "traffic"
@@ -44,12 +45,20 @@ def human(size: float) -> str:
 
 
 def compressible(traffic_dir: Path) -> list[Path]:
-    """Captures with no archive beside them yet, oldest shard first."""
+    """Finished captures with no archive beside them yet, oldest shard first.
+
+    A shard written today is not finished even when no process holds it: the
+    proxy may be stopped at this instant and appending again in a minute. Its
+    archive would then sit beside a fresh, growing file of the same name, and
+    every later run would skip that name as already done.
+    """
+    today = date.today()
     return sorted(
         path
         for path in traffic_dir.rglob("*")
         if path.suffix in SUFFIXES
         and path.is_file()
+        and datetime.fromtimestamp(path.stat().st_mtime).date() < today
         and not archive_of(path).exists()
     )
 
@@ -105,15 +114,20 @@ def replace_with_archive(capture: Path, level: int) -> tuple[int, int]:
     """Compress capture in place; returns its size before and after.
 
     The original is removed only once its archive has been read back and
-    compared against it in full.
+    compared against it in full. Until then the archive is a .part: a killed
+    run must not leave a truncated .zst, which is indistinguishable from a
+    finished one to the next run and would retire the capture unread.
     """
     before = capture.stat().st_size
     archive = archive_of(capture)
+    partial = archive.with_name(archive.name + ".part")
     subprocess.run(
-        ["zstd", f"-{level}", "-T0", "--long", "-q", "-o", str(archive), str(capture)],
+        # -f to overwrite the .part an earlier interrupted run left behind
+        ["zstd", f"-{level}", "-T0", "--long", "-q", "-f", "-o", str(partial), str(capture)],
         check=True,
     )
-    assert matches_decompressed(archive, capture), (archive, capture)
+    assert matches_decompressed(partial, capture), (partial, capture)
+    partial.replace(archive)
     capture.unlink()
     return before, archive.stat().st_size
 
@@ -123,7 +137,7 @@ def main():
     dry_run = "--dry-run" in sys.argv[1:]
     level = int(args[0]) if args else DEFAULT_LEVEL
 
-    # flow2jsonl.py fires one of these at every day roll, so a hand-run can
+    # flow2jsonl.py fires one of these per shard it opens, so a hand-run can
     # collide with it. Both would write the same .zst, and the round-trip check
     # would then reject an interleaved archive for both -- sparing the
     # originals, but leaving a corrupt .zst that makes every later run skip

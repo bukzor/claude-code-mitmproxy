@@ -64,11 +64,11 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
-- `compress_traffic.py` needs no scheduling: `flow2jsonl.py` spawns it at each
-  day roll, and it skips shards a process still holds open, so running it by
-  hand at any time is safe too. Check `log/compress_traffic.log` if
-  `log/traffic/` starts growing anyway -- that is the only place its failures
-  land.
+- `compress_traffic.py` needs no scheduling: `flow2jsonl.py` spawns it for every
+  shard it opens, so every proxy start sweeps yesterday and earlier. It skips
+  shards a process holds open or wrote today, so running it by hand at any time
+  is safe too. Check `log/compress_traffic.log` if `log/traffic/` starts growing
+  anyway -- that is the only place its failures land.
 - Run `check_laws.py` after any `masks.d/` or `blocks.d/` edit; it is the
   only detector for a broken law, which otherwise yields a well-formed
   digest answering a different question than the one asked.

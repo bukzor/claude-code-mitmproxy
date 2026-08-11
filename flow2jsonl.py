@@ -3,8 +3,8 @@
 `jsonl_path` (default /dev/stdout) is strftime-formatted and reopened when
 the formatted string changes; prefix with "+" for append mode. Mirrors
 mitmproxy's own save_stream_file option -- design/040-design.kb/
-ease-of-operation.kb/ has the why, including why a day roll also spawns
-compress_traffic.py over the shards it just finished.
+ease-of-operation.kb/ has the why, including why opening a shard also spawns
+compress_traffic.py over the shards already finished.
 
     mitmproxy ... -s flow2jsonl.py --set jsonl_path=+traffic/%Y-%m-%d.jsonl
 """
@@ -27,7 +27,7 @@ COMPRESSOR_LOG = Path(__file__).with_name("log") / "compress_traffic.log"
 
 _fp: Optional[IO[str]] = None
 _current_path: Optional[str] = None
-_rolled_over = False
+_compressed_for: Optional[str] = None
 _compressor: Optional[subprocess.Popen] = None
 
 
@@ -44,7 +44,7 @@ def load(loader):
 def _rotate_if_needed():
     """Reopen the output file when today's formatted jsonl_path differs from
     the currently open one."""
-    global _fp, _current_path, _rolled_over
+    global _fp, _current_path
     spec = ctx.options.jsonl_path
     append = spec.startswith("+")
     path = datetime.today().strftime(spec[1:] if append else spec)
@@ -53,7 +53,6 @@ def _rotate_if_needed():
     if _fp is not None:
         _fp.close()
         _fp = None
-        _rolled_over = True  # a finished shard, not a reopen of the live one
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     _fp = open(path, "a" if append else "w", buffering=1)
     _current_path = path
@@ -68,13 +67,12 @@ def done():
 
 
 def _compress_finished_shards():
-    """Spawn compress_traffic.py over every shard nobody holds open.
+    """Spawn compress_traffic.py over every shard that is no longer today's.
 
-    Called at the end of the response hook rather than at the rotation
-    itself, which is what makes yesterday's `.flow` eligible: mitmproxy's
-    Save addon owns that file and rotates it from its own response hook,
-    ahead of this script's. See
-    design/040-design.kb/ease-of-operation.kb/compression-at-rotation.md.
+    Called once per shard this process opens -- including the first one, at
+    startup -- and from the end of the response hook rather than from the
+    open itself. Both choices are load-bearing; see
+    design/040-design.kb/ease-of-operation.kb/compression-at-shard-open.md.
     """
     global _compressor
     if _compressor is not None and _compressor.poll() is None:
@@ -123,12 +121,14 @@ def request(flow: http.HTTPFlow):
 
 
 def response(flow: http.HTTPFlow):
-    global _rolled_over
+    global _compressed_for
     try:
         assert flow.response is not None
         _emit({"phase": "response", "data": flow.response.get_state()})
-        if _rolled_over:
-            _rolled_over = False
+        if _compressed_for != _current_path:
+            # Once per shard opened, so a reopen that self-heals a lost handle
+            # doesn't re-spawn against the same one.
+            _compressed_for = _current_path
             _compress_finished_shards()
     except Exception as exc:
         incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
