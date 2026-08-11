@@ -13,5 +13,20 @@ dependencies = [
 venvPath = "."
 venv = ".venv"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Addon modules are top-level, no src/ layout: `import syspatch`, not a package
+# path. Relative to rootdir, so it holds from any cwd.
+pythonpath = ["."]
+# Everything this repo's tooling writes at runtime lives under the gitignored
+# log/, test scratch included -- and unlike /tmp it survives a reboot, so a
+# failed run is still inspectable tomorrow.
+addopts = "--basetemp=log/pytest"
+
 [tool.uv.sources]
 basedpyright-as-pyright = { path = "../../repo/github.com/bukzor/basedpyright-as-pyright" }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

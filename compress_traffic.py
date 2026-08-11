@@ -158,9 +158,10 @@ def replace_with_archive(capture: Path, level: int) -> tuple[int, int]:
     return before, archive.stat().st_size
 
 
-def main():
-    args = [a for a in sys.argv[1:] if a != "--dry-run"]
-    dry_run = "--dry-run" in sys.argv[1:]
+def main(argv: list[str] | None = None):
+    argv = sys.argv[1:] if argv is None else argv
+    args = [a for a in argv if a != "--dry-run"]
+    dry_run = "--dry-run" in argv
     level = int(args[0]) if args else DEFAULT_LEVEL
 
     # flow2jsonl.py fires one of these per shard it opens, so a hand-run can
