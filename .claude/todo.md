@@ -13,6 +13,30 @@ Narrative in `../session.kb/`.
       capture, unsuffixed, once `masks.d/knowledge-cutoff.md` proved
       haiku and sonnet long-form are the same copy (their v2.1.215 cores
       differed by that one line and nothing else).
+- [x] Split every check into data / rendering / properties, per
+      `verdict.py`: `collect()` gathers, `render()` formats, `PREDICATES`
+      judges. The command prints both halves and exits 2 when a predicate
+      found something; `monitoring/test_checks.py` asserts the same
+      function objects, parametrized over `CHECKS × PREDICATES`, so there
+      is no per-check test file to keep in sync. It paid for itself
+      immediately: `check_dark_patches.py` could finally assert
+      subsumption, which found `strip-help-feedback` matching on the
+      heading `# Doing tasks` that `strip-doing-tasks-bloat` deletes
+      first — dead for as long as both have existed, with its target
+      text SURVIVING into every long-form session. Its `match.md` now
+      names its own target (the idiom `strip-additional-dirs` already
+      used), which is order-independent; the set strips 232 more chars
+      and the long-form floor rose 2435 → 2551.
+- [ ] Move the directly-importable modules to `mitmproxy-pythonpath/`, a
+      plain `sys.path` entry rather than a package. The names stay bare,
+      which is what matters: mitmproxy registers a path-loaded addon as
+      `__mitmproxy_script__.<stem>`, so the addon copy is never the
+      imported copy, and the pairing (mitmproxy re-executes the addon,
+      `reload.py` re-executes the library) only needs every importer to
+      agree on one name per module. Not free: every
+      `Path(__file__).parent / "masks.d"` anchor resolves one level too
+      deep from there, so a `paths.py` holding the repo root lands with
+      the move, and `proxy.sh` grows a `PYTHONPATH`.
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,

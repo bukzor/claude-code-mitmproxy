@@ -1,50 +1,84 @@
 #!/usr/bin/env python3
-"""Verify system prompt patches apply cleanly against a captured system.md."""
+"""Whether the system-prompt patch set still lands on the current prompt.
+
+A `failed-to-match` miss is the loud path's own definition of drift: the rule's
+`match` proved it is in scope and then its `search` target had vanished. The
+live proxy files an incident for exactly this, once, on the machine that pays
+for it. Checking here catches it on the machine that promoted the fixture
+instead -- run it after promoting one, or after editing a patch.
+
+The newest full fixture only, deliberately: an older one predates every
+upstream removal, so sunset rules still match it and report a miss that means
+nothing (see `corpus.latest_fixture`).
+
+To read the patched prompt itself rather than its measurements, that is
+`render_patched.py`.
+
+Usage: check_patches.py [--data-only]
+
+Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+"""
+
 from __future__ import annotations
 
-import re
-import sys
 from pathlib import Path
+from typing import NamedTuple
 
+import corpus
 import syspatch
 import templates
-
-DEFAULT_PATCHES_DIR = Path("~/.claude/system-prompt-patches.d").expanduser()
-KB_DIR = Path("system-prompts.kb")
-
-# Full-body capture name; -scope partials (e.g. v2.1.128-doing-tasks.md) excluded.
-CAPTURE_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)\.md$")
+import verdict
 
 
-def latest_capture(kb_dir: Path) -> Path:
-    """Highest-versioned full capture in kb_dir. Validating against the current
-    prompt keeps upstream-removed assertions silent; older captures still trip
-    them (their text predates removal), so default to the newest."""
-    versioned = [
-        (tuple(int(g) for g in m.groups()), p)
-        for p in kb_dir.iterdir()
-        if (m := CAPTURE_RE.match(p.name))
-    ]
-    assert versioned, ("no vMAJOR.MINOR.PATCH.md captures in", kb_dir)
-    return max(versioned)[1]
+class Patched(NamedTuple):
+    source: Path
+    original: int  # chars upstream sends
+    patched: int  # chars the session receives
+    misses: tuple[templates.Miss, ...]
 
 
-def main():
-    system_file = Path(sys.argv[1]) if len(sys.argv) > 1 else latest_capture(KB_DIR)
-    patches_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_PATCHES_DIR
+def collect() -> Patched:
+    source = corpus.latest_fixture()
+    text = source.read_text()
+    patches = templates.load_rules(syspatch.PATCHES_DIR)
+    # `apply_rules`, not `syspatch.apply_patches`: measuring is not triaging,
+    # and a miss provoked here must not file an incident for someone to
+    # discover as if a session had hit it.
+    patched, misses = templates.apply_rules(text, patches)
+    return Patched(source, len(text), len(patched), tuple(misses))
 
-    assert system_file.exists(), system_file
-    text = system_file.read_text()
-    patches = templates.load_rules(patches_dir)
-    result = syspatch.apply_patches(text, patches, capture_dir=None)
 
-    delta = len(result) - len(text)
-    print(f"original: {len(text)} chars", file=sys.stderr)
-    print(f"patched:  {len(result)} chars", file=sys.stderr)
-    print(f"delta:    {delta:+d} chars", file=sys.stderr)
+def render(patched: Patched) -> str:
+    return (
+        f"{patched.source.stem}: {patched.original} -> {patched.patched} chars"
+        f" ({patched.patched - patched.original:+d})\n"
+    )
 
-    sys.stdout.write(result)
+
+def patches_that_miss(patched: Patched) -> list[str]:
+    """patch rules that proved themselves in scope and then found nothing to
+    replace. This is drift: the rule still recognizes the prompt, so it is
+    aimed at the right session, but the text it was written against is gone.
+    Every session gets the unpatched prompt until someone rewrites the rule."""
+    return [f"{miss.rule}: {miss.kind}" for miss in patched.misses]
+
+
+def net_growth(patched: Patched) -> list[str]:
+    """the net size change, when the patch set fails to shorten the prompt.
+    Subtraction is the whole point of the patch set, so a run that nets out
+    longer means a replacement grew past what it replaced -- worth a look even
+    when every rule still matches, since nothing else measures it."""
+    if patched.patched < patched.original:
+        return []
+    return [f"{patched.original} -> {patched.patched} chars"]
+
+
+PREDICATES = (patches_that_miss, net_growth)
+
+
+def main(argv: list[str] | None = None) -> int:
+    return verdict.run(collect, render, PREDICATES, argv)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -32,28 +32,53 @@ can run for weeks without restarting.
 | `thinkpatch.py` | Restores summarized thinking on Opus 4.7+: strips the `redact-thinking-*` beta header **and** sets `thinking.display=summarized` (both required — see `CLAUDE.kb/thinking-display.md`). |
 | `flow2jsonl.py` | Streams every request/response as one JSONL line each. |
 
+## Checks
+
+Each prints its data, then a verdict block naming every property it checked,
+and exits **2** when one found something — so `if check_masks.py; then` reads
+correctly in a shell. `--data-only` prints the data alone and always exits 0,
+for diffing one run's table against another's. `pytest monitoring/` asserts the
+same property functions, isolated one per test. The shared normal form —
+`collect` / `render` / `PREDICATES` — is `verdict.py`; each is also installed as
+`claude-mitmproxy-check-*`.
+
+- `check_patches.py` — the live patch set against the newest full fixture:
+  no rule proved itself in scope and then failed to find its target, and the
+  set still nets out shorter.
+- `check_tool_patches.py` — same for tool-description patches, against each
+  patch's own recorded upstreams.
+- `check_dark_patches.py` — per-patch match matrix across all fixtures; run
+  after promoting one to spot patches gone silently dark (match misses are
+  silent by design). Asserts subsumption: no patch is left dead because an
+  earlier one in load order already consumed the span its match names.
+  `--pattern TEXT` instead asks which fixtures carry TEXT and whether the
+  pipeline already strips it.
+- `check_masks.py` — `masks.d/`: every mask is exercised by some fixture, and
+  no two fixtures collapse to one digest. Mask misses are silent in
+  production, so this is the only thing standing between a typo and every
+  session minting a fresh digest.
+- `check_laws.py` — the algebra the capture keys rest on, over every body on
+  disk: masking is idempotent, adding a mask only ever merges classes, and no
+  two block rules delete overlapping bytes.
+- `check_strip_floors.py` — no capture strips less than its shape's
+  `_strip-rate` floor, which would make every session like it file a bogus
+  `low-strip` incident.
+
 ## Tooling
 
-- `check_patches.py` — offline validation: applies the live patch set to a
-  captured prompt body (default: newest full capture in `system-prompts.kb/`)
-  and prints the patched result plus size stats to stderr. Expect zero
-  warnings against the newest capture.
-- `check_tool_patches.py` — same for tool-description patches, against each
-  patch's own `upstream.md`.
-- `check_dark_patches.py` — per-patch match matrix across all kb captures;
-  run after promoting a new capture to spot patches gone silently dark
-  (match misses are silent by design). `--pattern TEXT` instead asks which
-  fixtures carry TEXT and whether the pipeline already strips it.
+- `render_patched.py` — a captured prompt as the live patch set would rewrite
+  it: patched text to stdout, sizes to stderr, so `> patched.md` is the file.
+  The eyeball half of what `check_patches.py` measures.
 - `survey_captures.py` — inventory of `log/prompt-captures/`: shape,
   optional blocks, and promoted-yet per capture; the "someone looks" step
   of the standing promotion duty. Its `core` column is the digest with
   session-optional blocks stripped too, so an unseen core -- and only an
   unseen core -- means upstream shipped new prompt copy.
-- `check_masks.py` -- offline validation of `masks.d/`: every mask is
-  exercised by some fixture, masking is idempotent, and no two fixtures
-  collapse to one digest. Mask misses are silent in production, so this is
-  the only thing standing between a typo and every session minting a fresh
-  digest.
+- `dump_core.py` — that same core, as text, for diffing two captures whose
+  cores unexpectedly do (or don't) agree.
+- `diff_matrices.py` — two saved `check_dark_patches.py` tables, reporting
+  only the cells that changed; rows and columns that came or went are listed
+  as unshared rather than diffed.
 - `flow2jsonl.sh` — replay a `.flow` file through the JSONL addon.
 - `jsonl2sysprompt.sh` — extract the system-prompt body from a jsonl
   capture (`log/traffic/*.jsonl`). The live proxy records requests

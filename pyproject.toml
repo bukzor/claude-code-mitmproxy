@@ -1,5 +1,5 @@
 [project]
-name = "cc-mitm"
+name = "claude-mitmproxy"
 version = "0.1.0"
 description = "Reverse-proxy that records and rewrites Claude Code traffic"
 readme = "README.md"
@@ -9,12 +9,57 @@ dependencies = [
     "mitmproxy>=12.2.3",
 ]
 
+[project.scripts]
+# One command per check, printing its data and then its verdict, exiting 2 when
+# a predicate found something -- so `if claude-mitmproxy-check-masks; then`
+# reads correctly in a shell. `monitoring/` asserts the same PREDICATES; see
+# verdict.py for the normal form both halves share.
+claude-mitmproxy-check-masks = "check_masks:main"
+claude-mitmproxy-check-laws = "check_laws:main"
+claude-mitmproxy-check-patches = "check_patches:main"
+claude-mitmproxy-check-dark-patches = "check_dark_patches:main"
+claude-mitmproxy-check-strip-floors = "check_strip_floors:main"
+claude-mitmproxy-check-tool-patches = "check_tool_patches:main"
+
+# Tools, not checks: they answer a question rather than pass or fail, so they
+# have no predicates and nothing to exit 2 about.
+claude-mitmproxy-render-patched = "render_patched:main"
+claude-mitmproxy-dump-core = "dump_core:main"
+claude-mitmproxy-diff-matrices = "diff_matrices:main"
+claude-mitmproxy-survey-captures = "survey_captures:main"
+claude-mitmproxy-compress-traffic = "compress_traffic:main"
+claude-mitmproxy-gc-patch-failures = "gc_patch_failures:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Flat layout: top-level modules, `import syspatch`, no package. mitmproxy
+# loads each addon by path and registers it as `__mitmproxy_script__.<stem>`,
+# so the addon copy is never the imported copy -- mitmproxy re-executes the
+# addon one on mtime change, reload.py re-executes the library one. That
+# pairing needs every importer to agree on one name per module; it does not
+# need the name to be top-level, so moving these under a directory on
+# PYTHONPATH stays open (see .claude/todo.md).
+# Leading slash anchors to the repo root (gitignore semantics): the suites in
+# tests/ and monitoring/ are not shipped, and would collide on those names if
+# they were.
+include = ["/*.py"]
+
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+# Bare `pyright` is the whole-project command, so anything it reports has to be
+# worth acting on. trash/ is throwaway by definition -- abandoned scripts written
+# against APIs that have since moved -- and log/ is runtime output.
+exclude = ["**/node_modules", "**/__pycache__", "**/.*", "trash", "log"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# Two suites, both run by a bare `pytest`: tests/ checks the machinery against
+# fixtures it builds itself, monitoring/ checks the real data on disk. A red
+# monitoring/ is triage, not a broken build -- see monitoring/CLAUDE.md.
+testpaths = ["tests", "monitoring"]
 # Addon modules are top-level, no src/ layout: `import syspatch`, not a package
 # path. Relative to rootdir, so it holds from any cwd.
 pythonpath = ["."]

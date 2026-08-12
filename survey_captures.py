@@ -17,11 +17,11 @@ from typing import NamedTuple
 
 import incidents
 import shapes
+import syspatch
 import templates
 
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")
-BLOCKS_DIR = Path(__file__).parent / "blocks.d"
 
 
 class Capture(NamedTuple):
@@ -74,7 +74,7 @@ def main() -> None:
         if p.suffix == ".md" and p.name != "CLAUDE.md"
     }
 
-    blocks = templates.load_templates(BLOCKS_DIR)
+    blocks = templates.load_templates(syspatch.BLOCKS_DIR)
 
     header = (
         "version", "model", "raw", "core", "bytes", "shape", "promoted", "blocks"
