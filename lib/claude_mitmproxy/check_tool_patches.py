@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-import toolpatch
-import verdict
+from claude_mitmproxy import toolpatch
+from claude_mitmproxy import verdict
 
 
 class Rewrite(NamedTuple):

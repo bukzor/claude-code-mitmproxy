@@ -17,11 +17,11 @@ from __future__ import annotations
 import itertools
 from typing import NamedTuple
 
-import corpus
-import incidents
-import syspatch
-import templates
-import verdict
+from claude_mitmproxy import corpus
+from claude_mitmproxy import incidents
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
+from claude_mitmproxy import verdict
 
 
 class Corpus(NamedTuple):

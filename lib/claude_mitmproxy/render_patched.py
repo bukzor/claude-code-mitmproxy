@@ -16,9 +16,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import corpus
-import syspatch
-import templates
+from claude_mitmproxy import corpus
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -27,16 +27,20 @@ Narrative in `../session.kb/`.
       names its own target (the idiom `strip-additional-dirs` already
       used), which is order-independent; the set strips 232 more chars
       and the long-form floor rose 2435 → 2551.
-- [ ] Move the directly-importable modules to `mitmproxy-pythonpath/`, a
-      plain `sys.path` entry rather than a package. The names stay bare,
-      which is what matters: mitmproxy registers a path-loaded addon as
+- [x] Move the directly-importable modules out of the repo root — into a
+      real package, `lib/claude_mitmproxy/`, rather than the bare
+      `sys.path` entry first sketched here. Bareness bought nothing:
+      mitmproxy registers a path-loaded addon as
       `__mitmproxy_script__.<stem>`, so the addon copy is never the
-      imported copy, and the pairing (mitmproxy re-executes the addon,
-      `reload.py` re-executes the library) only needs every importer to
-      agree on one name per module. Not free: every
-      `Path(__file__).parent / "masks.d"` anchor resolves one level too
-      deep from there, so a `paths.py` holding the repo root lands with
-      the move, and `proxy.sh` grows a `PYTHONPATH`.
+      imported copy whatever the layout, and the pairing (mitmproxy
+      re-executes the addon, `reload.py` re-executes the library) only
+      needs every importer to agree on one name. A package makes that
+      name unambiguous and gives the console scripts a real target.
+      `paths.py` holds `ROOT`/`LOG`, replacing nine `__file__` anchors
+      that would each have needed re-counting; `proxy.sh` and
+      `flow2jsonl.sh` export `PYTHONPATH=lib`, which the compressor
+      subprocess inherits (now spawned `-m
+      claude_mitmproxy.compress_traffic`).
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,

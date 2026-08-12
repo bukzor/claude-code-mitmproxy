@@ -17,10 +17,10 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-import corpus
-import incidents
-import templates
-import verdict
+from claude_mitmproxy import corpus
+from claude_mitmproxy import incidents
+from claude_mitmproxy import templates
+from claude_mitmproxy import verdict
 
 
 class MaskRow(NamedTuple):

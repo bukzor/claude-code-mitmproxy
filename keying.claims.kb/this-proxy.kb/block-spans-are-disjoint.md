@@ -1,7 +1,7 @@
 ---
 label: DISJOINT
 standing: bare
-verify: python3 check_laws.py
+verify: .venv/bin/claude-mitmproxy-check-laws
 why:
     - no-hole-may-cross-a-blank-line.md
     - ../quotient.kb/order-independence-is-a-separate-property.md

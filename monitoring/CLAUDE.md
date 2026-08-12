@@ -1,7 +1,7 @@
 # monitoring/ — the checks, as a suite
 
-Every property in a root `check_*.py` module, asserted against the real data on
-disk: masks, promoted fixtures, captures, patch rules. One command, each
+Every property in a `claude_mitmproxy.check_*` module, asserted against the real
+data on disk: masks, promoted fixtures, captures, patch rules. One command, each
 property isolated, so one failure no longer hides the rest.
 
 **A failure here is triage, not a broken build.** These read data that changes

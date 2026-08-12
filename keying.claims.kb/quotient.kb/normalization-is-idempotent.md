@@ -1,7 +1,7 @@
 ---
 label: IDEMPOTENT
 standing: bare
-verify: python3 check_laws.py
+verify: .venv/bin/claude-mitmproxy-check-laws
 ---
 
 # Normalizing a Normal Form Is a No-Op

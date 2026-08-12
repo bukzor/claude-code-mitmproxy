@@ -19,11 +19,12 @@ from typing import IO, Optional
 
 from mitmproxy import ctx, http
 
-import incidents
+from claude_mitmproxy import incidents
+from claude_mitmproxy import paths
 
 UNCAUGHT_RULE = "_uncaught-flow2jsonl"
-COMPRESSOR = Path(__file__).with_name("compress_traffic.py")
-COMPRESSOR_LOG = Path(__file__).with_name("log") / "compress_traffic.log"
+COMPRESSOR = "claude_mitmproxy.compress_traffic"
+COMPRESSOR_LOG = paths.LOG / "compress_traffic.log"
 
 _fp: Optional[IO[str]] = None
 _current_path: Optional[str] = None
@@ -82,7 +83,7 @@ def _compress_finished_shards():
         log.write(f"--- {datetime.today():%Y-%m-%d %H:%M:%S}\n")
         log.flush()
         _compressor = subprocess.Popen(
-            [sys.executable, str(COMPRESSOR)],
+            [sys.executable, "-m", COMPRESSOR],
             stdin=subprocess.DEVNULL,
             stdout=log,
             stderr=subprocess.STDOUT,

@@ -7,9 +7,10 @@ import json
 import logging
 from pathlib import Path
 
-import incidents
-import shapes
-import templates
+from claude_mitmproxy import incidents
+from claude_mitmproxy import paths
+from claude_mitmproxy import shapes
+from claude_mitmproxy import templates
 
 
 def apply_patches(
@@ -31,8 +32,8 @@ def apply_patches(
 
 # --- aggregate strip-rate tripwire ---
 
-KB_DIR = Path(__file__).parent / "system-prompts.kb"
-BLOCKS_DIR = Path(__file__).parent / "blocks.d"
+KB_DIR = paths.ROOT / "system-prompts.kb"
+BLOCKS_DIR = paths.ROOT / "blocks.d"
 STRIP_RULE = "_strip-rate"
 
 

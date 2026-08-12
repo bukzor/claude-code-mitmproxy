@@ -22,10 +22,10 @@ import logging
 import re
 from pathlib import Path
 
-import incidents
-import shapes
-import syspatch
-import templates
+from claude_mitmproxy import incidents
+from claude_mitmproxy import shapes
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
 
 # Dependency order: reloading a module re-executes its own imports, so it has
 # to see already-reloaded versions of what it builds on.
@@ -37,13 +37,15 @@ LOCAL_FROM_IMPORT = re.compile(
 
 
 def check_no_local_from_imports() -> None:
-    """Refuse to reload while any module here does `from x import y` on a local
-    module. A from-import copies the reference, so the importer keeps the old
-    function object forever, and reloading quietly updates everyone except it.
-    `import x` with `x.y()` at the call site resolves through the module object
-    `importlib.reload` mutates in place, so one reload reaches every holder --
-    but only while the convention holds everywhere, which is why it is checked
-    rather than documented."""
+    """Refuse to reload while any module here reaches *into* a reloaded module:
+    `from claude_mitmproxy.templates import compile`. That copies the
+    reference, so the importer keeps the old function object forever, and
+    reloading quietly updates everyone except it. Naming the module instead --
+    `from claude_mitmproxy import templates`, `templates.compile()` at the call
+    site -- resolves through the module object `importlib.reload` mutates in
+    place, so one reload reaches every holder. Both spellings start `from`,
+    which is why this matches the dotted path rather than the keyword, and why
+    it is checked rather than documented."""
     offenders = [
         f"{path.name}:{line}"
         for path in sorted(Path(__file__).parent.glob("*.py"))

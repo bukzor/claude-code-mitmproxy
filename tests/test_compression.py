@@ -24,7 +24,7 @@ from typing import NamedTuple
 
 import pytest
 
-import compress_traffic
+from claude_mitmproxy import compress_traffic
 
 LINE = '{"phase":"request","data":{"headers":[["host","api.anthropic.com"]]}}\n'
 BODY = LINE * 20000

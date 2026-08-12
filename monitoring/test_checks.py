@@ -20,16 +20,16 @@ from typing import Any, Callable
 
 import pytest
 
-import check_dark_patches
-import check_laws
-import check_masks
-import check_patches
-import check_strip_floors
-import check_tool_patches
-import syscapture
-import syspatch
-import toolpatch
-import verdict
+from claude_mitmproxy import check_dark_patches
+from claude_mitmproxy import check_laws
+from claude_mitmproxy import check_masks
+from claude_mitmproxy import check_patches
+from claude_mitmproxy import check_strip_floors
+from claude_mitmproxy import check_tool_patches
+from claude_mitmproxy import syscapture
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import toolpatch
+from claude_mitmproxy import verdict
 
 CHECKS = (
     check_masks,

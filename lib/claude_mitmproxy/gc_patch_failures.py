@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-import incidents
+from claude_mitmproxy import incidents
 
 DEFAULT_RETENTION_DAYS = 30
 

@@ -5,12 +5,13 @@ itself. Run with `.venv/bin/pytest` — plain, not `uv run`, which re-syncs
 `.venv` while the live proxy is running out of it.
 
 Does not belong: validation of the real data on disk — captures, masks, patch
-templates, the strip floors. Those are the root `check_*.py` scripts, run by
-hand against whatever is actually there, with no fixed expected output. Test
-the machinery here; check the data there.
+templates, the strip floors. Those are the `check_*.py` modules, run by hand
+against whatever is actually there, with no fixed expected output. Test the
+machinery here; check the data there.
 
-Addon modules import top-level (`pythonpath = ["."]`), the same `import x`
-form `reload.py` requires of the addons themselves.
+Import the package, not its contents (`from claude_mitmproxy import
+syspatch`) — the form `reload.py` requires of the addons themselves.
+`pythonpath = ["lib"]` is what makes it resolve without an install.
 
 A test that provokes a failure in code that reports incidents must set that
 module's `CAPTURE_DIR` to None, or it files a real incident for someone to

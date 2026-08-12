@@ -14,38 +14,33 @@ dependencies = [
 # a predicate found something -- so `if claude-mitmproxy-check-masks; then`
 # reads correctly in a shell. `monitoring/` asserts the same PREDICATES; see
 # verdict.py for the normal form both halves share.
-claude-mitmproxy-check-masks = "check_masks:main"
-claude-mitmproxy-check-laws = "check_laws:main"
-claude-mitmproxy-check-patches = "check_patches:main"
-claude-mitmproxy-check-dark-patches = "check_dark_patches:main"
-claude-mitmproxy-check-strip-floors = "check_strip_floors:main"
-claude-mitmproxy-check-tool-patches = "check_tool_patches:main"
+claude-mitmproxy-check-masks = "claude_mitmproxy.check_masks:main"
+claude-mitmproxy-check-laws = "claude_mitmproxy.check_laws:main"
+claude-mitmproxy-check-patches = "claude_mitmproxy.check_patches:main"
+claude-mitmproxy-check-dark-patches = "claude_mitmproxy.check_dark_patches:main"
+claude-mitmproxy-check-strip-floors = "claude_mitmproxy.check_strip_floors:main"
+claude-mitmproxy-check-tool-patches = "claude_mitmproxy.check_tool_patches:main"
 
 # Tools, not checks: they answer a question rather than pass or fail, so they
 # have no predicates and nothing to exit 2 about.
-claude-mitmproxy-render-patched = "render_patched:main"
-claude-mitmproxy-dump-core = "dump_core:main"
-claude-mitmproxy-diff-matrices = "diff_matrices:main"
-claude-mitmproxy-survey-captures = "survey_captures:main"
-claude-mitmproxy-compress-traffic = "compress_traffic:main"
-claude-mitmproxy-gc-patch-failures = "gc_patch_failures:main"
+claude-mitmproxy-render-patched = "claude_mitmproxy.render_patched:main"
+claude-mitmproxy-dump-core = "claude_mitmproxy.dump_core:main"
+claude-mitmproxy-diff-matrices = "claude_mitmproxy.diff_matrices:main"
+claude-mitmproxy-survey-captures = "claude_mitmproxy.survey_captures:main"
+claude-mitmproxy-compress-traffic = "claude_mitmproxy.compress_traffic:main"
+claude-mitmproxy-gc-patch-failures = "claude_mitmproxy.gc_patch_failures:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-# Flat layout: top-level modules, `import syspatch`, no package. mitmproxy
-# loads each addon by path and registers it as `__mitmproxy_script__.<stem>`,
-# so the addon copy is never the imported copy -- mitmproxy re-executes the
-# addon one on mtime change, reload.py re-executes the library one. That
-# pairing needs every importer to agree on one name per module; it does not
-# need the name to be top-level, so moving these under a directory on
-# PYTHONPATH stays open (see .claude/todo.md).
-# Leading slash anchors to the repo root (gitignore semantics): the suites in
-# tests/ and monitoring/ are not shipped, and would collide on those names if
-# they were.
-include = ["/*.py"]
+# One package, one name per module. mitmproxy loads each addon by path and
+# registers it as `__mitmproxy_script__.<stem>`, so the addon copy is never the
+# imported copy -- mitmproxy re-executes the addon one on mtime change,
+# reload.py re-executes the library one. That pairing needs every *importer* to
+# agree on one name per module, which package-qualifying does not disturb.
+packages = ["lib/claude_mitmproxy"]
 
 [tool.pyright]
 venvPath = "."
@@ -60,9 +55,9 @@ exclude = ["**/node_modules", "**/__pycache__", "**/.*", "trash", "log"]
 # fixtures it builds itself, monitoring/ checks the real data on disk. A red
 # monitoring/ is triage, not a broken build -- see monitoring/CLAUDE.md.
 testpaths = ["tests", "monitoring"]
-# Addon modules are top-level, no src/ layout: `import syspatch`, not a package
-# path. Relative to rootdir, so it holds from any cwd.
-pythonpath = ["."]
+# The package lives under lib/, so lib/ is what goes on sys.path -- the same
+# entry proxy.sh exports. Relative to rootdir, so it holds from any cwd.
+pythonpath = ["lib"]
 # Everything this repo's tooling writes at runtime lives under the gitignored
 # log/, test scratch included -- and unlike /tmp it survives a reboot, so a
 # failed run is still inspectable tomorrow.

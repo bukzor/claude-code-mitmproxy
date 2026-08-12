@@ -10,7 +10,10 @@ onerror() {
 trap onerror ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ADDON="${SCRIPT_DIR}/flow2jsonl.py"
+ADDON="${SCRIPT_DIR}/lib/claude_mitmproxy/flow2jsonl.py"
+# The addon imports the package; mitmproxy only puts the addon's own directory
+# on sys.path (see proxy.sh).
+export PYTHONPATH="${SCRIPT_DIR}/lib${PYTHONPATH:+:${PYTHONPATH}}"
 
 if (( DEBUG > 0 )); then
   set -x

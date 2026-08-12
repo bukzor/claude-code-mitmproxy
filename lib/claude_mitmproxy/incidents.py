@@ -18,18 +18,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
-import templates
+from claude_mitmproxy import paths
+from claude_mitmproxy import templates
 
 # Gitignored; callers pass capture_dir=None to disable capture entirely
 # (offline callers like check_patches only want an in-process warning).
-CAPTURE_DIR = Path(__file__).parent / "log" / "patch-failures"
+CAPTURE_DIR = paths.LOG / "patch-failures"
 BODIES_DIRNAME = "_bodies"
 ARCHIVE_DIRNAME = "_archive"
 
 # In-repo, unlike the patches under ~/.claude: patches are one operator's
 # preferences, but masks define the capture system's identity function, and a
 # digest that varied with per-machine state wouldn't be content-addressed.
-MASKS_DIR = Path(__file__).parent / "masks.d"
+MASKS_DIR = paths.ROOT / "masks.d"
 
 
 class Incident(NamedTuple):

@@ -11,8 +11,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import syscapture
-import syspatch
+from claude_mitmproxy import syscapture
+from claude_mitmproxy import syspatch
 
 # Full-body fixture name; -scope partials (e.g. v2.1.128-doing-tasks.md) excluded.
 FIXTURE_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)\.md$")

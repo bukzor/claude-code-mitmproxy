@@ -31,10 +31,10 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-import corpus
-import syspatch
-import templates
-import verdict
+from claude_mitmproxy import corpus
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
+from claude_mitmproxy import verdict
 
 # The cell vocabulary, in the order a reader should worry about them.
 MISS = "-"

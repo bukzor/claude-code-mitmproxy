@@ -30,11 +30,12 @@ import logging
 import re
 from pathlib import Path
 
-import incidents
-import syspatch
-import templates
+from claude_mitmproxy import incidents
+from claude_mitmproxy import paths
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
 
-PROMPTS_DIR = Path(__file__).parent / "log" / "prompt-captures"
+PROMPTS_DIR = paths.LOG / "prompt-captures"
 UNCAUGHT_RULE = "_uncaught-syscapture"
 
 # cc_version rides in the billing-header block, not the prompt body itself.

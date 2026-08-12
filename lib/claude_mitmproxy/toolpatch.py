@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import Mapping, NamedTuple
 
-import incidents
+from claude_mitmproxy import incidents
 
 PATCHES_DIR = Path("~/.claude/tool-description-patches.d").expanduser()
 

@@ -10,6 +10,12 @@ onerror() {
 trap onerror ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ADDON_DIR="${SCRIPT_DIR}/lib/claude_mitmproxy"
+# The addons import each other by package name. mitmproxy path-loads each one
+# as `__mitmproxy_script__.<stem>` and puts only that file's own directory on
+# sys.path, so the package has to be findable independently -- and by the same
+# name in the compressor subprocess flow2jsonl spawns, which inherits this env.
+export PYTHONPATH="${SCRIPT_DIR}/lib${PYTHONPATH:+:${PYTHONPATH}}"
 PORT="${1:-8080}"
 # strftime path, append mode: shards by day, survives restarts -- see
 # design/040-design.kb/ease-of-operation.kb/.
@@ -24,10 +30,10 @@ mitmproxy \
   --mode "reverse:https://api.anthropic.com" \
   --listen-port "$PORT" \
   -w "$FLOW_FILE" \
-  -s "${SCRIPT_DIR}/reload.py" \
-  -s "${SCRIPT_DIR}/syscapture.py" \
-  -s "${SCRIPT_DIR}/syspatch.py" \
-  -s "${SCRIPT_DIR}/toolpatch.py" \
-  -s "${SCRIPT_DIR}/thinkpatch.py" \
-  -s "${SCRIPT_DIR}/flow2jsonl.py" \
+  -s "${ADDON_DIR}/reload.py" \
+  -s "${ADDON_DIR}/syscapture.py" \
+  -s "${ADDON_DIR}/syspatch.py" \
+  -s "${ADDON_DIR}/toolpatch.py" \
+  -s "${ADDON_DIR}/thinkpatch.py" \
+  -s "${ADDON_DIR}/flow2jsonl.py" \
   --set "jsonl_path=${JSONL_FILE}"

@@ -14,12 +14,16 @@ Claude Code traffic. Entry point: `proxy.sh`. Patches the system prompt
 pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
 (`flow2jsonl.py`).
 
+All the Python is one package, `lib/claude_mitmproxy/`; the repo root holds
+only the shell entry points and the rule/knowledge directories.
+
 Code and config both go live without a restart: mitmproxy re-executes an
 edited `-s` addon on its own, and `touch reload.py` re-executes the shared
-modules those addons import. That is why every local import in this repo is
-`import x`, never `from x import y` -- `reload.py` asserts it, and
-`CLAUDE.kb/reloading-a-live-proxy.md` explains why a from-import would
-silently stop reloading.
+modules those addons import. That is why every local import in this repo
+names a module -- `from claude_mitmproxy import syspatch`, never
+`from claude_mitmproxy.syspatch import apply_patches`. `reload.py` asserts
+it, and `CLAUDE.kb/reloading-a-live-proxy.md` explains why importing the
+contents would silently stop reloading.
 
 ## Generated output
 

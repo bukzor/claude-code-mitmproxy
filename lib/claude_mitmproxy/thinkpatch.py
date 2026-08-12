@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 
-import incidents
+from claude_mitmproxy import incidents
 
 REDACT_BETA = "redact-thinking-2026-02-12"
 UNCAUGHT_RULE = "_uncaught-thinkpatch"

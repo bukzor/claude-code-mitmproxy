@@ -15,10 +15,10 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-import incidents
-import shapes
-import syspatch
-import templates
+from claude_mitmproxy import incidents
+from claude_mitmproxy import shapes
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
 
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")

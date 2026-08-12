@@ -13,9 +13,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import incidents
-import syspatch
-import templates
+from claude_mitmproxy import incidents
+from claude_mitmproxy import syspatch
+from claude_mitmproxy import templates
 
 
 def main(argv: list[str] | None = None) -> int:

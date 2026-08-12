@@ -1,7 +1,7 @@
 ---
 label: COARSEN
 standing: bare
-verify: python3 check_laws.py
+verify: .venv/bin/claude-mitmproxy-check-laws
 why:
     - the-equivalence-is-the-kernel.md
 ---

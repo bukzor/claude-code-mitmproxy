@@ -35,12 +35,13 @@ can run for weeks without restarting.
 ## Checks
 
 Each prints its data, then a verdict block naming every property it checked,
-and exits **2** when one found something — so `if check_masks.py; then` reads
-correctly in a shell. `--data-only` prints the data alone and always exits 0,
-for diffing one run's table against another's. `pytest monitoring/` asserts the
-same property functions, isolated one per test. The shared normal form —
-`collect` / `render` / `PREDICATES` — is `verdict.py`; each is also installed as
-`claude-mitmproxy-check-*`.
+and exits **2** when one found something — so `if claude-mitmproxy-check-masks;
+then` reads correctly in a shell. `--data-only` prints the data alone and always
+exits 0, for diffing one run's table against another's. `pytest monitoring/`
+asserts the same property functions, isolated one per test. The shared normal
+form — `collect` / `render` / `PREDICATES` — is `verdict.py`. Every module named
+below lives in `lib/claude_mitmproxy/` and is installed as a
+`claude-mitmproxy-*` command.
 
 - `check_patches.py` — the live patch set against the newest full fixture:
   no rule proved itself in scope and then failed to find its target, and the
