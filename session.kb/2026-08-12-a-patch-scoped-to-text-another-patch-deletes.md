@@ -49,7 +49,7 @@ match-only idiom `strip-additional-dirs` and `strip-security-bloat` already
 use. A rule that matches on what it deletes cannot be scoped out by whatever
 ran before it; the order-dependence was the defect, not the ordering.
 
-The patch set strips 232 more chars, and `syspatch.strip_floors` recalibrated
+The patch set strips 232 more chars, and `prompt_patches.strip_floors` recalibrated
 the long-form floor 2435 → 2551 with every capture still clearing it.
 
 Sunset rows are exempt from the predicate: an upstream-removed rule asserts

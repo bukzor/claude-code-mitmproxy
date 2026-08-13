@@ -1,20 +1,20 @@
-"""Replace built-in tool descriptions with slim stubs via mitmproxy.
+"""Replace built-in tool descriptions with slim stubs.
+
+The patch half of `addons/toolpatch.py`, minus every mitmproxy concept: the
+`tools` list in, mutated in place, incidents filed on the way. That is what
+lets `check_tool_patches.py` exercise the same code the proxy runs.
 
 Patch format and triage workflow: ~/.claude/tool-description-patches.d/README.md.
 """
 
 from __future__ import annotations
 
-import json
-import logging
 from pathlib import Path
 from typing import Mapping, NamedTuple
 
 from claude_mitmproxy import incidents
 
 PATCHES_DIR = Path("~/.claude/tool-description-patches.d").expanduser()
-
-UNCAUGHT_RULE = "_uncaught-toolpatch"
 
 
 class ToolPatch(NamedTuple):
@@ -94,56 +94,3 @@ def apply_tool_patches(
             incidents.report_issues(live, [issue], capture_dir)
         tool["description"] = patch.replacement
 
-
-# --- mitmproxy addon ---
-
-
-def load(loader):
-    """Called once at mitmproxy startup. Patches are re-read from disk on
-    every request (see _request) so editing `*-patches.d/` takes effect
-    immediately -- this hook only logs what's configured at startup."""
-    del loader  # unused
-    patches = load_tool_patches(PATCHES_DIR)
-    logging.info("loaded %d tool description patches", len(patches))
-    for patch in patches.values():
-        logging.info(
-            "  %s (%d upstream variants -> %d chars)",
-            patch.name,
-            len(patch.upstreams),
-            len(patch.replacement),
-        )
-
-
-def request(flow):
-    """mitmproxy request hook. Wraps _request so a bug here lands in the same
-    content-addressed capture as a patch-application issue, instead of only
-    flashing through mitmproxy's own log."""
-    try:
-        _request(flow)
-    except Exception as exc:
-        incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
-        raise
-
-
-def _request(flow):
-    from mitmproxy import http
-
-    assert isinstance(flow, http.HTTPFlow)
-
-    content_bytes = flow.request.get_content()
-    if not content_bytes:
-        return
-
-    try:
-        request = json.loads(content_bytes)
-    except json.JSONDecodeError:
-        return
-
-    if not isinstance(request, dict):
-        return
-    tools = request.get("tools")
-    if not isinstance(tools, list):
-        return
-
-    apply_tool_patches(tools, load_tool_patches(PATCHES_DIR))
-    flow.request.set_content(json.dumps(request).encode())

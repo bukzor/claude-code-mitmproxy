@@ -34,7 +34,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from claude_mitmproxy import incidents
-from claude_mitmproxy import paths
+from claude_mitmproxy import repo_paths
 
 # Non-patch rule, underscore-prefixed like _locate-system-prompt so it cannot
 # collide with a patch name. The child reports its own failures because nothing
@@ -45,7 +45,7 @@ FAILURE_RULE = "_compress-traffic"
 # check_compression.py sets this None -- the seam check_patches already uses to
 # exercise the machinery without leaving incidents for someone to triage.
 CAPTURE_DIR = incidents.CAPTURE_DIR
-TRAFFIC_DIR = paths.LOG / "traffic"
+TRAFFIC_DIR = repo_paths.LOG / "traffic"
 LOCK_PATH = TRAFFIC_DIR / ".compress.lock"
 SUFFIXES = (".jsonl", ".flow")
 DEFAULT_LEVEL = 16

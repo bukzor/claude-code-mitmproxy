@@ -1,5 +1,5 @@
 """Prompt-shape classification, shared by the live strip-rate tripwire
-(syspatch.py) and the capture inventory (survey_captures.py).
+(prompt_patches.py) and the capture inventory (survey_captures.py).
 
 Anthropic serves structurally distinct system-prompt shapes concurrently,
 correlated with model class; each is named for a heading unique to it.

@@ -3,8 +3,10 @@
 The user-visible "system prompt" — instructions, examples, and context
 that shape Claude Code behavior — is **not confined to**
 `request["system"]`. It is distributed across at least five distinct
-protocol surfaces inside each `/v1/messages` request body. `syspatch.py`
-rewrites the first; `toolpatch.py` rewrites `tools[].description`.
+protocol surfaces inside each `/v1/messages` request body.
+`addons/syspatch.py` rewrites the first; `addons/toolpatch.py` rewrites
+`tools[].description`. Which block of `request["system"]` is the prompt body
+is `prompt_location.py` -- this note is how that surface was mapped.
 
 ## Surfaces
 
@@ -42,12 +44,12 @@ in captured traffic — but only as upstream prose *mentioning* the tag
 (the "prompt injection" bullet describing how `<system-reminder>` tags
 should be interpreted). Mention, not use.
 
-## Implication for `syspatch.py`
+## Implication for `prompt_patches.py`
 
 A complete patcher requires three targets:
 
-1. `request["system"]` — `syspatch.py`.
-2. Each `request["tools"][i].description` — `toolpatch.py` (whole-description
+1. `request["system"]` — `prompt_patches.py`.
+2. Each `request["tools"][i].description` — `tool_patches.py` (whole-description
    stub replacement with an `upstream.md` drift tripwire; see
    `~/.claude/tool-description-patches.d/README.md`).
    `input_schema.properties.*.description` remains unpatched.
@@ -58,7 +60,7 @@ A complete patcher requires three targets:
 
 The patch-format machinery (`Patch`, `apply_patches`,
 `_template_to_regex`) is fully reusable; only the **walk** differs per
-locus. `toolpatch.py` deliberately does not reuse it: per-tool whole
+locus. `tool_patches.py` deliberately does not reuse it: per-tool whole
 replacement plus drift detection wants an exact-compare, not templates.
 
 ## Method

@@ -26,10 +26,10 @@ from claude_mitmproxy import check_masks
 from claude_mitmproxy import check_patches
 from claude_mitmproxy import check_strip_floors
 from claude_mitmproxy import check_tool_patches
-from claude_mitmproxy import syscapture
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import toolpatch
-from claude_mitmproxy import verdict
+from claude_mitmproxy import prompt_capture
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import tool_patches
+from claude_mitmproxy import check_verdict
 
 CHECKS = (
     check_masks,
@@ -48,10 +48,10 @@ CHECKS = (
 # whole of what this table encodes. Absent from it: the checks that read only
 # committed fixtures, which are always there.
 REQUIRES: dict[Any, tuple[Path, ...]] = {
-    check_patches: (syspatch.PATCHES_DIR,),
-    check_dark_patches: (syspatch.PATCHES_DIR,),
-    check_tool_patches: (toolpatch.PATCHES_DIR,),
-    check_strip_floors: (syspatch.PATCHES_DIR, syscapture.PROMPTS_DIR),
+    check_patches: (prompt_patches.PATCHES_DIR,),
+    check_dark_patches: (prompt_patches.PATCHES_DIR,),
+    check_tool_patches: (tool_patches.PATCHES_DIR,),
+    check_strip_floors: (prompt_patches.PATCHES_DIR, prompt_capture.PROMPTS_DIR),
 }
 
 
@@ -72,5 +72,5 @@ CASES = [(check, predicate) for check in CHECKS for predicate in check.PREDICATE
 def test_check_property(check: Any, predicate: Callable[[Any], Any]):
     evidence = predicate(collected(check))
     assert not evidence, "\n".join(
-        [f"{predicate.__name__}: {verdict.summary(predicate)}", *verdict.lines(evidence)]
+        [f"{predicate.__name__}: {check_verdict.summary(predicate)}", *check_verdict.lines(evidence)]
     )

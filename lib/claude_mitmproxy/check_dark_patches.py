@@ -22,24 +22,28 @@ query, not a check: it prints the row and stops.
 
 Usage: check_dark_patches.py [--data-only] [--pattern TEXT] [FIXTURE ...]
 
-Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+Structure is `check_verdict.py`'s normal form: collect, render, PREDICATES.
 """
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import NamedTuple
 
-from claude_mitmproxy import corpus
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
-from claude_mitmproxy import verdict
+from claude_mitmproxy import prompt_corpus
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
+from claude_mitmproxy import check_verdict
 
 # The cell vocabulary, in the order a reader should worry about them.
 MISS = "-"
 HIT = "HIT"
 SUBSUMED = "SUBSUMED"
+
+# Row-label decoration, shared by `render` and `parse` so they cannot drift.
+SUNSET_SUFFIX = " (sunset)"
 
 
 class PatchRow(NamedTuple):
@@ -49,7 +53,7 @@ class PatchRow(NamedTuple):
 
     @property
     def label(self) -> str:
-        return self.name + (" (sunset)" if self.sunset else "")
+        return self.name + (SUNSET_SUFFIX if self.sunset else "")
 
 
 class PatchMatrix(NamedTuple):
@@ -62,23 +66,23 @@ def fixture_texts(paths: list[Path] | None) -> dict[str, str]:
     the matrix about a candidate before promoting it; the default is every
     promoted fixture."""
     if paths is None:
-        return {p.stem: text for p, text in corpus.fixtures().items()}
+        return {p.stem: text for p, text in prompt_corpus.fixtures().items()}
     texts = {p.stem: p.read_text() for p in paths}
     return {stem: t if t.endswith("\n") else t + "\n" for stem, t in texts.items()}
 
 
 def collect(paths: list[Path] | None = None) -> PatchMatrix:
     texts = fixture_texts(paths)
-    patches = templates.load_rules(syspatch.PATCHES_DIR)
-    assert patches, syspatch.PATCHES_DIR
+    patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
+    assert patches, prompt_patches.PATCHES_DIR
 
     cells: dict[tuple[str, str], str] = {}
     for stem, raw in texts.items():
         patched_so_far = raw
         for patch in patches:
-            if templates.first_hit(raw, patch.matches) is None:
+            if rule_templates.first_hit(raw, patch.matches) is None:
                 cells[stem, patch.name] = MISS
-            elif templates.first_hit(patched_so_far, patch.matches) is not None:
+            elif rule_templates.first_hit(patched_so_far, patch.matches) is not None:
                 cells[stem, patch.name] = HIT
             else:
                 cells[stem, patch.name] = SUBSUMED
@@ -88,9 +92,9 @@ def collect(paths: list[Path] | None = None) -> PatchMatrix:
                 # they'd really see. Skipped for upstream-removed patches: they
                 # never modify text (see apply_patches), and replaying them here
                 # only emits "matched-despite-upstream-removed" -- expected on
-                # any pre-removal fixture (see `corpus.latest_fixture`), not a
+                # any pre-removal fixture (see `prompt_corpus.latest_fixture`), not a
                 # defect this matrix is trying to surface.
-                patched_so_far = syspatch.apply_patches(
+                patched_so_far = prompt_patches.apply_patches(
                     patched_so_far, (patch,), capture_dir=None
                 )
 
@@ -119,6 +123,36 @@ def table(stems: tuple[str, ...], rows: list[tuple[str, dict[str, str]]]) -> str
 
 def render(matrix: PatchMatrix) -> str:
     return table(matrix.stems, [(row.label, row.cells) for row in matrix.rows])
+
+
+# `LEVEL:logger:message`, logging's default format. A matrix is usually
+# captured with `> before.txt 2>&1`, and a patch-miss warning on stderr is
+# not part of the table.
+LOG_LINE = re.compile(r"^(?:DEBUG|INFO|WARNING|ERROR|CRITICAL):")
+
+
+def parse(text: str) -> PatchMatrix:
+    """`render`'s inverse: a matrix captured to a file, back as data.
+
+    Comparing two runs is comparing two matrices (`diff_matrices.py`), and
+    only one of them can be collected -- the other was collected before the
+    change, and exists only as text. Parsing it back to the same type is what
+    keeps the diff from being a text diff with extra steps."""
+    lines = [ln for ln in text.splitlines() if ln.strip() and not LOG_LINE.match(ln)]
+    assert lines, "no matrix here"
+    stems = tuple(re.split(r" {2,}", lines[0].strip()))
+    rows = []
+    for line in lines[1:]:
+        label, *cells = re.split(r" {2,}", line.strip())
+        assert len(cells) == len(stems), (label, cells, stems)
+        rows.append(
+            PatchRow(
+                label.removesuffix(SUNSET_SUFFIX),
+                label.endswith(SUNSET_SUFFIX),
+                dict(zip(stems, cells)),
+            )
+        )
+    return PatchMatrix(stems, tuple(rows))
 
 
 def subsumed_patches(matrix: PatchMatrix) -> dict[str, list[str]]:
@@ -153,9 +187,9 @@ def pattern_row(pattern: str, paths: list[Path] | None) -> str:
     it. The full live patch set at once, unlike the matrix: the question is
     what a session ends up with, not which rule did it."""
     texts = fixture_texts(paths)
-    live = tuple(p for p in templates.load_rules(syspatch.PATCHES_DIR) if not p.upstream_removed)
+    live = tuple(p for p in rule_templates.load_rules(prompt_patches.PATCHES_DIR) if not p.upstream_removed)
     row = {
-        stem: pattern_cell(pattern, raw, syspatch.apply_patches(raw, live, capture_dir=None))
+        stem: pattern_cell(pattern, raw, prompt_patches.apply_patches(raw, live, capture_dir=None))
         for stem, raw in texts.items()
     }
     return table(tuple(texts), [(repr(pattern), row)])
@@ -174,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
     if pattern is not None:
         sys.stdout.write(pattern_row(pattern, paths))
         return 0
-    return verdict.run(lambda: collect(paths), render, PREDICATES, argv)
+    return check_verdict.run(lambda: collect(paths), render, PREDICATES, argv)
 
 
 if __name__ == "__main__":

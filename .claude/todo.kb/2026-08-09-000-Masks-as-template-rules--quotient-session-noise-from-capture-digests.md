@@ -4,7 +4,7 @@ status: done
 closeout: >-
     Both tiers landed 2026-08-09 in ~3.5 SWEh: `masks.d/` (13 rules) +
     `check_masks.py` for tier 1, `blocks.d/` (11 rules) + the survey `core`
-    column for tier 2, on a `templates.py` extracted from `syspatch.py`.
+    column for tier 2, on a `rule_templates.py` extracted from `prompt_patches.py`.
     See "Outcome" below for two corrections to the criteria as written.
 required-reading:
     - design/040-design.kb/content-addressed-capture.md
@@ -56,16 +56,16 @@ additive-drift failure class this project exists to catch.
 
 - `incidents.py` `_VOLATILE_SUBS`: 4 in-code regexes (gitStatus tail, cwd
   line, scratchpad path, cc_version); `content_hash` = sha256 of the
-  substituted text; capture dedup keys on it (`syscapture.save_prompt`
+  substituted text; capture dedup keys on it (`prompt_capture.save_prompt`
   first-seen-wins).
 - Template engine (literal templates, `$NAME`/`$LINES` placeholders,
-  `match`/`search` split, `match.d/` alternatives) lives in `syspatch.py`;
+  `match`/`search` split, `match.d/` alternatives) lives in `prompt_patches.py`;
   format spec in `~/.claude/system-prompt-patches.d/README.md`.
 - Existing patches already match the volatile regions masking needs:
   `strip-git-status`, `strip-additional-dirs`, `strip-scratchpad-bloat` —
   mask rules can start as near-copies of their match templates.
 - `survey_captures.py` surfaces block presence via `BLOCK_MARKERS`
-  (shared registry candidate: `shapes.py`).
+  (shared registry candidate: `prompt_shape.py`).
 
 ## Proposed Solution
 
@@ -89,7 +89,7 @@ rows sharing a core are the same prompt modulo session-optional blocks;
 only a new core warrants a hand-diff. Derive `BLOCK_MARKERS` from these
 rules' anchors so flags and stripper can't drift.
 
-Layering: extract the template compiler out of `syspatch.py` into a shared
+Layering: extract the template compiler out of `prompt_patches.py` into a shared
 module importable by `incidents.py` (no cycle); compile rules once at addon
 load so a bad rule kills proxy start loudly instead of breaking hashing
 per-request.
@@ -99,8 +99,8 @@ per-request.
 - [x] Docs first: update `design/040-design.kb/content-addressed-capture.md`
       (masking mechanism becomes template rules) and
       `template-patch-model.md` (model gains a second consumer)
-- [x] Extract template engine from `syspatch.py` into a shared module;
-      `syspatch` behavior unchanged
+- [x] Extract template engine from `prompt_patches.py` into a shared module;
+      `prompt_patches` behavior unchanged
 - [x] Port the 4 `_VOLATILE_SUBS` masks to in-repo rule dirs; delete
       `_VOLATILE_SUBS`. cc_version may need a `$TOKEN`-type placeholder
       (non-whitespace run, `;`-delimited here) — add it to the engine and
@@ -133,7 +133,7 @@ per-request.
 
 ## Outcome
 
-Landed as `templates.py` (engine, shared by `syspatch.py`, `incidents.py`,
+Landed as `rule_templates.py` (engine, shared by `prompt_patches.py`, `incidents.py`,
 `survey_captures.py`), `masks.d/` + `check_masks.py`, `blocks.d/` + the
 survey `core` column, and `rekey_captures.py` for the existing store
 (70→46 main captures, 23→21 subagent). Behavior-preservation proved by

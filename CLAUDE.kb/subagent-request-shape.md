@@ -18,10 +18,10 @@ Two shapes observed:
 - **Specialized agent types** (confirmed live: `Explore`): a different
   identity line at `system[1]` -- `"You are a Claude agent, built on
   Anthropic's Claude Agent SDK."` (this exact line is shared with the
-  auxiliary CLI shapes in `syspatch.IDENTITY_LINES`) -- followed by an
+  auxiliary CLI shapes in `prompt_location.IDENTITY_LINES`) -- followed by an
   agent-type-specific prompt at `system[2]` (Explore's opens `"You are
   a file search specialist for Claude Code..."`). Never
-  BODY_MARKER-prefixed. `syspatch.locate_subagent_body` walks this
+  BODY_MARKER-prefixed. `prompt_location.locate_subagent_body` walks this
   shape for capture; see
   `design/040-design.kb/prompt-loci-coverage.md` for the coverage
   decision this fed.

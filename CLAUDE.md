@@ -10,20 +10,25 @@ git-caution: personal
 
 Reverse-proxy in front of `api.anthropic.com` that records and rewrites
 Claude Code traffic. Entry point: `proxy.sh`. Patches the system prompt
-(`syspatch.py`) and thinking-redaction beta (`thinkpatch.py`); captures
-pristine prompt bodies (`syscapture.py`); dumps flows to JSONL
-(`flow2jsonl.py`).
+(`prompt_patches.py`) and thinking-redaction beta (`addons/thinkpatch.py`);
+captures pristine prompt bodies (`prompt_capture.py`); dumps flows to JSONL
+(`addons/flow2jsonl.py`).
 
 All the Python is one package, `lib/claude_mitmproxy/`; the repo root holds
-only the shell entry points and the rule/knowledge directories.
+only the shell entry points and the rule/knowledge directories. Its
+`addons/` subpackage holds exactly the modules `proxy.sh` `-s`-loads, and
+they hold nothing but mitmproxy hooks: the work is in the library module
+each delegates to, which imports without mitmproxy and is therefore what
+the offline checks run. Nothing outside `addons/` may import an addon --
+`reload.py` asserts it, `addons/__init__.py` says why.
 
 Code and config both go live without a restart: mitmproxy re-executes an
-edited `-s` addon on its own, and `touch reload.py` re-executes the shared
+edited `-s` addon on its own, and `touch reload.py` re-executes the library
 modules those addons import. That is why every local import in this repo
-names a module -- `from claude_mitmproxy import syspatch`, never
-`from claude_mitmproxy.syspatch import apply_patches`. `reload.py` asserts
-it, and `CLAUDE.kb/reloading-a-live-proxy.md` explains why importing the
-contents would silently stop reloading.
+names a module -- `from claude_mitmproxy import prompt_patches`, never
+`from claude_mitmproxy.prompt_patches import apply_patches`. `reload.py`
+asserts it, and `CLAUDE.kb/reloading-a-live-proxy.md` explains why importing
+the contents would silently stop reloading.
 
 ## Generated output
 
@@ -70,7 +75,7 @@ checkbox to clear):
   `CLAUDE.kb/patch-failure-triage.md`.
 - Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
   entries past their retention window.
-- `compress_traffic.py` needs no scheduling: `flow2jsonl.py` spawns it for every
+- `compress_traffic.py` needs no scheduling: `addons/flow2jsonl.py` spawns it for every
   shard it opens, so every proxy start sweeps yesterday and earlier. It skips
   shards a process holds open or wrote today, so running it by hand at any time
   is safe too. Failures land as `_compress-traffic` incidents, with the detail

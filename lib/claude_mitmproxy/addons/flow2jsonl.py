@@ -20,11 +20,11 @@ from typing import IO, Optional
 from mitmproxy import ctx, http
 
 from claude_mitmproxy import incidents
-from claude_mitmproxy import paths
+from claude_mitmproxy import repo_paths
 
 UNCAUGHT_RULE = "_uncaught-flow2jsonl"
 COMPRESSOR = "claude_mitmproxy.compress_traffic"
-COMPRESSOR_LOG = paths.LOG / "compress_traffic.log"
+COMPRESSOR_LOG = repo_paths.LOG / "compress_traffic.log"
 
 _fp: Optional[IO[str]] = None
 _current_path: Optional[str] = None

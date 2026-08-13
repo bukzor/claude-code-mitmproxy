@@ -7,7 +7,7 @@ throw away when the repo is restructured, rather than the one to edit.
 - `prior:` `../store.kb`
 - `ontology:` everything the priors admit, plus this repo's proper nouns:
   `masks.d/`, `blocks.d/`, `log/prompt-captures/`, `log/patch-failures/`,
-  `syscapture.py`, `survey_captures.py`, `templates.py`, `check_laws.py`,
+  `prompt_capture.py`, `survey_captures.py`, `rule_templates.py`, `check_laws.py`,
   masked digest, core digest, capture, fixture, subagent, main
 - `defeated by:` restructuring the repo. Nothing here is meant to outlive
   the filenames it mentions; a claim that would survive belongs upstream

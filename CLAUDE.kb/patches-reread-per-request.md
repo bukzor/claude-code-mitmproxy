@@ -1,6 +1,6 @@
 # Patches are re-read per request, not cached at startup
 
-`syspatch.py` and `toolpatch.py` both used to snapshot their patch
+`addons/syspatch.py` and `addons/toolpatch.py` both used to snapshot their patch
 directories once, in `load()` at mitmproxy startup, and serve every
 request from that in-memory copy. A running proxy never re-read them,
 so editing `*-patches.d/` while the proxy was live produced incidents

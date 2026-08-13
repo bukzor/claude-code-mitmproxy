@@ -6,7 +6,7 @@ why:
 
 # Exact-compare tool stubs
 
-`toolpatch.py` deliberately does not reuse the template patch model.
+`tool_patches.py` deliberately does not reuse the template patch model.
 Tool descriptions are replaced whole -- the stub is self-contained, so
 there is no "precise text to replace" inside a body, only "which
 reviewed upstream wording is this?" That question wants byte-equality

@@ -10,11 +10,13 @@ onerror() {
 trap onerror ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ADDON_DIR="${SCRIPT_DIR}/lib/claude_mitmproxy"
-# The addons import each other by package name. mitmproxy path-loads each one
-# as `__mitmproxy_script__.<stem>` and puts only that file's own directory on
-# sys.path, so the package has to be findable independently -- and by the same
-# name in the compressor subprocess flow2jsonl spawns, which inherits this env.
+# Every file in ADDON_DIR appears below and vice versa; see its __init__.py.
+ADDON_DIR="${SCRIPT_DIR}/lib/claude_mitmproxy/addons"
+# The addons import the library beside them by package name. mitmproxy
+# path-loads each one as `__mitmproxy_script__.<stem>` and puts only that
+# file's own directory on sys.path, so the package has to be findable
+# independently -- and by the same name in the compressor subprocess
+# flow2jsonl spawns, which inherits this env.
 export PYTHONPATH="${SCRIPT_DIR}/lib${PYTHONPATH:+:${PYTHONPATH}}"
 PORT="${1:-8080}"
 # strftime path, append mode: shards by day, survives restarts -- see

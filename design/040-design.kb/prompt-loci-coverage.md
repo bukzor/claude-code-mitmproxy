@@ -9,8 +9,8 @@ The behavior-shaping text spreads over five request surfaces (inventory
 and discovery method: `../../CLAUDE.kb/system-prompt-loci.md`).
 Coverage is deliberate, not aspirational:
 
-- `system` — patched (`syspatch.py`).
-- `tools[].description` — patched (`toolpatch.py`).
+- `system` — patched (`prompt_patches.py`).
+- `tools[].description` — patched (`tool_patches.py`).
 - `tools[].input_schema.*.description` — unpatched; low bloat so far.
 - `<system-reminder>` envelopes in user messages — unpatched by policy:
   their bulk is the user's own CLAUDE.md/agents/skills content, already
@@ -27,8 +27,8 @@ Coverage is deliberate, not aspirational:
     `is_subagent_request` never enters into it.
   - Specialized agent types (confirmed: `Explore`) send a genuinely
     distinct, agent-type-specific prompt that never carries
-    BODY_MARKER. `syspatch.locate_subagent_body` captures this shape
-    (wired into `syscapture.py`) — still unpatched, since there's not
+    BODY_MARKER. `prompt_location.locate_subagent_body` captures this shape
+    (wired into `addons/syscapture.py`) — still unpatched, since there's not
     yet evidence on whether these prompts carry the same
     bloat/contradiction problems the interactive prompt does.
 

@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import NamedTuple
 
 from claude_mitmproxy import incidents
-from claude_mitmproxy import shapes
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
+from claude_mitmproxy import prompt_shape
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
 
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")
@@ -43,7 +43,7 @@ def parse_name(path: Path) -> Capture:
     return Capture(version.removeprefix("v"), model, raw, path)
 
 
-def core_of(text: str, blocks: tuple[templates.Template, ...]) -> tuple[str, str]:
+def core_of(text: str, blocks: tuple[rule_templates.Template, ...]) -> tuple[str, str]:
     """The capture's (core digest, session-optional blocks it carries).
 
     The core digest is what's left once every block this session happened to
@@ -51,7 +51,7 @@ def core_of(text: str, blocks: tuple[templates.Template, ...]) -> tuple[str, str
     same prompt copy, whatever their sessions differed on. Blocks are stripped
     from the masked body, so a block template can be written against the
     tokens masks leave behind instead of the volatile text they replaced."""
-    stripped, present = templates.strip_blocks(incidents.normalize_body(text), blocks)
+    stripped, present = rule_templates.strip_blocks(incidents.normalize_body(text), blocks)
     return incidents.digest_of(stripped), ",".join(present)
 
 
@@ -74,7 +74,7 @@ def main() -> None:
         if p.suffix == ".md" and p.name != "CLAUDE.md"
     }
 
-    blocks = templates.load_templates(syspatch.BLOCKS_DIR)
+    blocks = rule_templates.load_templates(prompt_patches.BLOCKS_DIR)
 
     header = (
         "version", "model", "raw", "core", "bytes", "shape", "promoted", "blocks"
@@ -89,7 +89,7 @@ def main() -> None:
             capture.raw,
             core,
             str(len(text)),
-            shapes.shape_of(text),
+            prompt_shape.shape_of(text),
             promoted_as(text, kb_texts),
             present,
         ))

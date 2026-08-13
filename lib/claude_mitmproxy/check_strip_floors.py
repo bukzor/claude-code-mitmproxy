@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify no body we have actually seen strips less than its shape's floor.
 
-`syspatch.strip_floors` calibrates the `_strip-rate` tripwire on the core of
+`prompt_patches.strip_floors` calibrates the `_strip-rate` tripwire on the core of
 each shape's newest fixture, so the floor should sit below what the sparsest
 real session strips. Two things can push it back above: a promoted fixture
 whose extra prose is real (fine, the floor should rise), or a session-optional
@@ -16,18 +16,18 @@ been capturing), top level only -- `subagents/` bodies are never patched.
 
 Usage: check_strip_floors.py [--data-only]
 
-Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+Structure is `check_verdict.py`'s normal form: collect, render, PREDICATES.
 """
 
 from __future__ import annotations
 
 from typing import NamedTuple
 
-from claude_mitmproxy import corpus
-from claude_mitmproxy import shapes
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
-from claude_mitmproxy import verdict
+from claude_mitmproxy import prompt_corpus
+from claude_mitmproxy import prompt_shape
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
+from claude_mitmproxy import check_verdict
 
 
 class StripRates(NamedTuple):
@@ -37,18 +37,18 @@ class StripRates(NamedTuple):
 
 
 def collect() -> StripRates:
-    patches = templates.load_rules(syspatch.PATCHES_DIR)
+    patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
     strips: dict[str, list[tuple[int, str]]] = {}
-    for path in corpus.captures():
+    for path in prompt_corpus.captures():
         text = path.read_text()
         # Misses suppressed the same way `strip_floors` suppresses them:
         # measuring is not triaging, and a capture old enough to miss a patch
         # is expected, not a regression.
-        patched, _misses = templates.apply_rules(text, patches)
-        strips.setdefault(shapes.shape_of(text), []).append(
+        patched, _misses = rule_templates.apply_rules(text, patches)
+        strips.setdefault(prompt_shape.shape_of(text), []).append(
             (len(text) - len(patched), path.name)
         )
-    return StripRates(syspatch.strip_floors(patches), {k: sorted(v) for k, v in strips.items()})
+    return StripRates(prompt_patches.strip_floors(patches), {k: sorted(v) for k, v in strips.items()})
 
 
 def render(rates: StripRates) -> str:
@@ -76,7 +76,7 @@ PREDICATES = (captures_below_floor,)
 
 
 def main(argv: list[str] | None = None) -> int:
-    return verdict.run(collect, render, PREDICATES, argv)
+    return check_verdict.run(collect, render, PREDICATES, argv)
 
 
 if __name__ == "__main__":

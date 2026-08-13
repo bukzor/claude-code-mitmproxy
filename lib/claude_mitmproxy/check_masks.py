@@ -10,17 +10,17 @@ minting a fresh digest, which nobody watches. Read this after editing
 Usage: check_masks.py [--data-only]
   --data-only  the table alone, for diffing two runs against each other
 
-Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+Structure is `check_verdict.py`'s normal form: collect, render, PREDICATES.
 """
 
 from __future__ import annotations
 
 from typing import NamedTuple
 
-from claude_mitmproxy import corpus
+from claude_mitmproxy import prompt_corpus
 from claude_mitmproxy import incidents
-from claude_mitmproxy import templates
-from claude_mitmproxy import verdict
+from claude_mitmproxy import rule_templates
+from claude_mitmproxy import check_verdict
 
 
 class MaskRow(NamedTuple):
@@ -34,10 +34,10 @@ class MaskMatrix(NamedTuple):
 
 
 def collect() -> MaskMatrix:
-    texts = corpus.fixtures()
+    texts = prompt_corpus.fixtures()
     rows = []
     for mask in incidents.masks():
-        pattern = templates.template_to_regex(mask.template)
+        pattern = rule_templates.template_to_regex(mask.template)
         rows.append(MaskRow(
             mask.name,
             tuple(p.stem for p, text in texts.items() if pattern.search(text)),
@@ -77,7 +77,7 @@ PREDICATES = (dark_masks, collapsed_fixtures)
 
 
 def main(argv: list[str] | None = None) -> int:
-    return verdict.run(collect, render, PREDICATES, argv)
+    return check_verdict.run(collect, render, PREDICATES, argv)
 
 
 if __name__ == "__main__":

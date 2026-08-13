@@ -13,7 +13,7 @@ for one restarted mid-day. This bit for real: a plain-filename restart on
 moment the process reopened its `-w` target. `+` plus a same-day path
 makes a restart resume instead of erase.
 
-`flow2jsonl.py` reimplements both checks -- rotate on date change, append
+`addons/flow2jsonl.py` reimplements both checks -- rotate on date change, append
 within a day -- mirroring mitmproxy's own `save_stream_file` option
 (`mitmproxy.addons.save.Save.maybe_rotate_to_new_file`) rather than
 inventing a second convention, so both capture files behave identically

@@ -64,7 +64,7 @@ keys:
   consequence: nothing is renamed, and no observation is discarded to free
   up a name.
 - **Equivalence** is `masked_hash`, demoted to an in-memory set of the
-  masked digests already on disk, which `syscapture.py` derives from the
+  masked digests already on disk, which `prompt_capture.py` derives from the
   `.raw.md` files themselves. The set is cached against the mask set it was
   taken under, and that mask set is re-read per request anyway, so a
   `masks.d/` edit invalidates the cache by inequality — no separate

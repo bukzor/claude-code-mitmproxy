@@ -1,14 +1,14 @@
-# Restoring summarized thinking on Opus 4.7+ (`thinkpatch.py`)
+# Restoring summarized thinking on Opus 4.7+ (`addons/thinkpatch.py`)
 
 Since Claude Code v2.1.69 / Opus 4.7, `thinking` blocks come back with empty
 text and only an opaque `signature` — ctrl-o in the TUI shows nothing. This is
-server-controlled default behavior, not a Claude Code bug. `thinkpatch.py`
+server-controlled default behavior, not a Claude Code bug. `addons/thinkpatch.py`
 restores **summarized** thinking. Verified working in practice (ctrl-o renders
 summaries).
 
 ## Two patches, both required
 
-The mechanism lives in `thinkpatch.py`'s docstring/code; what isn't obvious there:
+The mechanism lives in `addons/thinkpatch.py`'s docstring/code; what isn't obvious there:
 
 - It took **both** stripping the `anthropic-beta: redact-thinking-2026-02-12`
   header **and** setting `thinking.display="summarized"`. Either alone is
@@ -30,7 +30,7 @@ The mechanism lives in `thinkpatch.py`'s docstring/code; what isn't obvious ther
   across display modes, so flipping `display` does not break tool-use / signature
   round-trips.
 - **Claude Code always sends `thinking.type == "adaptive"`** (the asserts in
-  `thinkpatch.py` encode this observation). If a future version omits the field
+  `addons/thinkpatch.py` encode this observation). If a future version omits the field
   entirely, the body patch won't fire — and *creating* a thinking config risks
   enabling thinking where it was intentionally off. Inspect captured
   `traffic.jsonl` before changing that assumption.

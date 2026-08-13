@@ -1,10 +1,12 @@
-"""Capture each unique Claude Code system-prompt body crossing the proxy.
+"""Record each unique Claude Code system-prompt body, once.
 
-Loaded before syspatch.py (addon hooks run in load order), so bodies are
-recorded pristine, pre-patch -- unlike traffic.jsonl/traffic.flow, which
-record what was actually sent upstream. One pair of files per unique body
-lands in log/prompt-captures/ (gitignored), keyed by v{cc_version}_{model}_
-{digest}: {digest}.raw.md is the verbatim body, {digest}.md is its masked
+The capture half of `addons/syscapture.py`, minus every mitmproxy concept:
+body in, files out. That addon loads before `addons/syspatch.py` (addon hooks
+run in load order), so what arrives here is pristine, pre-patch -- unlike
+traffic.jsonl/traffic.flow, which record what was actually sent upstream. One
+pair of files per unique body lands in log/prompt-captures/ (gitignored), keyed
+by v{cc_version}_{model}_{digest}: {digest}.raw.md is the verbatim body, and
+{digest}.md is its masked
 sibling (incidents.normalize_body) -- the low-noise day-to-day diff target,
 since the raw form carries per-session boilerplate (cwd, gitStatus, ...) that
 swamps real prompt changes.
@@ -25,18 +27,14 @@ promotion duty (and survey_captures.py) enumerates promotion candidates.
 """
 from __future__ import annotations
 
-import json
-import logging
 import re
 from pathlib import Path
 
 from claude_mitmproxy import incidents
-from claude_mitmproxy import paths
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
+from claude_mitmproxy import repo_paths
+from claude_mitmproxy import rule_templates
 
-PROMPTS_DIR = paths.LOG / "prompt-captures"
-UNCAUGHT_RULE = "_uncaught-syscapture"
+PROMPTS_DIR = repo_paths.LOG / "prompt-captures"
 
 # cc_version rides in the billing-header block, not the prompt body itself.
 CC_VERSION_RE = re.compile(r"\bcc_version=([^;\s\"]+)")
@@ -44,7 +42,7 @@ CC_VERSION_RE = re.compile(r"\bcc_version=([^;\s\"]+)")
 # {directory: (mask set the digests were taken under, those digests)}. Held per
 # process rather than on disk: the .raw.md files are the only durable input, so
 # a rebuild is always available and can never disagree with them.
-_CAPTURED: dict[Path, tuple[tuple[templates.Template, ...], set[str]]] = {}
+_CAPTURED: dict[Path, tuple[tuple[rule_templates.Template, ...], set[str]]] = {}
 
 
 def cc_version_of(system) -> str:
@@ -58,7 +56,7 @@ def cc_version_of(system) -> str:
 
 
 def load_masked_digests(
-    directory: Path, masks: tuple[templates.Template, ...]
+    directory: Path, masks: tuple[rule_templates.Template, ...]
 ) -> set[str]:
     """The masked digest of every capture already in directory -- the question
     dedup asks, since two sessions that ran the same prompt differently have to
@@ -76,7 +74,7 @@ def load_masked_digests(
         return cached[1]
     digests: set[str] = set()
     for raw in sorted(directory.glob("*.raw.md")):
-        masked = templates.apply_masks(raw.read_text(), masks)
+        masked = rule_templates.apply_masks(raw.read_text(), masks)
         digests.add(incidents.digest_of(masked))
         sibling = directory / f"{raw.name.removesuffix('.raw.md')}.md"
         if not sibling.exists() or sibling.read_text() != masked:
@@ -97,7 +95,7 @@ def save_prompt(
     namespaces."""
     directory.mkdir(parents=True, exist_ok=True)
     masks = incidents.masks()
-    masked = templates.apply_masks(body, masks)
+    masked = rule_templates.apply_masks(body, masks)
     captured = load_masked_digests(directory, masks)
     masked_digest = incidents.digest_of(masked)
     if masked_digest in captured:
@@ -107,51 +105,3 @@ def save_prompt(
     raw_path.write_text(body)
     (directory / f"{base_name}.md").write_text(masked)
     captured.add(masked_digest)
-    return raw_path
-
-
-def request(flow):
-    try:
-        _request(flow)
-    except Exception as exc:
-        incidents.capture_uncaught(UNCAUGHT_RULE, exc, incidents.CAPTURE_DIR)
-        raise
-
-
-def _request(flow):
-    from mitmproxy import http
-
-    assert isinstance(flow, http.HTTPFlow)
-
-    content_bytes = flow.request.get_content()
-    if not content_bytes:
-        return
-
-    try:
-        request = json.loads(content_bytes)
-    except json.JSONDecodeError:
-        return
-
-    if not isinstance(request, dict):
-        return
-
-    system = request.get("system")
-    if isinstance(system, str):
-        bodies = [system] if syspatch.BODY_MARKER in system else []
-        subagent_body = None
-    elif isinstance(system, list):
-        bodies = [item["text"] for item in syspatch.locate_prompt_bodies(system)]
-        subagent_body = syspatch.locate_subagent_body(system)
-    else:
-        return
-
-    model = request.get("model", "unknown")
-    cc_version = cc_version_of(system)
-    for body in bodies:
-        saved = save_prompt(body, cc_version, model)
-        if saved is not None:
-            logging.info("captured new system prompt -> %s", saved)
-    if subagent_body is not None:
-        saved = save_prompt(subagent_body, cc_version, model, PROMPTS_DIR / "subagents")
-        if saved is not None:
-            logging.info("captured new subagent prompt -> %s", saved)

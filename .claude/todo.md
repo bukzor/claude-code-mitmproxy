@@ -14,7 +14,7 @@ Narrative in `../session.kb/`.
       haiku and sonnet long-form are the same copy (their v2.1.215 cores
       differed by that one line and nothing else).
 - [x] Split every check into data / rendering / properties, per
-      `verdict.py`: `collect()` gathers, `render()` formats, `PREDICATES`
+      `check_verdict.py`: `collect()` gathers, `render()` formats, `PREDICATES`
       judges. The command prints both halves and exits 2 when a predicate
       found something; `monitoring/test_checks.py` asserts the same
       function objects, parametrized over `CHECKS × PREDICATES`, so there
@@ -36,11 +36,29 @@ Narrative in `../session.kb/`.
       re-executes the addon, `reload.py` re-executes the library) only
       needs every importer to agree on one name. A package makes that
       name unambiguous and gives the console scripts a real target.
-      `paths.py` holds `ROOT`/`LOG`, replacing nine `__file__` anchors
+      `repo_paths.py` holds `ROOT`/`LOG`, replacing nine `__file__` anchors
       that would each have needed re-counting; `proxy.sh` and
       `flow2jsonl.sh` export `PYTHONPATH=lib`, which the compressor
       subprocess inherits (now spawned `-m
       claude_mitmproxy.compress_traffic`).
+- [x] Give the modules names that say what they hold, and separate the
+      addons from everything else. `paths`/`templates`/`shapes`/`corpus`/
+      `verdict` were abstract enough to name anything, and became
+      `repo_paths`/`rule_templates`/`prompt_shape`/`prompt_corpus`/
+      `check_verdict`. The addons were worse than abstract: nothing
+      distinguished `syscapture.py` (six mitmproxy hooks) from
+      `survey_captures.py` (a report), so they moved to `addons/`, which
+      now holds exactly the files `proxy.sh` `-s`-loads. That directory
+      only means something if the rule holds in both directions, so the
+      three addons that carried library code were split — the hooks stayed
+      in `addons/`, `prompt_location` / `prompt_patches` /
+      `prompt_capture` / `tool_patches` took the rest — and `reload.py`
+      asserts nothing outside `addons/` imports one. The split found its
+      own simplification: `syscapture` never wanted `syspatch`, only the
+      locator. `diff_matrices.py` now parses back into the
+      `PatchMatrix` its producer emits, so the diff compares data rather
+      than aligned text; `tests/test_matrix_format.py` holds
+      `parse(render(m)) == m`.
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,

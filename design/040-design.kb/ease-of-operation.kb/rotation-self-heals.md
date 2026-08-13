@@ -5,7 +5,7 @@ why:
 
 # Rotation self-heals instead of trusting `_current_path` alone
 
-`flow2jsonl.py`'s `_rotate_if_needed` must treat "no open file" as its own
+`addons/flow2jsonl.py`'s `_rotate_if_needed` must treat "no open file" as its own
 reason to (re)open, not just "the formatted path changed". Checking
 `path == _current_path` alone lets `_fp` and `_current_path` fall out of
 sync -- once that happens, every later call sees the path still matches

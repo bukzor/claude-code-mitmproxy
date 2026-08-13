@@ -8,7 +8,7 @@ why:
 
 # The Dedup Index Is Stale-Proof in the Masks and Owner-Protected in the Files
 
-`syscapture.py` memoizes the set of masked digests under the mask set
+`prompt_capture.py` memoizes the set of masked digests under the mask set
 object itself. `WHOLE_INPUT` therefore applies to that component exactly:
 `incidents.masks()` is re-read per request and the templates are
 NamedTuples, so a changed `masks.d/` yields a value that cannot compare

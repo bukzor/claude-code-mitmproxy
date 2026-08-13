@@ -8,11 +8,12 @@ its per-session environment (cwd, scratchpad path, git status) neutralized, so
 the same prompt dedups to a single incident across sessions and proxy restarts.
 
 The capture primitives (`masked_hash`, `save_body`, `save_incident`, the
-`Incident` record) live in `incidents.py`, not `syspatch.py` — they're generic
-over what's being captured. `syspatch.py`'s `report_issues` is the
-patch-domain-specific caller (a body plus a list of match/search issues);
-`incidents.capture_uncaught` is the other caller, used by all four addon
-scripts (`syspatch.py`, `toolpatch.py`, `thinkpatch.py`, `flow2jsonl.py`) to wrap their
+`Incident` record) live in `incidents.py`, not `prompt_patches.py` — they're
+generic over what's being captured. `prompt_patches.py`'s `report_issues` call
+is the patch-domain-specific caller (a body plus a list of match/search
+issues); `incidents.capture_uncaught` is the other caller, used by all four
+addons (`addons/syspatch.py`, `addons/toolpatch.py`, `addons/thinkpatch.py`,
+`addons/flow2jsonl.py`) to wrap their
 mitmproxy hooks: any exception that escapes the hook body is captured under
 rule `_uncaught-{addon}` (kind = the exception's class name) via the same
 content-addressed, idempotent-on-disk mechanism, then re-raised — capture,
@@ -36,7 +37,7 @@ in whole -- `mv` within a filesystem is atomic, `mkdir`-then-write is not.
 
 Code half: `_uncaught-{addon}` `NameError`/`AttributeError` naming a symbol
 that no longer exists, from a mid-refactor save mitmproxy re-executed
-(2026-08-10: three `NameError: _rolled_over` in `flow2jsonl.py`, ten
+(2026-08-10: three `NameError: _rolled_over` in `addons/flow2jsonl.py`, ten
 seconds apart, at three different line numbers -- three successive saves of
 one refactor). Confirm with `git log -S{symbol}`: a commit that removed it
 dates the burst, and the tree is coherent now. No `mv` trick applies here
@@ -48,7 +49,7 @@ traffic went unrecorded.
 
 ## Tool-description drift (`tooldesc-*`)
 
-A second patch domain shares this capture machinery: `toolpatch.py` swaps
+A second patch domain shares this capture machinery: `tool_patches.py` swaps
 built-in tool descriptions for slim stubs, comparing the live text against
 the accepted wordings in
 `~/.claude/tool-description-patches.d/{Tool}/upstream.d/`. A mismatch still
@@ -118,7 +119,7 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
   `cc_is_subagent=true` rather than enumerating block forms, because the
   actual prompt body is agent-type-specific (claude-code-guide, Explore,
   general-purpose, ...) — too open-ended to match block-by-block like the
-  CLI shapes. Same reasoning also applies in `thinkpatch.py`: subagent
+  CLI shapes. Same reasoning also applies in `addons/thinkpatch.py`: subagent
   requests using classic (non-adaptive) reasoning send
   `thinking: {"type": "enabled", "budget_tokens": N}`, a config shape with
   no `display` field to set, so `_patch_thinking_body` treats it as a
@@ -148,7 +149,7 @@ the 980 a git-less session strips. `check_strip_floors.py` is the
 detector; run it whenever you promote a fixture or edit `blocks.d/`.
 Two kinds:
 
-- `unknown-shape-...` -- the body matches no `shapes.py` marker: a new
+- `unknown-shape-...` -- the body matches no `prompt_shape.py` marker: a new
   prompt shape. Capture it properly (it's already in
   `log/prompt-captures/`), promote a fixture, add patches, and add its
   heading to `SHAPE_MARKERS`.
@@ -166,7 +167,7 @@ Triage ends with `archive_incident` like any other rule.
 
 `compress_traffic.py` archives finished traffic shards and deletes the
 originals, so it reports its own failures instead of leaving them to an
-exit code: `flow2jsonl.py` spawns one child per shard it opens -- usually
+exit code: `addons/flow2jsonl.py` spawns one child per shard it opens -- usually
 one per proxy lifetime -- so the parent that could read a returncode has
 already exited by the time there is one to read. Kind is the exception
 class, body is its traceback.
@@ -206,7 +207,7 @@ Anthropic serves structurally distinct prompt shapes concurrently at the
 same cc_version, correlated with model — since v2.1.221, three of them:
 the long-form (`# System`, `# Doing tasks`, ...) on sonnet-5, and two
 distinct `# Harness` shapes (opus gets `# Delivering work`/`# Corrections`,
-fable gets `# Communicating with the user`). `shapes.py` is the shared
+fable gets `# Communicating with the user`). `prompt_shape.py` is the shared
 classifier; `system-prompts.kb/CLAUDE.md` records fixture naming.
 There is no variant registry — a long-form-only patch just anchors its
 `match.md` on a heading unique to that shape (e.g. `# Tone and style`,

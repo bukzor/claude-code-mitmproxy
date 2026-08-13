@@ -34,8 +34,8 @@ stable structure like section headings; `search` (the precise text to
 replace) carries the exact wording. Drift *within* an asserted scope is
 loud, while out-of-scope absence stays silent.
 
-Template compilation lives in `templates.py`, imported by every
-consumer: `syspatch.py` for the prompt patches, `incidents.py` for the
+Template compilation lives in `rule_templates.py`, imported by every
+consumer: `prompt_patches.py` for the prompt patches, `incidents.py` for the
 capture-digest masks (`content-addressed-capture.md`), and
 `survey_captures.py` for the block strippers (`fixture-lifecycle.md`).
 Applying a rule set *returns* its unapplied rules rather than reporting

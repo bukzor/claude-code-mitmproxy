@@ -9,14 +9,14 @@ instead -- run it after promoting one, or after editing a patch.
 
 The newest full fixture only, deliberately: an older one predates every
 upstream removal, so sunset rules still match it and report a miss that means
-nothing (see `corpus.latest_fixture`).
+nothing (see `prompt_corpus.latest_fixture`).
 
 To read the patched prompt itself rather than its measurements, that is
 `render_patched.py`.
 
 Usage: check_patches.py [--data-only]
 
-Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+Structure is `check_verdict.py`'s normal form: collect, render, PREDICATES.
 """
 
 from __future__ import annotations
@@ -24,27 +24,27 @@ from __future__ import annotations
 from pathlib import Path
 from typing import NamedTuple
 
-from claude_mitmproxy import corpus
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
-from claude_mitmproxy import verdict
+from claude_mitmproxy import prompt_corpus
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
+from claude_mitmproxy import check_verdict
 
 
 class Patched(NamedTuple):
     source: Path
     original: int  # chars upstream sends
     patched: int  # chars the session receives
-    misses: tuple[templates.Miss, ...]
+    misses: tuple[rule_templates.Miss, ...]
 
 
 def collect() -> Patched:
-    source = corpus.latest_fixture()
+    source = prompt_corpus.latest_fixture()
     text = source.read_text()
-    patches = templates.load_rules(syspatch.PATCHES_DIR)
-    # `apply_rules`, not `syspatch.apply_patches`: measuring is not triaging,
+    patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
+    # `apply_rules`, not `prompt_patches.apply_patches`: measuring is not triaging,
     # and a miss provoked here must not file an incident for someone to
     # discover as if a session had hit it.
-    patched, misses = templates.apply_rules(text, patches)
+    patched, misses = rule_templates.apply_rules(text, patches)
     return Patched(source, len(text), len(patched), tuple(misses))
 
 
@@ -77,7 +77,7 @@ PREDICATES = (patches_that_miss, net_growth)
 
 
 def main(argv: list[str] | None = None) -> int:
-    return verdict.run(collect, render, PREDICATES, argv)
+    return check_verdict.run(collect, render, PREDICATES, argv)
 
 
 if __name__ == "__main__":

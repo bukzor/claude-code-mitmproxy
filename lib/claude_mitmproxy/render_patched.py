@@ -16,22 +16,22 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from claude_mitmproxy import corpus
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
+from claude_mitmproxy import prompt_corpus
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    system_file = Path(argv[0]) if argv else corpus.latest_fixture()
-    patches_dir = Path(argv[1]) if len(argv) > 1 else syspatch.PATCHES_DIR
+    system_file = Path(argv[0]) if argv else prompt_corpus.latest_fixture()
+    patches_dir = Path(argv[1]) if len(argv) > 1 else prompt_patches.PATCHES_DIR
 
     assert system_file.exists(), system_file
     text = system_file.read_text()
-    patches = templates.load_rules(patches_dir)
+    patches = rule_templates.load_rules(patches_dir)
     # The real pipeline, not `apply_rules`: this is what a session receives.
     # capture_dir=None keeps a hand-run from filing an incident nobody hit.
-    result = syspatch.apply_patches(text, patches, capture_dir=None)
+    result = prompt_patches.apply_patches(text, patches, capture_dir=None)
 
     print(f"original: {len(text)} chars", file=sys.stderr)
     print(f"patched:  {len(result)} chars", file=sys.stderr)

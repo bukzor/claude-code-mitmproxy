@@ -28,7 +28,7 @@ Fire once per shard opened rather than once per open, so the reopen in
 shard.
 
 **The trigger belongs on the response hook, not the request hook.** Two
-writers shard this directory independently. `flow2jsonl.py` owns the
+writers shard this directory independently. `addons/flow2jsonl.py` owns the
 `.jsonl` and rotates from `_emit`, which the request hook reaches first.
 mitmproxy's own `Save` addon owns the `.flow` and rotates from
 `save_flow`, which only the *response* hook reaches. So at the first

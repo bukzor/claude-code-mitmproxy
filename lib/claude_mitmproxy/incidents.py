@@ -1,7 +1,8 @@
-"""Content-addressed capture for addon incidents: shared by syspatch.py's
-patch-application issues and any addon hook's uncaught exceptions. Capture is
-idempotent on disk, keyed by masked_hash, so a live proxy re-hitting the same
-failure on every request logs and writes exactly once.
+"""Content-addressed capture for addon incidents: shared by
+prompt_patches.py's patch-application issues and any addon hook's uncaught
+exceptions. Capture is idempotent on disk, keyed by masked_hash, so a live
+proxy re-hitting the same failure on every request logs and writes exactly
+once.
 
 Also the home of the two digests every store here is keyed by, since masking
 defines both: `digest_of` over a body as sent identifies that observation
@@ -18,19 +19,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
-from claude_mitmproxy import paths
-from claude_mitmproxy import templates
+from claude_mitmproxy import repo_paths
+from claude_mitmproxy import rule_templates
 
 # Gitignored; callers pass capture_dir=None to disable capture entirely
 # (offline callers like check_patches only want an in-process warning).
-CAPTURE_DIR = paths.LOG / "patch-failures"
+CAPTURE_DIR = repo_paths.LOG / "patch-failures"
 BODIES_DIRNAME = "_bodies"
 ARCHIVE_DIRNAME = "_archive"
 
 # In-repo, unlike the patches under ~/.claude: patches are one operator's
 # preferences, but masks define the capture system's identity function, and a
 # digest that varied with per-machine state wouldn't be content-addressed.
-MASKS_DIR = paths.ROOT / "masks.d"
+MASKS_DIR = repo_paths.ROOT / "masks.d"
 
 
 class Incident(NamedTuple):
@@ -38,7 +39,7 @@ class Incident(NamedTuple):
     kind: str
 
 
-def masks() -> tuple[templates.Template, ...]:
+def masks() -> tuple[rule_templates.Template, ...]:
     """The compiled mask set, re-read per call exactly as patches are: an edit
     is live on the next request, with no restart, and nothing anywhere holds a
     stale opinion about what a digest should be. Deliberately uncached -- a
@@ -49,10 +50,10 @@ def masks() -> tuple[templates.Template, ...]:
     can't split one body across two mask sets. The returned value doubles as
     the cache key for anything derived from the whole mask set, so a caller
     holding one knows by inequality when its derivation went stale.
-    `syspatch.load` calls this at startup so a malformed mask takes the proxy
-    down there rather than first surfacing mid-run as an `_uncaught-syspatch`
-    incident."""
-    return templates.load_templates(MASKS_DIR)
+    `addons/syspatch.py` calls this at startup so a malformed mask takes the
+    proxy down there rather than first surfacing mid-run as an
+    `_uncaught-syspatch` incident."""
+    return rule_templates.load_templates(MASKS_DIR)
 
 
 def normalize_body(body: str) -> str:
@@ -60,7 +61,7 @@ def normalize_body(body: str) -> str:
     memory paths, cc_version, ...) masked -- stable across sessions that ran
     the same content differently. Which regions, exactly, is `masks.d/`. A
     no-op on text with no such regions, e.g. a traceback."""
-    return templates.apply_masks(body, masks())
+    return rule_templates.apply_masks(body, masks())
 
 
 def digest_of(text: str) -> str:

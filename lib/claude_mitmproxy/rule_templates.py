@@ -1,7 +1,7 @@
 """Compile declarative templates -- literal prose with `$PLACEHOLDER` holes --
 into regexes, and apply directories of them to a body.
 
-Two consumers with opposite loudness disciplines share this: `syspatch.py`
+Two consumers with opposite loudness disciplines share this: `prompt_patches.py`
 rewrites prompts and is loud when a rule half-applies, while `incidents.py`
 masks session-volatile text out of the capture digest and is never loud.
 Applying a rule set therefore *returns* what failed to apply instead of

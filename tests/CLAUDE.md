@@ -10,7 +10,7 @@ against whatever is actually there, with no fixed expected output. Test the
 machinery here; check the data there.
 
 Import the package, not its contents (`from claude_mitmproxy import
-syspatch`) — the form `reload.py` requires of the addons themselves.
+prompt_patches`) — the form `reload.py` requires of the addons themselves.
 `pythonpath = ["lib"]` is what makes it resolve without an install.
 
 A test that provokes a failure in code that reports incidents must set that

@@ -14,17 +14,17 @@ import sys
 from pathlib import Path
 
 from claude_mitmproxy import incidents
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     assert argv, "usage: dump_core.py BODY.md ..."
-    blocks = templates.load_templates(syspatch.BLOCKS_DIR)
+    blocks = rule_templates.load_templates(prompt_patches.BLOCKS_DIR)
     for arg in argv:
         masked = incidents.normalize_body(Path(arg).read_text())
-        core, _present = templates.strip_blocks(masked, blocks)
+        core, _present = rule_templates.strip_blocks(masked, blocks)
         sys.stdout.write(core)
     return 0
 

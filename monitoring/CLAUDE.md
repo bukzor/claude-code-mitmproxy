@@ -23,7 +23,7 @@ test file and nothing to add when a check grows a property. A property is a
 function in a check module's `PREDICATES` tuple, next to the data it reads, and
 it shows up here as a test on the next run. That is what makes the hand-run
 command and this suite unable to disagree about what healthy means: they call
-the same function object. See `verdict.py` for the normal form.
+the same function object. See `check_verdict.py` for the normal form.
 
 The one thing this directory owns is skip policy. A check asserts when its data
 is missing -- an absent patch dir is a broken environment, and a command that

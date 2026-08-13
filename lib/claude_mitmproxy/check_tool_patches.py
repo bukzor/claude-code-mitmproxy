@@ -5,15 +5,15 @@ session patches silently.
 
 Usage: check_tool_patches.py [--data-only]
 
-Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+Structure is `check_verdict.py`'s normal form: collect, render, PREDICATES.
 """
 
 from __future__ import annotations
 
 from typing import NamedTuple
 
-from claude_mitmproxy import toolpatch
-from claude_mitmproxy import verdict
+from claude_mitmproxy import tool_patches
+from claude_mitmproxy import check_verdict
 
 
 class Rewrite(NamedTuple):
@@ -29,14 +29,14 @@ class ToolPatches(NamedTuple):
 
 
 def collect() -> ToolPatches:
-    patches = toolpatch.load_tool_patches(toolpatch.PATCHES_DIR)
+    patches = tool_patches.load_tool_patches(tool_patches.PATCHES_DIR)
     rewrites = []
     for patch in patches.values():
         for upstream in patch.upstreams:
             tools = [{"name": patch.name, "description": upstream, "input_schema": {}}]
             # capture_dir=None: provoking a miss here must not file an incident
             # for someone to triage (`incidents.py` documents the seam).
-            toolpatch.apply_tool_patches(tools, patches, capture_dir=None)
+            tool_patches.apply_tool_patches(tools, patches, capture_dir=None)
             rewrites.append(
                 Rewrite(patch.name, len(upstream), len(patch.replacement), tools[0]["description"])
             )
@@ -47,7 +47,7 @@ def collect() -> ToolPatches:
 
 def render(patched: ToolPatches) -> str:
     if not patched.rewrites:
-        return f"no tool-description patches installed in {toolpatch.PATCHES_DIR}\n"
+        return f"no tool-description patches installed in {tool_patches.PATCHES_DIR}\n"
     out = [
         f"{r.tool:16} {r.upstream:6} -> {r.replacement:5} chars" for r in patched.rewrites
     ]
@@ -71,7 +71,7 @@ PREDICATES = (upstreams_that_miss,)
 
 
 def main(argv: list[str] | None = None) -> int:
-    return verdict.run(collect, render, PREDICATES, argv)
+    return check_verdict.run(collect, render, PREDICATES, argv)
 
 
 if __name__ == "__main__":

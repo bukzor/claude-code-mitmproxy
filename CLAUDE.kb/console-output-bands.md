@@ -33,7 +33,7 @@ real `mitmproxy` import to an otherwise standalone module.
 
 ## Convention in this repo
 
-`syspatch.py` patch-failure reporting:
+`prompt_patches.py` patch-failure reporting:
 
 - failure headline → `logging.warning(...)` (event log + status-bar flash)
 - `saved offending body -> …` breadcrumb → `logging.info(...)` (event log only)

@@ -9,7 +9,7 @@ that answers a different question than the one asked. This is the detector.
 
 Usage: check_laws.py [--data-only]
 
-Structure is `verdict.py`'s normal form: collect, render, PREDICATES.
+Structure is `check_verdict.py`'s normal form: collect, render, PREDICATES.
 """
 
 from __future__ import annotations
@@ -17,11 +17,11 @@ from __future__ import annotations
 import itertools
 from typing import NamedTuple
 
-from claude_mitmproxy import corpus
+from claude_mitmproxy import prompt_corpus
 from claude_mitmproxy import incidents
-from claude_mitmproxy import syspatch
-from claude_mitmproxy import templates
-from claude_mitmproxy import verdict
+from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import rule_templates
+from claude_mitmproxy import check_verdict
 
 
 class Corpus(NamedTuple):
@@ -29,8 +29,8 @@ class Corpus(NamedTuple):
 
     captures: dict[str, str]
     fixtures: dict[str, str]
-    masks: tuple[templates.Template, ...]
-    blocks: tuple[templates.Template, ...]
+    masks: tuple[rule_templates.Template, ...]
+    blocks: tuple[rule_templates.Template, ...]
 
     @property
     def bodies(self) -> dict[str, str]:
@@ -39,10 +39,10 @@ class Corpus(NamedTuple):
 
 def collect() -> Corpus:
     found = Corpus(
-        captures=corpus.capture_bodies(),
-        fixtures={str(p): text for p, text in corpus.fixtures().items()},
+        captures=prompt_corpus.capture_bodies(),
+        fixtures={str(p): text for p, text in prompt_corpus.fixtures().items()},
         masks=incidents.masks(),
-        blocks=templates.load_templates(syspatch.BLOCKS_DIR),
+        blocks=rule_templates.load_templates(prompt_patches.BLOCKS_DIR),
     )
     assert found.bodies, "no bodies to check"
     return found
@@ -61,11 +61,11 @@ def not_idempotent(found: Corpus) -> list[str]:
     """bodies whose second masking differs from the first. Masking twice must
     equal masking once, so that a masked body and a raw one agree on their
     digest and re-masking a `.md` sibling is a no-op."""
-    once = {name: templates.apply_masks(body, found.masks) for name, body in found.bodies.items()}
+    once = {name: rule_templates.apply_masks(body, found.masks) for name, body in found.bodies.items()}
     return [
         name
         for name, masked in once.items()
-        if templates.apply_masks(masked, found.masks) != masked
+        if rule_templates.apply_masks(masked, found.masks) != masked
     ]
 
 
@@ -74,11 +74,11 @@ def masks_that_split_a_class(found: Corpus) -> dict[str, list[tuple[str, str]]]:
     Adding a mask may only merge equivalence classes: masks delete
     session-specific detail, and deleting cannot create a distinction."""
     bodies = found.bodies
-    full = {k: templates.apply_masks(v, found.masks) for k, v in bodies.items()}
+    full = {k: rule_templates.apply_masks(v, found.masks) for k, v in bodies.items()}
     splits = {}
     for dropped in found.masks:
         fewer = tuple(m for m in found.masks if m.name != dropped.name)
-        small = {k: templates.apply_masks(v, fewer) for k, v in bodies.items()}
+        small = {k: rule_templates.apply_masks(v, fewer) for k, v in bodies.items()}
         split = [
             (a, b)
             for a, b in itertools.combinations(bodies, 2)
@@ -95,7 +95,7 @@ def block_spans(text: str, blocks) -> dict[str, list[tuple[int, int]]]:
     footprint is all of its matches, not just the first."""
     return {
         block.name: [
-            m.span() for m in templates.template_to_regex(block.template).finditer(text)
+            m.span() for m in rule_templates.template_to_regex(block.template).finditer(text)
         ]
         for block in blocks
     }
@@ -126,7 +126,7 @@ def bodies_with_overlapping_blocks(found: Corpus) -> dict[str, list[str]]:
     """
     found_overlaps = {}
     for name, body in sorted(found.bodies.items()):
-        masked, _ = templates.borrow_newline(incidents.normalize_body(body))
+        masked, _ = rule_templates.borrow_newline(incidents.normalize_body(body))
         overlapping = overlapping_blocks(block_spans(masked, found.blocks))
         if overlapping:
             found_overlaps[name] = sorted(overlapping)
@@ -137,7 +137,7 @@ PREDICATES = (not_idempotent, masks_that_split_a_class, bodies_with_overlapping_
 
 
 def main(argv: list[str] | None = None) -> int:
-    return verdict.run(collect, render, PREDICATES, argv)
+    return check_verdict.run(collect, render, PREDICATES, argv)
 
 
 if __name__ == "__main__":
