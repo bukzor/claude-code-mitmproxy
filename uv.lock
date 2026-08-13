@@ -291,23 +291,23 @@ name = "claude-mitmproxy"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "basedpyright-as-pyright" },
     { name = "mitmproxy" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "basedpyright-as-pyright" },
     { name = "pytest" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "basedpyright-as-pyright", directory = "../../repo/github.com/bukzor/basedpyright-as-pyright" },
-    { name = "mitmproxy", specifier = ">=12.2.3" },
-]
+requires-dist = [{ name = "mitmproxy", specifier = ">=12.2.3" }]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.1.1" }]
+dev = [
+    { name = "basedpyright-as-pyright", directory = "../../repo/github.com/bukzor/basedpyright-as-pyright" },
+    { name = "pytest", specifier = ">=9.1.1" },
+]
 
 [[package]]
 name = "click"
