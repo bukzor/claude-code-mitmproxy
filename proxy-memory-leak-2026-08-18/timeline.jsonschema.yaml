@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Timeline Event Metadata
+type: object
+properties:
+  at:
+    type: string
+    description: When the event happened; ISO 8601 with local offset. For a span, the start.
+  source:
+    type: string
+    description: Where the time was read from (log line, file mtime, user report).
+  confidence:
+    type: string
+    enum: [observed, inferred]
+required: [at, source, confidence]
+additionalProperties: false

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Remediation Metadata
+type: object
+properties:
+  status:
+    type: string
+    enum: [proposed, accepted, done, rejected]
+  requires-sudo:
+    type: boolean
+required: [status, requires-sudo]
+additionalProperties: false

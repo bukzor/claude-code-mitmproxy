@@ -1,0 +1,6 @@
+# Scratch: intermediate output, staged-in-error files, recoverable dumps.
+trash/
+
+# Browser captures carry live session cookies -- never committable.
+*.cdp.jsonl
+*.har

@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Evidence Capture Metadata
+type: object
+properties:
+  captured:
+    type: string
+    description: Date the capture was taken (YYYY-MM-DD), not the date of the events it shows.
+  method:
+    type: string
+    description: >
+      Relative path to the sibling .sh script that re-takes this capture
+      (plus any args used), so methods stay re-runnable and shellcheckable.
+
+required: [captured, method]
+additionalProperties: false

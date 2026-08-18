@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Root-Cause Candidate Metadata
+type: object
+properties:
+  status:
+    type: string
+    enum: [confirmed, leading, viable, disfavored, refuted]
+required: [status]
+additionalProperties: false
