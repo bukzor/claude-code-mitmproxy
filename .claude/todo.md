@@ -7,6 +7,10 @@ managed-by: Skill(llm-subtask)
 Use subtasks, not sections for organization. Ordered by intended completion.
 Narrative in `../session.kb/`.
 
+- [ ] <https:../proxy-memory-leak-2026-08-18/todo.kb/2026-08-18-000-confirm-store-retention-and-adopt-a-bound.md>
+      (outside `.claude/`, so this breadcrumb is its only sweep visibility):
+      restart the proxy once so `quietconn.py` loads; next day, capture
+      RSS as fix verification; then rule on standing RSS monitoring.
 - [x] <https:todo.kb/2026-08-09-000-Masks-as-template-rules--quotient-session-noise-from-capture-digests.md>
 - [x] <https:todo.kb/2026-08-10-000-Session-specific-guidance-bullets-are-unruled-core-digest-noise.md>
 - [x] Promote a `long-form` fixture at v2.1.226. Done — the haiku
