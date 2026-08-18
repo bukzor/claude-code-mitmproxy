@@ -27,9 +27,9 @@ work`/`# Corrections`, fable gets `# Communicating with the user`). Earlier
 captures use `-harness` for the pre-split Fable-class shape. No separate
 registry to update: a patch scopes itself to a variant just by anchoring its
 own `match.md` on a heading unique to that shape (see
-`CLAUDE.kb/patch-failure-triage.md`). `check_patches` still defaults to the
-newest *unsuffixed* full capture — pass a variant capture explicitly to
-validate against it.
+`CLAUDE.kb/patch-failure-triage.md`). `check_patches` checks only the
+newest *unsuffixed* full capture — variant fixtures are validated by
+`check_dark_patches.py`'s matrix.
 
 Likewise, patches sunset to `upstream-removed.bool` assert against the
 *current* prompt: run against an old capture they report

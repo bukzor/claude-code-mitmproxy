@@ -253,8 +253,9 @@ patch's job is done — sunset it, don't recreate it.
 
 1. Capture the new body to `system-prompts.kb/v<version>.md` (see that
    collection's `CLAUDE.md`).
-2. Run `check_patches` (defaults to the newest unsuffixed full capture; pass a
-   variant capture explicitly to check the others) → expect zero warnings.
+2. Run `check_patches` (checks only the newest unsuffixed full capture;
+   variant fixtures are covered by `check_dark_patches.py`'s matrix) →
+   expect zero warnings.
    Also run `check_dark_patches.py` — its per-patch match matrix shows
    patches gone silently dark on shapes they used to hit, which zero
    warnings cannot (match misses are silent by design).
