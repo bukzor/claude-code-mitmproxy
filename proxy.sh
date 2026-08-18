@@ -28,11 +28,18 @@ if (( DEBUG > 0 )); then
   set -x
 fi
 
-mitmproxy \
+# mitmdump, never the mitmproxy TUI: the TUI retains every flow in memory
+# with no eviction, and a day of Claude Code traffic is hundreds of MB
+# (see proxy-memory-leak-2026-08-18/). The flows are all on disk anyway;
+# flow_detail=0 leaves only the event log, on stderr.
+exec >&2
+exec mitmdump \
   --mode "reverse:https://api.anthropic.com" \
   --listen-port "$PORT" \
+  --set flow_detail=0 \
   -w "$FLOW_FILE" \
   -s "${ADDON_DIR}/reload.py" \
+  -s "${ADDON_DIR}/quietconn.py" \
   -s "${ADDON_DIR}/syscapture.py" \
   -s "${ADDON_DIR}/syspatch.py" \
   -s "${ADDON_DIR}/toolpatch.py" \
