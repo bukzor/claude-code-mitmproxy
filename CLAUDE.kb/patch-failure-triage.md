@@ -244,6 +244,18 @@ Read `_bodies/{digest}.md`, find where the target went, then:
   Before re-targeting a "reworded" miss, grep the *patched* output for the
   target's surviving neighbors, not just the target itself — an
   earlier-sorted sibling may already cover the span.
+- **Not present at all — match fired on this project's own text** →
+  a bare-heading `match.md` (e.g. `# Delivering work`) is a plain substring
+  search, so it can hit inside this repo's own captured `gitStatus` (a commit
+  *message* naming the heading, not the heading itself — this project's
+  commit history literally mentions its own patch targets). The tell: the
+  body has no trace of the section anywhere, in a shape that shouldn't carry
+  it (2026-08-20, `condense-delivering-work` fired on a sonnet long-form and
+  a pre-convergence fable body via commit `873f6da`'s message). Fix by
+  anchoring the template to a leading `\n` so it only matches a heading that
+  starts its own line — real headings are always preceded by a blank line;
+  a commit-log mention never is. Don't blanket-apply this to every
+  heading-anchored `match.md` pre-emptively; fix it where it's actually fired.
 
 Intent over letter: these patches exist to strip upstream bloat and resolve
 contradictions with user instructions. When upstream removes the bloat, the

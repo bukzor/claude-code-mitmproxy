@@ -72,6 +72,21 @@ Narrative in `../session.kb/`.
       mis-substituted, or the rewording is real and the shell name is a
       bug. A second 2.1.226 long-form capture settles it; until then the
       fixture carries a sample of one.
+- [ ] Confirm the v2.1.237 shape convergence with a second capture per
+      model. `system-prompts.kb/v2.1.237-opus.md` is a fable-5 session
+      carrying the `-opus` shape verbatim (`# Delivering work`, but no
+      `# Corrections` — present in every prior `-opus` fixture) and
+      `system-prompts.kb/v2.1.237.md` is a sonnet-5 long-form session with
+      neither `# Delivering work` nor `# Corrections` (present in
+      v2.1.233's long-form). Each is a sample of one: could be a genuine
+      version-level shift (fable folded into `-opus` outright, sonnet
+      reverted the v2.1.233 merge) or per-session variance (e.g.
+      `# Corrections` is itself session-optional, not static). A second
+      capture per model at >=2.1.237 settles it; until then
+      `condense-corrections` silently not firing on either new fixture is
+      expected, not a regression (`check_dark_patches.py` confirms).
+      `system-prompts.kb/CLAUDE.md`'s naming section already documents
+      that shape and model decoupled as of this version.
 - [x] Decide whether `git-status` should strip a commit-less repo. Yes,
       and the fix was one character: `$LINES` now matches zero or more
       lines. The miss was never in `blocks.d/git-status.md` — its
