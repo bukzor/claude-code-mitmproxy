@@ -1,7 +1,3 @@
----
-last-updated: 2026-08-18
----
-
 # Root cause: confirmed -- the mitmproxy TUI's unbounded flow store
 
 `proxy.sh` ran the proxy as the interactive `mitmproxy` TUI, whose View
