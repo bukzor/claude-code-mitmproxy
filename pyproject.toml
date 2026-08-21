@@ -7,7 +7,11 @@ license = "Apache-2.0"
 requires-python = ">=3.13"
 # Runtime only, and only the addons need even this: every library module
 # imports without mitmproxy, which is what lets the checks run offline.
-dependencies = ["mitmproxy>=12.2.3"]
+dependencies = [
+    "llm-claims-kb",
+    "llm-kb",
+    "mitmproxy>=12.2.3",
+]
 
 [project.scripts]
 # One command per check, printing its data and then its verdict, exiting 2 when
@@ -70,6 +74,8 @@ addopts = "--basetemp=log/pytest"
 
 [tool.uv.sources]
 basedpyright-as-pyright = { path = "../../repo/github.com/bukzor/basedpyright-as-pyright" }
+llm-claims-kb = { path = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" }
+llm-kb = { path = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" }
 
 [dependency-groups]
 dev = [
