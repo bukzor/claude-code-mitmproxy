@@ -23,9 +23,13 @@ cost-benefit-sweh:
    PID 19340, baseline ~97 MiB, no new incidents.
 4. ~~Confirm the root cause~~ done 2026-08-18 15:25: post-clear plateau
    under traffic (`../findings.kb/post-clear-rss-plateau-under-traffic.md`);
-   `../root-cause.md` rewritten as the answer. After a day of traffic
-   under mitmdump, capture RSS once more as fix verification (expect
-   startup-sized, not traffic-sized).
+   `../root-cause.md` rewritten as the answer. ~~After a day of traffic
+   under mitmdump, capture RSS once more as fix verification~~ done
+   2026-08-21: 99 MiB -> 141 MiB over ~66.6 h, ~30x slower than the
+   pre-fix leak rate (`../findings.kb/headless-mitmdump-growth-rate-is-normal.md`).
 5. The host still has no proxy-RSS monitoring
    (`../environment.kb/host-and-proxy.md`) -- decide whether this
-   incident warrants one before closing.
+   incident warrants one before closing. OPEN QUESTION for the user: the
+   day-3 read still shows slow monotonic growth (no plateau/shrink), just
+   far slower than the leak -- close as "normal, no monitoring" or keep
+   watching a while longer / add a cheap periodic RSS log before closing?
