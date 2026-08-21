@@ -1,6 +1,6 @@
 ---
 why:
-  - earned-silence
+  - ../020-goals.kb/earned-silence.md
 ---
 
 # Loudness policy

@@ -1,2 +1,6 @@
-# yaml-language-server: $schema=https://json-schema.org/draft-07/schema
-$ref: "../jsonschema/why-linked-entry.jsonschema.yaml"
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: A motivated layer entry -- the canonical entry, with `why:` required.
+$ref: "skill://llm-design-kb/jsonschema/layer-entry.jsonschema.yaml#base"
+required: [why]
+unevaluatedProperties: false

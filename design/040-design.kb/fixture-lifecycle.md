@@ -1,7 +1,7 @@
 ---
 why:
-  - pristine-fixture-supply
-  - offline-validation
+  - ../020-goals.kb/pristine-fixture-supply.md
+  - ../020-goals.kb/offline-validation.md
 ---
 
 # Fixture lifecycle

@@ -1,6 +1,6 @@
 ---
 why:
-  - ease-of-operation
+  - ../../020-goals.kb/ease-of-operation.md
 ---
 
 # Shards are compressed when one is opened, from the response hook

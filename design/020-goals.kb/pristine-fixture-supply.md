@@ -1,6 +1,6 @@
 ---
 why:
-  - offline-validation
+  - offline-validation.md
 ---
 
 # Pristine fixture supply

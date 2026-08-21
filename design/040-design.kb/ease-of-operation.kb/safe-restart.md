@@ -1,6 +1,6 @@
 ---
 why:
-  - ease-of-operation
+  - ../../020-goals.kb/ease-of-operation.md
 ---
 
 # Safe restart

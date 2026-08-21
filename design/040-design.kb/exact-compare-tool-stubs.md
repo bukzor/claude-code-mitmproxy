@@ -1,7 +1,7 @@
 ---
 why:
-  - earned-silence
-  - decoupled-from-the-cli
+  - ../020-goals.kb/earned-silence.md
+  - ../020-goals.kb/decoupled-from-the-cli.md
 ---
 
 # Exact-compare tool stubs

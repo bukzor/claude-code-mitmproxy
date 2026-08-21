@@ -1,7 +1,7 @@
 ---
 why:
-  - decoupled-from-the-cli
-  - pristine-fixture-supply
+  - ../020-goals.kb/decoupled-from-the-cli.md
+  - ../020-goals.kb/pristine-fixture-supply.md
 ---
 
 # Addon pipeline

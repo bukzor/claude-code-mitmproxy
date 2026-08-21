@@ -1,6 +1,6 @@
 ---
 why:
-  - final-say-over-injected-behavior
+  - ../010-mission.kb/final-say-over-injected-behavior.md
 ---
 
 # Offline validation

@@ -1,7 +1,7 @@
 ---
 why:
-  - earned-silence
-  - offline-validation
+  - ../020-goals.kb/earned-silence.md
+  - ../020-goals.kb/offline-validation.md
 ---
 
 # Content-addressed capture
