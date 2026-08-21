@@ -74,8 +74,8 @@ addopts = "--basetemp=log/pytest"
 
 [tool.uv.sources]
 basedpyright-as-pyright = { path = "../../repo/github.com/bukzor/basedpyright-as-pyright" }
-llm-claims-kb = { path = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" }
-llm-kb = { path = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" }
+llm-claims-kb = { path = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb", editable = true }
+llm-kb = { path = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb", editable = true }
 
 [dependency-groups]
 dev = [

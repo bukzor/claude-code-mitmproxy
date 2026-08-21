@@ -122,6 +122,7 @@ dev = [
     { name = "copier", specifier = ">=9.16.0" },
     { name = "hypothesis", specifier = ">=6.155.7" },
     { name = "isort", specifier = ">=8.0.1" },
+    { name = "llm-kb", marker = "python_full_version >= '3.12'", editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" },
     { name = "pre-commit", specifier = ">=4.6.0" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
@@ -304,8 +305,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llm-claims-kb", directory = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" },
-    { name = "llm-kb", directory = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" },
+    { name = "llm-claims-kb", editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" },
+    { name = "llm-kb", editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" },
     { name = "mitmproxy", specifier = ">=12.2.3" },
 ]
 
@@ -527,7 +528,7 @@ wheels = [
 [[package]]
 name = "llm-claims-kb"
 version = "0.1.0"
-source = { directory = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" }
+source = { editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" }
 dependencies = [
     { name = "pyyaml" },
 ]
@@ -538,7 +539,7 @@ requires-dist = [{ name = "pyyaml", specifier = ">=6.0" }]
 [[package]]
 name = "llm-kb"
 version = "0.1.0"
-source = { directory = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" }
+source = { editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" }
 dependencies = [
     { name = "jsonschema" },
     { name = "pyyaml" },
