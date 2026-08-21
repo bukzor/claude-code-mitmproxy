@@ -1,10 +1,14 @@
 # yaml-language-server: $schema=https://json-schema.org/draft-07/schema
-# Deliberately NOT a $ref stub onto
-# skill://llm-discourse-graph/jsonschema/questions.jsonschema.yaml: the
-# category name collides, the meaning doesn't. In a claim ledger every
-# sub-collection is a theory named after its subject, and this one's subject
-# happens to be questions; its members are claims (label/standing/why) like
-# every sibling's, not discourse-graph question nodes
-# (resolved/candidate-resolutions/sources). Reuse follows meaning, not
-# spelling -- and the reuse that is real is taken, via jsonschema/.
+$comment: |
+  NO-REF ruled 2026-08-21 (2026-05-15-000-schema-propagation-from-canonical):
+  Deliberately NOT a $ref stub onto
+  skill://llm-discourse-graph/jsonschema/questions.jsonschema.yaml: the
+  category name collides, the meaning doesn't. In a claim ledger every
+  sub-collection is a theory named after its subject, and this one's subject
+  happens to be questions; its members are claims (label/standing/why) like
+  every sibling's, not discourse-graph question nodes
+  (resolved/candidate-resolutions/sources). It cannot be a `#base` extender
+  either: extension is conjunction, and no narrowing of the question node
+  yields a claim. Reuse follows meaning, not spelling -- and the reuse that
+  is real is taken, via jsonschema/.
 $ref: "jsonschema/claim.jsonschema.yaml"
