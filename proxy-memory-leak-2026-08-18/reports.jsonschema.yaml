@@ -1,16 +1,2 @@
-# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
-$schema: https://json-schema.org/draft/2020-12/schema
-title: Upstream Report Metadata
-type: object
-properties:
-  target:
-    type: string
-    description: Where this gets posted (issue URL, tracker component).
-  status:
-    type: string
-    enum: [draft, ready, posted, declined]
-  posted-url:
-    type: string
-    description: URL of the posted comment/issue, once posted.
-required: [target, status]
-additionalProperties: false
+# yaml-language-server: $schema=https://json-schema.org/draft-07/schema
+$ref: "skill://incident-forensics/jsonschema/reports.jsonschema.yaml"
