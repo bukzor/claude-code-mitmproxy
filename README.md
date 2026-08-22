@@ -1,13 +1,12 @@
----
-last-updated: 2026-08-09
----
-
 # claude-code-mitmproxy
 
-A mitmproxy reverse-proxy in front of `api.anthropic.com` that records and
-rewrites Claude Code traffic in transit — patching the hardcoded system
-prompt and un-redacting thinking summaries — without touching the CLI, so
-it survives Claude Code upgrades.
+Patches Claude Code behavior that the CLI exposes no setting, env var, or hook
+to change -- by two means. Most of that behavior crosses the wire, so a
+**mitmproxy reverse-proxy** in front of `api.anthropic.com` records and rewrites
+the traffic in transit -- the hardcoded system prompt, redacted thinking
+summaries -- without touching the CLI, so it survives upgrades. The rest is
+compiled into the binary and never crosses the wire; `binpatch.py` patches that
+on disk instead, re-applying after each upgrade (Binary patches, below).
 
 ## Quick start
 
@@ -107,6 +106,22 @@ template language and its compiler (`rule_templates.py`):
 - `blocks.d/` -- deletes whole session-optional sections, for
   `survey_captures.py`'s core-digest column only. Never part of the
   capture digest: whether a body carried `# Memory` is itself content.
+
+## Binary patches
+
+`lib/claude_mitmproxy/binpatch.py` substitutes equal-length bytes in the
+installed Claude Code binary, for behavior that is compiled in and never crosses
+the wire -- the one class of Claude Code behavior the proxy cannot reach.
+Substitutions are equal-length so offsets and executable structure stay valid,
+and the bun binary embeds the bundle twice, so each patch expects two hits and
+refuses any other count as drift (nothing is written).
+
+Unlike the proxy, this does not survive upgrades: an auto-update installs a
+fresh, unpatched binary. So it runs as a `SessionStart` hook that re-applies on
+the next session; when it had to patch, it tells you on stderr to restart, since
+the running session already mapped the old code. `os.replace` swaps a new inode
+in without writing the busy one, so patching the live binary never ETXTBSYs.
+Wiring and re-derivation: `CLAUDE.kb/binpatch-and-its-session-hook.md`.
 
 ## Knowledge bases
 
