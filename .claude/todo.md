@@ -46,3 +46,15 @@ Narrative in `../session.kb/`.
       where nothing was is the coarsening masks want. All five checkers
       byte-identical except the survey, which gained four rows: cores
       27 → 23, unpromoted 21 → 17.
+
+## Later
+
+- [ ] Consider renaming this repo to encompass both works -- the proxy and
+      `binpatch.py` (on-disk patches). The two-surface framing already landed in
+      README + CLAUDE.md, so what's left is mechanical: the name is carried by
+      the repo dir, the git remote (`claude-code-mitmproxy`), pyproject
+      `name`/`description`, the package `claude_mitmproxy` (dir + every import +
+      `claude-mitmproxy-*` script), the README h1, and CLAUDE.md's lead; plus two
+      external references -- the `~/.claude/settings.json` SessionStart hook path
+      and the `~/.claude/{system-prompt,tool-description}-patches.d/README.md`
+      that cite `~/claude/mitmproxy/`. `grep -rwin mitmproxy` scopes it.
