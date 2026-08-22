@@ -30,6 +30,19 @@ names a module -- `from claude_mitmproxy import prompt_patches`, never
 asserts it, and `CLAUDE.kb/reloading-a-live-proxy.md` explains why importing
 the contents would silently stop reloading.
 
+## Binary patches (`binpatch.py`)
+
+The proxy rewrites what crosses the wire; `binpatch.py` rewrites what does not.
+It substitutes equal-length bytes in the on-disk Claude Code binary to undo
+behavior compiled into the CLI that has no setting, env var, or hook and never
+reaches the proxy. It runs as a SessionStart hook and re-applies itself after
+each auto-update -- `CLAUDE.kb/binpatch-and-its-session-hook.md`.
+
+What belongs: an equal-length byte substitution against compiled-in behavior
+unreachable in transit, expecting the bun binary's two embedded copies and
+refusing any other count. What does NOT: anything the proxy can rewrite in
+flight -- that is a `prompt_patches`/`tool_patches` entry, not a binary patch.
+
 ## Generated output
 
 Everything the proxy or its tooling writes at runtime is gitignored and

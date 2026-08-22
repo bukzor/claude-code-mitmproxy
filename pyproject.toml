@@ -33,6 +33,9 @@ claude-mitmproxy-diff-matrices = "claude_mitmproxy.diff_matrices:main"
 claude-mitmproxy-survey-captures = "claude_mitmproxy.survey_captures:main"
 claude-mitmproxy-compress-traffic = "claude_mitmproxy.compress_traffic:main"
 claude-mitmproxy-gc-patch-failures = "claude_mitmproxy.gc_patch_failures:main"
+# Not a proxy tool: byte-patches the on-disk Claude Code binary for behavior
+# that never crosses the wire. Also runs as a SessionStart hook by file path.
+claude-mitmproxy-binpatch = "claude_mitmproxy.binpatch:main"
 
 [build-system]
 requires = ["hatchling"]
