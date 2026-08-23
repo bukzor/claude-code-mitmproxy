@@ -58,3 +58,14 @@ Narrative in `../session.kb/`.
       external references -- the `~/.claude/settings.json` SessionStart hook path
       and the `~/.claude/{system-prompt,tool-description}-patches.d/README.md`
       that cite `~/claude/mitmproxy/`. `grep -rwin mitmproxy` scopes it.
+- [ ] Finish weaving binpatch into `design/`'s why-chain. The sharpest
+      contradiction is already reconciled --
+      `020-goals.kb/decoupled-from-the-cli.md` now records binpatch as the
+      deliberate exception for behavior unreachable on the wire. Still open:
+      `010-mission.kb/final-say-over-injected-behavior.md` is wire-centric
+      ("the text it injects into every request"; "CLI upgrades require no
+      rework beyond re-verifying targets") -- true of the proxy surface, but
+      the binpatch surface re-applies per upgrade, so the mission's scope and
+      that success criterion want a one-line caveat. Then decide whether
+      binpatch earns its own `020-goals.kb/` and/or `040-design.kb/` node, or
+      stays a documented exception on the decoupling goal alone.
