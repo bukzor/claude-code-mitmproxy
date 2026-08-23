@@ -156,7 +156,8 @@ Two kinds:
 - `low-strip-{shape}-{N}B-floor-{M}B` -- known shape, stripped less than
   half its fixture core's expectation: the shape drifted wholesale under
   a stable heading (promote + re-patch), or the fixture/patches moved and
-  the floor is stale (`touch reload.py`; floors cache per process), or
+  the floor is stale (floors cache per process --
+  `touch lib/claude_mitmproxy/addons/reload.py`), or
   `blocks.d/` is missing a rule for a block the fixture carries, which
   leaves that block in the core and inflates the floor
   (`check_strip_floors.py` names it).

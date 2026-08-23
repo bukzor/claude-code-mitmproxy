@@ -1,4 +1,4 @@
-# Reloading a live proxy: `touch reload.py`
+# Reloading a live proxy: `touch lib/claude_mitmproxy/addons/reload.py`
 
 mitmproxy polls every `-s` script's mtime once a second and re-executes
 the ones that changed, so there is no "the running process is insulated
@@ -27,8 +27,8 @@ and delegates immediately, and `reload.py` asserts that nothing outside
 
 `reload.py` is the fix for everything else, and the only place that does
 this: an `-s` script with no hooks that `importlib.reload`s every library
-module in dependency order. `touch reload.py` and the next poll picks up
-every code edit in the repo. There is nothing in the file to edit --
+module in dependency order. Touch it and the next poll picks up every
+code edit in the repo. There is nothing in the file to edit --
 mtime is the whole trigger, so a nonce would be pure git churn.
 
 ## Why every local import names a module, never its contents

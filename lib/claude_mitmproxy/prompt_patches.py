@@ -75,8 +75,8 @@ def strip_floors(patches: tuple[rule_templates.Rule, ...]) -> dict[str, int]:
 
     Cached per patch set -- Rule stores templates as strings, so
     value-equal loads share one entry; a fixture promoted mid-process is
-    picked up by `touch reload.py`, which rebuilds this module and the
-    cache with it."""
+    picked up by `touch lib/claude_mitmproxy/addons/reload.py`, which
+    rebuilds this module and the cache with it."""
     newest: dict[str, tuple[tuple, str]] = {}
     for path in KB_DIR.glob("v*.md"):
         text = path.read_text()

@@ -22,8 +22,9 @@ each delegates to, which imports without mitmproxy and is therefore what
 the offline checks run. Nothing outside `addons/` may import an addon --
 `reload.py` asserts it, `addons/__init__.py` says why.
 
-Code and config both go live without a restart: mitmproxy re-executes an
-edited `-s` addon on its own, and `touch reload.py` re-executes the library
+Code and config both go live without a restart: mitmproxy re-executes
+an edited `-s` addon on its own, and
+`touch lib/claude_mitmproxy/addons/reload.py` re-executes the library
 modules those addons import. That is why every local import in this repo
 names a module -- `from claude_mitmproxy import prompt_patches`, never
 `from claude_mitmproxy.prompt_patches import apply_patches`. `reload.py`
