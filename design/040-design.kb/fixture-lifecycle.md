@@ -20,6 +20,10 @@ why:
    against older fixtures are expected, not regressions.
 4. On promotion, run `check_patches.py` (expect zero warnings) and
    `check_dark_patches.py` (expect no unexplained newly-dark patches).
+   Running them by hand is for seeing the answer before committing, not
+   for remembering to: promoting a fixture is a commit into
+   `system-prompts.kb/`, and that is one of the occasions that runs the
+   whole offline suite by itself (`every-duty-has-an-occasion.md`).
 
 Step 2 has no automatic trigger — additive upstream drift is invisible
 to every loud mechanism until someone looks — so `survey_captures.py` is

@@ -82,11 +82,27 @@ Narrative in `../session.kb/`.
         incident-store dedup rather than a permanently-red check. One
         awaiting-veto predicate now: uncovered core at the newest
         cc_version on disk.
-  - [ ] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
+  - [~] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
         single queue-triage duty; fold the event-driven checks into the
         hook's own description; `compress_traffic` bullet already needs no
         change (self-scheduling, failures already file incidents — a log
-        tail was never a duty).
+        tail was never a duty). Done except for the part that waits on the
+        subtask above: the section is **two** duties, not one, because
+        fixture promotion is still polled until the drift predicate is
+        ratified. The `compress_traffic` bullet went anyway -- with gc now
+        self-scheduling too, "these run themselves" is one clause pointing
+        at the design entry rather than a paragraph per job, and the
+        `_compress-traffic` detail was already in the triage kb.
+        Also landed, which the plan did not anticipate: the theory itself.
+        `design/020-goals.kb/earned-attention.md` (agent-inferred, marked
+        vetoable) states it as the dual of `earned-silence` -- that goal
+        binds the system's quiet, this one binds the operator's time, and
+        both hang off the mission. `design/040-design.kb/`
+        `every-duty-has-an-occasion.md` is the mechanism: the three routes
+        (argue it away / bind it to its occasion / make it loud), which
+        duty took which, and what makes an occasion usable. The drift
+        predicate is a `[!QUESTION]` block there now, so the open decision
+        lives in the tower rather than only in this file.
 - [ ] <https:../proxy-memory-leak-2026-08-18/todo.kb/2026-08-18-000-confirm-store-retention-and-adopt-a-bound.md>
       (outside `.claude/`, so this breadcrumb is its only sweep visibility):
       restart done, fix-verification RSS capture done 2026-08-21 (99 MiB →

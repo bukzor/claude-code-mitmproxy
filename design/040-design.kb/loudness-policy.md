@@ -22,9 +22,11 @@ Shape exemptions are recognized by form (billing header, identity line,
 task-prefix, `cc_is_subagent=true`), never by full text — so a drifted
 interactive prompt still lands loud.
 
-Because `match` misses are silent by design, they need a periodic
-sweep: `check_dark_patches.py` prints the per-patch match matrix across
-fixtures; run it whenever a new capture is promoted. A mask, whose
+Because `match` misses are silent by design, they need a sweep --
+periodic in the sense that promotion is periodic, not that anyone
+schedules it (`every-duty-has-an-occasion.md`).
+`check_dark_patches.py` prints the per-patch match matrix across
+fixtures, and the commit that promotes a capture runs it. A mask, whose
 misses are silent unconditionally, gets the stronger form of the same
 sweep — `check_masks.py` *fails* on a mask no fixture exercises, since
 unlike a patch there is no legitimate reason for a mask to be dark

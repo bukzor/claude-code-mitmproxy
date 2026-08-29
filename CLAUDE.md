@@ -72,42 +72,39 @@ outputs are day-sharded and restarts append instead of truncate:
 
 Two in-repo rule sets share the patch template language, each with its own
 `README.md`: `masks.d/` neutralizes session-volatile *content* for
-`incidents.masked_hash` (validate with `check_masks.py`; an edit needs no
-follow-up -- nothing stored is named by a masked digest), and `blocks.d/` deletes
-session-optional *blocks* to answer "what would a session that switched nothing
-on have sent?" -- `survey_captures.py`'s core-digest column offline, and the
-live `_strip-rate` floor (validate with `check_strip_floors.py`).
-`check_laws.py` validates the algebra both rest on -- masking idempotent and
-only ever coarsening, block deletions never overlapping.
+`incidents.masked_hash` (an edit needs no follow-up -- nothing stored is named
+by a masked digest), and `blocks.d/` deletes session-optional *blocks* to
+answer "what would a session that switched nothing on have sent?" --
+`survey_captures.py`'s core-digest column offline, and the live `_strip-rate`
+floor. `check_laws.py` validates the algebra both rest on -- masking idempotent
+and only ever coarsening, block deletions never overlapping -- and is the only
+detector for a broken law, which otherwise yields a well-formed digest
+answering a different question than the one asked. Running it, and the rest of
+the offline checks, is not a duty: the commit that edits either directory does
+it (`.pre-commit-config.yaml`).
 
 ## Standing maintenance
 
-Always implicitly appended to the todo list (recurring, not a literal
-checkbox to clear):
+Two duties, always implicitly appended to the todo list. That there are only
+two is a design commitment, not an accident: every other recurring obligation
+has been bound to the occasion that creates it or argued away
+(`design/040-design.kb/every-duty-has-an-occasion.md`), so a duty listed here
+is a claim that neither was possible.
 
-- Check `log/patch-failures/` for new incidents; triage per
-  `CLAUDE.kb/patch-failure-triage.md`.
-- Run `gc_patch_failures.py` occasionally to prune `log/patch-failures/_archive/`
-  entries past their retention window.
-- `compress_traffic.py` needs no scheduling: `addons/flow2jsonl.py` spawns it for every
-  shard it opens, so every proxy start sweeps yesterday and earlier. It skips
-  shards a process holds open or wrote today, so running it by hand at any time
-  is safe too. Failures land as `_compress-traffic` incidents, with the detail
-  in `log/compress_traffic.log`; `tests/test_compression.py` re-runs the whole
-  sweep offline against seeded captures.
-- Run `check_laws.py` after any `masks.d/` or `blocks.d/` edit; it is the
-  only detector for a broken law, which otherwise yields a well-formed
-  digest answering a different question than the one asked. A `blocks.d/`
-  edit also moves every `_strip-rate` floor, so run `check_strip_floors.py`
-  with it.
-- Run `survey_captures.py --drift` for the prompt copies no fixture covers,
-  one row per (shape, core) and newest first, naming the raw to promote
-  (`cp` per `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,
-  `check_dark_patches.py`, `check_masks.py`, `check_strip_floors.py`).
-  Each shape's top row is the due one, but weigh it against `seen`: a
-  one-off capture can be newer than the copy that keeps recurring.
-  Promotion has no automatic
-  trigger — additive drift is invisible to every loud mechanism until
-  someone looks; the `_strip-rate` tripwire only catches
-  subtractive/rewrite drift. Bare `survey_captures.py` is still the full
-  inventory, for reading what is on disk rather than what is missing.
+- **Triage `log/patch-failures/` when it is nonempty**, per
+  `CLAUDE.kb/patch-failure-triage.md`. Reading a drifted body and deciding what
+  upstream did to a patch's target is judgment about someone else's prose, and
+  no occasion produces it. The queue's *upkeep* is not yours: a proxy start
+  sweeps it, expiring `_uncaught-*` transients unread and reclaiming archives
+  past their window.
+
+- **Promote fixtures.** `survey_captures.py --drift` lists the prompt copies no
+  fixture covers, one row per (shape, core), newest first, naming the raw to
+  promote (`cp` per `system-prompts.kb/CLAUDE.md`; the checks then run
+  themselves, on the commit). Each shape's top row is the due one, but weigh it
+  against `seen`: a one-off capture can be newer than the copy that keeps
+  recurring. This is still a duty because additive drift is invisible to every
+  loud mechanism until someone looks -- the `_strip-rate` tripwire catches only
+  subtractive and rewrite drift -- and making it a signal instead is an open
+  question in `every-duty-has-an-occasion.md`. Bare `survey_captures.py` is the
+  full inventory, for reading what is on disk rather than what is missing.

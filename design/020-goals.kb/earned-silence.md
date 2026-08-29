@@ -16,3 +16,9 @@ fixture the patch was verified against, or a recognized non-interactive
 request shape. Any other anomaly is loud — and exactly once per
 distinct content, so loudness stays actionable instead of becoming
 noise someone learns to mute.
+
+This binds the system's quiet, not the operator's time; for the other
+direction -- when the operator may be asked to look at all -- see
+[earned-attention], which is a sibling and not a consequence.
+
+[earned-attention]: earned-attention.md
