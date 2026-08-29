@@ -36,6 +36,16 @@ One incident class needs no fix: **live-edit transients**, a short burst of
 cause is already gone from the working tree. All three variants below
 produce them, and all are archive-and-move-on.
 
+You don't have to be the one who moves on, though: `gc_patch_failures.py`
+archives any `_uncaught-*` record past the retention window unread, because
+"already gone" and "still there" are told apart by waiting and nothing else.
+Expiry is safe on `save_incident`'s idempotence — removing the record restores
+the warning, so a cause that is still live re-files on its next request while a
+transient never returns. Reading one inside the window is therefore optional:
+the sections below are for when you want the cause *now*, which is usually
+when it's your own refactor in flight. No other rule may expire this way; for
+a patch miss or a tooldesc drift, age is evidence of neglect, not resolution.
+
 Data half: `_uncaught-syspatch` `AssertionError`s whose messages name a
 patch directory in a half-created state ("missing match.md", "no *.md
 files in match.d/", missing replace.md). The proxy loads patches
@@ -312,4 +322,5 @@ patch's job is done — sunset it, don't recreate it.
    no other live incident still references it. This keeps a just-resolved
    incident inspectable for a while; `gc_patch_failures.py`, run
    periodically (not automatic), reclaims anything left archived past its
-   retention window.
+   retention window — and archives live `_uncaught-*` records that reached
+   the same age unread, per the transient argument above.

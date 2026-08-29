@@ -14,12 +14,17 @@ Narrative in `../session.kb/`.
       subtask, in landing order; each retires a CLAUDE.md duty line, but
       the docs edit waits for the final subtask so the section never
       overstates what's built:
-  - [ ] `gc_patch_failures.py`: also expire *live* `_uncaught-*` incidents
+  - [x] `gc_patch_failures.py`: also expire *live* `_uncaught-*` incidents
         past the retention window. Safe by an existing property:
         `save_incident` is idempotent per (rule, content), so a persistent
         cause re-files (and re-warns) after expiry, while a live-edit
         transient never returns. Retires transient triage entirely. Test:
-        expired-then-refired incident warns a second time.
+        expired-then-refired incident warns a second time. Landed:
+        `expire_transients()`, archiving rather than deleting so `gc` still
+        gets its own look and a wrong guess stays readable beside the
+        re-filed record; `tests/test_gc_transients.py` (6, each
+        mutation-verified). CLAUDE.md's duty line is still accurate as
+        written ("run gc occasionally") and retires with subtask 2.
   - [ ] Run gc opportunistically at proxy startup (beside the eager
         `masks()` load in `addons/syspatch.py`, or inside
         `archive_incident`). Retires "run gc occasionally".
@@ -110,11 +115,15 @@ Narrative in `../session.kb/`.
 
 ## Later
 
-- [ ] Stash `cc_version` (from the request's `User-Agent`) on `Incident`
-      records. Triage's first question, today answered by decompressing a
-      day of `traffic.jsonl.zst` and matching `timestamp_start` to the
-      incident's `at`. Prevents no neglect-negative — it only makes the
-      irreducible judgment visits cheaper — hence Later, not committed.
+- [x] Stash `cc_version` on `Incident` records. Landed as `ffea89a`, three
+      commits before the plan above filed it -- same session as the toil
+      evaluation that proposed it. Source is the billing header's
+      `cc_version=`, not the `User-Agent`: both carry it, but the addon has
+      already parsed the body the billing header rides in. Records carry
+      `model` too, since tool-description wordings vary by model family and
+      the `upstream.d/` filename names whichever axis moved. First-seen, not
+      latest -- the write is idempotent, and that is what keeps a live proxy
+      from rewriting the record every request.
 - [ ] Consider renaming this repo to encompass both works -- the proxy and
       `binpatch.py` (on-disk patches). The two-surface framing already landed in
       README + CLAUDE.md, so what's left is mechanical: the name is carried by
