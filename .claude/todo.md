@@ -36,12 +36,20 @@ Narrative in `../session.kb/`.
         imports that `reload.py`'s RELOADED didn't name, which would have
         left it silently stale under a live proxy; `reload.py` now checks
         that set against the addons' imports (observed red on exactly this).
-  - [ ] Pre-commit hook: any commit touching `masks.d/`, `blocks.d/`, or
+  - [x] Pre-commit hook: any commit touching `masks.d/`, `blocks.d/`, or
         `system-prompts.kb/` runs the offline check suite (`check_laws`,
         `check_masks`, `check_strip_floors`, `check_patches`,
         `check_dark_patches` — all subsecond). Pure functions of those
         inputs: event-driven makes them impossible to forget and pointless
         to schedule. Retires the "run X after editing Y" duty lines.
+        Landed: `.pre-commit-config.yaml` runs `pytest monitoring/`, not the
+        five commands by name — monitoring/ already parametrizes over every
+        check's PREDICATES, so a property added beside its data gates
+        commits with nothing to update here. Verified in all three states
+        (skips an unrelated path, passes on clean data, blocks on a
+        deliberately dark mask). `pre-commit install` chained the existing
+        git-localhost-store hook as `pre-commit.legacy`; README says so,
+        since `.git/hooks/` isn't versioned.
   - [ ] Make `--drift` loud (promoted from ## Later, which asked for a
         ruling: the ruling landed as the 2026-08-29 "get us to that state"
         direction; the predicate below is agent-proposed, veto before

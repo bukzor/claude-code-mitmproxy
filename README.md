@@ -48,6 +48,15 @@ form — `collect` / `render` / `PREDICATES` — is `check_verdict.py`. Every mo
 below lives in `lib/claude_mitmproxy/` and is installed as a
 `claude-mitmproxy-*` command.
 
+That suite is also a commit gate. `.pre-commit-config.yaml` runs it whenever a
+commit touches `masks.d/`, `blocks.d/` or `system-prompts.kb/` — the three
+inputs every check reads — so "run `check_laws` after editing a mask" is not
+something anyone has to remember. `pre-commit install` wires it up in a fresh
+clone, chaining any pre-existing hook as `pre-commit.legacy` rather than
+replacing it. A red the commit didn't cause (upstream shipped a new prompt
+overnight) is triage, not a bad commit: `--no-verify`, then
+`CLAUDE.kb/patch-failure-triage.md`.
+
 - `check_patches.py` — the live patch set against the newest full fixture:
   no rule proved itself in scope and then failed to find its target, and the
   set still nets out shorter.

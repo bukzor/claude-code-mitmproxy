@@ -1,0 +1,31 @@
+# The offline checks, fired by the data they are functions of.
+#
+# `masks.d/`, `blocks.d/` and `system-prompts.kb/` are the inputs every
+# `check_*` module reads: nothing else under version control can move a
+# digest, a floor, or a verdict. That makes a commit touching one of them the
+# only occasion these checks have, and firing them there is what turns "run
+# check_laws after editing masks.d/" from a line someone has to remember into
+# something that cannot be skipped by forgetting.
+#
+# `monitoring/` rather than the five commands by name: it parametrizes over
+# every check module's PREDICATES, so a property added beside its data appears
+# here on the next run with nothing to update, and one failure doesn't hide
+# the rest (monitoring/CLAUDE.md).
+#
+# Red here normally means this commit broke something -- which is exactly what
+# the file filter buys, since without it a red would just as likely be upstream
+# shipping a new prompt overnight. When it *is* that -- monitoring/CLAUDE.md
+# calls its own reds triage, not a broken build -- `--no-verify` is the right
+# move, then CLAUDE.kb/patch-failure-triage.md.
+#
+# Installed with `pre-commit install`, which chains the pre-existing
+# `.git/hooks/pre-commit` as `pre-commit.legacy` rather than replacing it.
+repos:
+  - repo: local
+    hooks:
+      - id: offline-checks
+        name: offline checks (masks, blocks, fixtures)
+        entry: .venv/bin/pytest monitoring/ -q
+        language: system
+        pass_filenames: false
+        files: ^(masks\.d/|blocks\.d/|system-prompts\.kb/)
