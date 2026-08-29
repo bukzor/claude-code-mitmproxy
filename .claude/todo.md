@@ -7,6 +7,44 @@ managed-by: Skill(llm-subtask)
 Use subtasks, not sections for organization. Ordered by intended completion.
 Narrative in `../session.kb/`.
 
+- [ ] Collapse "Standing maintenance" to demand-driven: every polled duty
+      becomes loud or event-driven, so the whole section reduces to "triage
+      `log/patch-failures/` when nonempty" (2026-08-29 toil evaluation;
+      `--drift` itself already landed as deda83e). One small commit per
+      subtask, in landing order; each retires a CLAUDE.md duty line, but
+      the docs edit waits for the final subtask so the section never
+      overstates what's built:
+  - [ ] `gc_patch_failures.py`: also expire *live* `_uncaught-*` incidents
+        past the retention window. Safe by an existing property:
+        `save_incident` is idempotent per (rule, content), so a persistent
+        cause re-files (and re-warns) after expiry, while a live-edit
+        transient never returns. Retires transient triage entirely. Test:
+        expired-then-refired incident warns a second time.
+  - [ ] Run gc opportunistically at proxy startup (beside the eager
+        `masks()` load in `addons/syspatch.py`, or inside
+        `archive_incident`). Retires "run gc occasionally".
+  - [ ] Pre-commit hook: any commit touching `masks.d/`, `blocks.d/`, or
+        `system-prompts.kb/` runs the offline check suite (`check_laws`,
+        `check_masks`, `check_strip_floors`, `check_patches`,
+        `check_dark_patches` — all subsecond). Pure functions of those
+        inputs: event-driven makes them impossible to forget and pointless
+        to schedule. Retires the "run X after editing Y" duty lines.
+  - [ ] Make `--drift` loud (promoted from ## Later, which asked for a
+        ruling: the ruling landed as the 2026-08-29 "get us to that state"
+        direction; the predicate below is agent-proposed, veto before
+        building). Predicate: an unpromoted core that *recurs* (>=2 raw
+        captures) per shape — recurrence answers the noted "goes red the
+        moment upstream ships anything" objection, since a single fresh
+        capture stays silent until a second session confirms the shape
+        stuck. Emit through the incident store (rule `_unpromoted-drift`
+        or similar) so it dedups per content and lands in the one queue
+        that remains. Sequence after the `blocks.d/` additions below —
+        they merge spurious copies out of the very table this reads.
+  - [ ] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
+        single queue-triage duty; fold the event-driven checks into the
+        hook's own description; `compress_traffic` bullet already needs no
+        change (self-scheduling, failures already file incidents — a log
+        tail was never a duty).
 - [ ] <https:../proxy-memory-leak-2026-08-18/todo.kb/2026-08-18-000-confirm-store-retention-and-adopt-a-bound.md>
       (outside `.claude/`, so this breadcrumb is its only sweep visibility):
       restart done, fix-verification RSS capture done 2026-08-21 (99 MiB →
@@ -72,15 +110,11 @@ Narrative in `../session.kb/`.
 
 ## Later
 
-- [ ] Decide whether `survey_captures.py --drift` should become a loud
-      `check_*` instead of a report someone remembers to run. It is the last
-      standing duty with no tripwire, which `design/020-goals.kb/earned-silence.md`
-      argues against on principle. The predicate cannot be "any uncovered
-      copy" — 23 are uncovered today, most of them historical, so it would be
-      permanently red. "The newest copy per shape is uncovered" self-clears on
-      promotion and is the actual duty, but it goes red the moment upstream
-      ships anything, which is either the point or a nag depending on how
-      often that is. Needs a ruling, not an implementation.
+- [ ] Stash `cc_version` (from the request's `User-Agent`) on `Incident`
+      records. Triage's first question, today answered by decompressing a
+      day of `traffic.jsonl.zst` and matching `timestamp_start` to the
+      incident's `at`. Prevents no neglect-negative — it only makes the
+      irreducible judgment visits cheaper — hence Later, not committed.
 - [ ] Consider renaming this repo to encompass both works -- the proxy and
       `binpatch.py` (on-disk patches). The two-surface framing already landed in
       README + CLAUDE.md, so what's left is mechanical: the name is carried by
