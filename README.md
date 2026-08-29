@@ -79,7 +79,8 @@ below lives in `lib/claude_mitmproxy/` and is installed as a
   optional blocks, and promoted-yet per capture; the "someone looks" step
   of the standing promotion duty. Its `core` column is the digest with
   session-optional blocks stripped too, so an unseen core -- and only an
-  unseen core -- means upstream shipped new prompt copy.
+  unseen core -- means upstream shipped new prompt copy. `--drift` reports
+  just the cores no fixture covers, newest first, naming the raw to promote.
 - `dump_core.py` — that same core, as text, for diffing two captures whose
   cores unexpectedly do (or don't) agree.
 - `diff_matrices.py` — two saved `check_dark_patches.py` tables, reporting

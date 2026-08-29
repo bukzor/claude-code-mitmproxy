@@ -26,6 +26,18 @@ to every loud mechanism until someone looks — so `survey_captures.py` is
 that look: one row per capture, with shape, session-optional blocks, and
 whether this exact body is already promoted.
 
+Looking is not the same as finding, though, and at ~100 captures the
+inventory stopped fitting the duty it serves: the question is which
+*copies* lack a fixture, and the table answers it only by eye, one
+grouping and set-difference at a time. `--drift` computes that instead —
+one row per uncovered (shape, core), newest first, naming the raw to
+promote. Coverage is read off the fixtures rather than off captures that
+equal one, so a fixture whose capture has since been cleaned up still
+counts as covering its copy. The judgment stays human: the tool ranks by
+recency and reports how many captures carry each copy, because the newest
+copy and the copy that keeps recurring are not always the same one, and
+which to promote is a call about what upstream is actually serving.
+
 Beside each capture's raw digest the survey prints a *core* digest: the
 masked body hashed again after the session-optional blocks (`blocks.d/`)
 are stripped too. Rows sharing a core are the same prompt modulo which

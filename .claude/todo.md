@@ -49,6 +49,15 @@ Narrative in `../session.kb/`.
 
 ## Later
 
+- [ ] Decide whether `survey_captures.py --drift` should become a loud
+      `check_*` instead of a report someone remembers to run. It is the last
+      standing duty with no tripwire, which `design/020-goals.kb/earned-silence.md`
+      argues against on principle. The predicate cannot be "any uncovered
+      copy" — 23 are uncovered today, most of them historical, so it would be
+      permanently red. "The newest copy per shape is uncovered" self-clears on
+      promotion and is the actual duty, but it goes red the moment upstream
+      ships anything, which is either the point or a nag depending on how
+      often that is. Needs a ruling, not an implementation.
 - [ ] Consider renaming this repo to encompass both works -- the proxy and
       `binpatch.py` (on-disk patches). The two-surface framing already landed in
       README + CLAUDE.md, so what's left is mechanical: the name is carried by

@@ -100,11 +100,14 @@ checkbox to clear):
   digest answering a different question than the one asked. A `blocks.d/`
   edit also moves every `_strip-rate` floor, so run `check_strip_floors.py`
   with it.
-- Run `survey_captures.py` to spot captures whose *core* digest matches no
-  promoted fixture; promote the fullest raw per shape (`cp` per
-  `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,
+- Run `survey_captures.py --drift` for the prompt copies no fixture covers,
+  one row per (shape, core) and newest first, naming the raw to promote
+  (`cp` per `system-prompts.kb/CLAUDE.md`, then `check_patches.py`,
   `check_dark_patches.py`, `check_masks.py`, `check_strip_floors.py`).
+  Each shape's top row is the due one, but weigh it against `seen`: a
+  one-off capture can be newer than the copy that keeps recurring.
   Promotion has no automatic
   trigger — additive drift is invisible to every loud mechanism until
   someone looks; the `_strip-rate` tripwire only catches
-  subtractive/rewrite drift.
+  subtractive/rewrite drift. Bare `survey_captures.py` is still the full
+  inventory, for reading what is on disk rather than what is missing.
