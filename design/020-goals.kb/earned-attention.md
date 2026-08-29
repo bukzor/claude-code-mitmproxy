@@ -39,6 +39,25 @@ What is left over is judgment -- deciding what upstream's new wording means
 for a patch -- which no amount of scheduling can absorb, and which is
 precisely what the freed attention is for.
 
+## Prior art
+
+This is a fragment of SRE re-derived at single-operator scale: "make it
+loud" is actionable alerting, the old standing list was toil in the
+strict sense, and the triage residue is the judgment SRE caps toil to
+protect. Two deltas are load-bearing, not accidental. First, the
+argument against a standing duty here is reliability, not economics -- a
+skipped duty fails silently, whereas SRE's toil merely costs -- which is
+what licenses the "argue it away" route where SRE would only
+deprioritize. Second, SRE's default cure is automation on a schedule,
+and a schedule is a duty relocated: someone must notice the cron died.
+This repo prefers binding work to an occasion that cannot be skipped
+while work continues -- the pattern SRE culture already practices as CI
+without naming it. And there is no error-budget analog on purpose:
+budgets price a negotiation between two parties, and at one operator
+there is no counterparty -- the nearest kin is a calibration rule
+(strip floors set from fixture cores so ordinary traffic never pages),
+not a negotiation instrument.
+
 The mechanism, and which route each duty took:
 [`every-duty-has-an-occasion`].
 
