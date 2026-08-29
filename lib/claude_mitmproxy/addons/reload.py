@@ -21,6 +21,7 @@ import logging
 import re
 from pathlib import Path
 
+from claude_mitmproxy import gc_patch_failures
 from claude_mitmproxy import incidents
 from claude_mitmproxy import prompt_capture
 from claude_mitmproxy import prompt_location
@@ -37,6 +38,7 @@ RELOADED = (
     rule_templates,
     prompt_shape,
     incidents,
+    gc_patch_failures,
     prompt_location,
     prompt_patches,
     prompt_capture,
@@ -44,6 +46,7 @@ RELOADED = (
 )
 
 PACKAGE = Path(__file__).parent.parent
+ADDONS = Path(__file__).parent
 
 LOCAL_FROM_IMPORT = re.compile(
     rf"^from ({'|'.join(m.__name__ for m in RELOADED)}) import", re.MULTILINE
@@ -52,6 +55,7 @@ ADDON_IMPORT = re.compile(
     r"^(?:from|import) claude_mitmproxy\.addons\b|^from claude_mitmproxy import addons\b",
     re.MULTILINE,
 )
+LIBRARY_IMPORT = re.compile(r"^from claude_mitmproxy import (\w+)", re.MULTILINE)
 
 
 def check_no_local_from_imports() -> None:
@@ -82,13 +86,35 @@ def check_addons_unimported() -> None:
     offenders = [
         str(path.relative_to(PACKAGE.parent))
         for path in sorted(PACKAGE.rglob("*.py"))
-        if path.parent != Path(__file__).parent and ADDON_IMPORT.search(path.read_text())
+        if path.parent != ADDONS and ADDON_IMPORT.search(path.read_text())
     ]
     assert not offenders, (offenders, "addons are loaded, not imported")
 
 
+def check_reloaded_covers_addon_imports() -> None:
+    """Refuse to reload while an addon imports a library module RELOADED
+    doesn't name. mitmproxy re-executes the addon, so the addon's own edits
+    land; what it holds is rebound from `sys.modules` and keeps running the
+    code the proxy started with. That is the whole failure this file exists to
+    prevent, and it is invisible from the outside -- the stale module goes on
+    working, correctly, from an old definition. Checked rather than
+    documented, because the way it goes wrong is someone adding an import
+    three files away and never coming here."""
+    named = {module.__name__.rsplit(".", 1)[-1] for module in RELOADED}
+    imported = {
+        name
+        for path in sorted(ADDONS.glob("*.py"))
+        for name in LIBRARY_IMPORT.findall(path.read_text())
+    }
+    assert not imported - named, (
+        sorted(imported - named),
+        "addon-imported module missing from RELOADED",
+    )
+
+
 check_no_local_from_imports()
 check_addons_unimported()
+check_reloaded_covers_addon_imports()
 for module in RELOADED:
     importlib.reload(module)
 logging.info("reloaded %s", ", ".join(m.__name__ for m in RELOADED))

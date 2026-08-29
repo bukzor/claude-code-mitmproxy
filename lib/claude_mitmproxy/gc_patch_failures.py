@@ -22,9 +22,14 @@ That argument covers `_uncaught-*` only. A patch miss or a tooldesc drift
 means upstream moved and this repo has not caught up -- the record's age is
 evidence of neglect, not of resolution, and expiring it would delete the
 only notice.
+
+Neither half is scheduled by anyone: `sweep_at_startup` runs both from
+`addons/syspatch.py`'s load hook, once per proxy start. Running it by hand
+stays safe and does the same thing, but nothing depends on someone doing so.
 """
 from __future__ import annotations
 
+import logging
 import sys
 import time
 from pathlib import Path
@@ -37,6 +42,8 @@ DEFAULT_RETENTION_DAYS = 30
 # wrapper's (`incidents.capture_uncaught`), so this covers every addon
 # without naming them.
 TRANSIENT_RULE_PREFIX = "_uncaught-"
+
+FAILURE_RULE = "_gc-patch-failures"
 
 
 def gc(archive_dir: Path, retention_days: float, *, dry_run: bool) -> list[Path]:
@@ -88,16 +95,53 @@ def expire_transients(
     return stale
 
 
+def sweep(retention_days: float, *, dry_run: bool) -> tuple[list[Path], list[Path]]:
+    """Both halves against the live store, as (expired, removed).
+
+    Expiry runs first, so an incident that ages out today is archived now and
+    judged by the archive window on some later run -- never expired and
+    reclaimed in the same pass, which would collapse the two windows into one
+    and lose the inspectable interval the archive exists to provide."""
+    expired = expire_transients(incidents.CAPTURE_DIR, retention_days, dry_run=dry_run)
+    archive = incidents.CAPTURE_DIR / incidents.ARCHIVE_DIRNAME
+    removed = gc(archive, retention_days, dry_run=dry_run)
+    return expired, removed
+
+
+def sweep_at_startup() -> None:
+    """Run the sweep once, from `addons/syspatch.py`'s load hook -- this
+    module's only scheduler, and the reason nobody has to remember it.
+
+    A proxy start is the right occasion on both counts: once per process, so
+    it never touches the request path, and frequent enough against a window
+    measured in weeks (the proxy is restarted on the order of days).
+
+    Failures are captured, not raised. Everything here is disk housekeeping,
+    and a proxy that patches traffic with a cluttered `log/` is strictly
+    better than one that refused to start over it. The incident is the notice,
+    which does mean a store too broken to record it takes the proxy down --
+    correctly, since at that point nothing in this repo can report anything."""
+    try:
+        expired, removed = sweep(DEFAULT_RETENTION_DAYS, dry_run=False)
+    except Exception as exc:
+        incidents.capture_uncaught(FAILURE_RULE, exc, incidents.CAPTURE_DIR)
+        return
+    # Silent when it did nothing, which is most starts: an unconditional line
+    # would be one nobody reads, and this one should be worth reading.
+    if expired or removed:
+        logging.info(
+            "gc: expired %d transient(s), reclaimed %d archived file(s)",
+            len(expired),
+            len(removed),
+        )
+
+
 def main():
     args = [a for a in sys.argv[1:] if a != "--dry-run"]
     dry_run = "--dry-run" in sys.argv[1:]
     retention_days = float(args[0]) if args else DEFAULT_RETENTION_DAYS
 
-    # Expire first, so an incident that ages out today is archived and then
-    # judged by the archive window on its own later run, not both at once.
-    expired = expire_transients(incidents.CAPTURE_DIR, retention_days, dry_run=dry_run)
-    archive = incidents.CAPTURE_DIR / incidents.ARCHIVE_DIRNAME
-    removed = gc(archive, retention_days, dry_run=dry_run)
+    expired, removed = sweep(retention_days, dry_run=dry_run)
 
     verb = "would expire" if dry_run else "expired"
     for path in expired:

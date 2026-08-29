@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 
+from claude_mitmproxy import gc_patch_failures
 from claude_mitmproxy import incidents
 from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
@@ -26,7 +27,12 @@ def load(loader):
     Masks are re-read the same way, but compiling them here too is not
     redundant: a malformed one takes the proxy down at startup rather than
     at hash time. Editing `masks.d/` needs no restart and no follow-up: no
-    stored name depends on the mask set, and what does re-derives itself."""
+    stored name depends on the mask set, and what does re-derives itself.
+
+    It also sweeps `log/patch-failures/`, which has nothing to do with
+    patching a system prompt -- it is here because a load hook is the only
+    once-per-proxy occasion this repo has, and because that store is already
+    this addon's heaviest dependency."""
     del loader  # unused
     patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
     logging.info("loaded %d system prompt patches", len(patches))
@@ -39,6 +45,7 @@ def load(loader):
             label = "match-only"
         logging.info("  %s (%s)", patch.name, label)
     logging.info("loaded %d capture-digest masks", len(incidents.masks()))
+    gc_patch_failures.sweep_at_startup()
 
 
 def request(flow):

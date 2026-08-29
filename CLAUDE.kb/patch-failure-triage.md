@@ -320,7 +320,9 @@ patch's job is done — sunset it, don't recreate it.
    `.venv`, which the live proxy is running out of) moves it into
    `log/patch-failures/_archive/`, taking the shared body along only once
    no other live incident still references it. This keeps a just-resolved
-   incident inspectable for a while; `gc_patch_failures.py`, run
-   periodically (not automatic), reclaims anything left archived past its
-   retention window — and archives live `_uncaught-*` records that reached
-   the same age unread, per the transient argument above.
+   incident inspectable for a while; `gc_patch_failures.py` reclaims anything
+   left archived past its retention window — and archives live `_uncaught-*`
+   records that reached the same age unread, per the transient argument above.
+   It schedules itself: `addons/syspatch.py`'s load hook sweeps once per proxy
+   start, so this is not a duty. Running it by hand does the same thing and is
+   always safe.

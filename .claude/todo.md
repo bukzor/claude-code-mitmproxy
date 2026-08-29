@@ -25,9 +25,17 @@ Narrative in `../session.kb/`.
         re-filed record; `tests/test_gc_transients.py` (6, each
         mutation-verified). CLAUDE.md's duty line is still accurate as
         written ("run gc occasionally") and retires with subtask 2.
-  - [ ] Run gc opportunistically at proxy startup (beside the eager
+  - [x] Run gc opportunistically at proxy startup (beside the eager
         `masks()` load in `addons/syspatch.py`, or inside
-        `archive_incident`). Retires "run gc occasionally".
+        `archive_incident`). Retires "run gc occasionally". Landed:
+        `sweep_at_startup()` from syspatch's load hook — not
+        `archive_incident`, which `expire_transients` itself calls, so a
+        sweep hung there would run once per record it archived. Failures
+        file a `_gc-patch-failures` incident instead of refusing to start.
+        Fallout: `gc_patch_failures` was the first library module an addon
+        imports that `reload.py`'s RELOADED didn't name, which would have
+        left it silently stale under a live proxy; `reload.py` now checks
+        that set against the addons' imports (observed red on exactly this).
   - [ ] Pre-commit hook: any commit touching `masks.d/`, `blocks.d/`, or
         `system-prompts.kb/` runs the offline check suite (`check_laws`,
         `check_masks`, `check_strip_floors`, `check_patches`,
