@@ -71,7 +71,7 @@ Narrative in `../session.kb/`.
       restart done, fix-verification RSS capture done 2026-08-21 (99 MiB →
       141 MiB / ~66.6 h, ~30x slower than the pre-fix leak) — only the
       standing-RSS-monitoring ruling is left, open question for the user.
-- [ ] Add `blocks.d/` rules for the two session-optional blocks nothing
+- [x] Add `blocks.d/` rules for the two session-optional blocks nothing
       covers: the auto-mode paragraph ("You are operating autonomously. The
       user is not watching in real time...", through the check-your-last-
       paragraph and check-the-evidence bullets) and the model-identity
@@ -85,7 +85,22 @@ Narrative in `../session.kb/`.
       `survey_captures.py --drift`; diffing the two 2.1.251 harness-fable
       cores is the reproduction. Run `check_laws.py` and
       `check_strip_floors.py` with the edit, then re-check `--drift`: some
-      of today's 22 uncovered copies should merge.
+      of today's 22 uncovered copies should merge. Landed as three rules,
+      not two: the auto-mode block has two wordings (v2.1.227 reworded its
+      last paragraph from em-dashes to a parenthetical), so it is whole
+      forms per `blocks.d/README.md` -- few alternatives, parts not
+      independently optional. 22 -> 19 uncovered copies. Floors did not move
+      at all, which is the general rule and worth remembering: a floor is
+      what the *patch set* strips from a core, so deleting more core only
+      moves it when a patch was matching inside the deleted text.
+- [ ] Add a `blocks.d/` rule for the fork-provenance paragraph ("This
+      conversation was forked out of {path}..."), the third uncovered
+      session-optional block. Found the same way as the two above, while
+      diffing v2.1.212.f03 harness-fable cores: with auto-mode and
+      model-identity stripped, it is the remaining unexplained difference
+      between two captures of one copy. Needs a `$` hole for the path (no
+      mask tokenizes it today), so check whether a `masks.d/` rule for the
+      path is the better half of the fix.
 - [ ] Rule on how to promote two *concurrent* copies of one shape at one
       cc_version. `harness-fable` at 2.1.251 has two (`ada19cdbceea` from
       2.1.251.d59, `6ee2dac2d820` from 2.1.251.171) differing on a reworded
