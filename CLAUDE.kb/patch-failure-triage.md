@@ -22,8 +22,8 @@ not fail-soft. Same `_bodies`-style underscore-prefixed rule as
 
 One incident class needs no fix: **live-edit transients**, a short burst of
 `_uncaught-*` incidents timestamped within seconds of each other, whose
-cause is already gone from the working tree. Both halves of the reload
-story produce them, and both are archive-and-move-on.
+cause is already gone from the working tree. All three variants below
+produce them, and all are archive-and-move-on.
 
 Data half: `_uncaught-syspatch` `AssertionError`s whose messages name a
 patch directory in a half-created state ("missing match.md", "no *.md
@@ -34,6 +34,17 @@ intermediate file state load-bearing for a moment; affected requests pass
 through unpatched (mitmproxy contains addon exceptions). To avoid causing
 them: build a new patch dir outside `system-prompt-patches.d/` and `mv` it
 in whole -- `mv` within a filesystem is atomic, `mkdir`-then-write is not.
+
+Environment half: `_uncaught-syspatch` `AssertionError: rules dir missing
+(wrong $HOME?)` -- not a malformed patch subdirectory but the whole
+`~/.claude/system-prompt-patches.d/` tree transiently absent, because
+`~/.claude` is itself a git repo an operator edits live. A `git rebase`
+there briefly checks out a commit that doesn't have the directory (e.g.
+`checkout origin/main` before the pick), and a request lands in that
+window. Confirm with `git -C ~/.claude reflog --date=iso`: a
+`rebase (start)`/`rebase (abort)` (or any checkout) pair straddling the
+incident's `at` timestamp dates the burst, same as the code half's
+`git log -S{symbol}` check.
 
 Code half: `_uncaught-{addon}` `NameError`/`AttributeError` naming a symbol
 that no longer exists, from a mid-refactor save mitmproxy re-executed
