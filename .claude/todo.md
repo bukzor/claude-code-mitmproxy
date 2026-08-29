@@ -12,6 +12,29 @@ Narrative in `../session.kb/`.
       restart done, fix-verification RSS capture done 2026-08-21 (99 MiB →
       141 MiB / ~66.6 h, ~30x slower than the pre-fix leak) — only the
       standing-RSS-monitoring ruling is left, open question for the user.
+- [ ] Add `blocks.d/` rules for the two session-optional blocks nothing
+      covers: the auto-mode paragraph ("You are operating autonomously. The
+      user is not watching in real time...", through the check-your-last-
+      paragraph and check-the-evidence bullets) and the model-identity
+      paragraph ("This iteration of Claude is Claude Fable 5..."). 36 of 99
+      captures carry each; no `blocks.d/` or `masks.d/` rule matches either
+      (`grep -rl 'operating autonomously\|iteration of Claude' blocks.d/
+      masks.d/` is empty). Both are session/model state, not prompt copy, so
+      leaving them in inflates every carrier's core -- two captures of one
+      copy read as two copies -- and inflates that shape's `_strip-rate`
+      floor, the hazard CLAUDE.md already names. Found via
+      `survey_captures.py --drift`; diffing the two 2.1.251 harness-fable
+      cores is the reproduction. Run `check_laws.py` and
+      `check_strip_floors.py` with the edit, then re-check `--drift`: some
+      of today's 22 uncovered copies should merge.
+- [ ] Rule on how to promote two *concurrent* copies of one shape at one
+      cc_version. `harness-fable` at 2.1.251 has two (`ada19cdbceea` from
+      2.1.251.d59, `6ee2dac2d820` from 2.1.251.171) differing on a reworded
+      `<system-reminder>` harness bullet -- genuine copy drift, so the
+      `blocks.d/` fix above will not merge them. `system-prompts.kb/CLAUDE.md`
+      names variants per *shape* (`-opus`, `-fable`), which has no slot for
+      two copies of the same shape at the same version. Either pick one
+      (which one, on what rule?) or extend the naming.
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,
