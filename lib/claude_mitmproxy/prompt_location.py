@@ -14,6 +14,7 @@ should be the place a reader goes looking for it.
 from __future__ import annotations
 
 import json
+import re
 
 # Opening text that identifies the main prompt body among `system` blocks.
 BODY_MARKER = "\nYou are an interactive agent"
@@ -55,6 +56,22 @@ AUX_TRAILER_PREFIXES = ("## Session Context",)
 # enumerate block-by-block. Recognize the request instead, via the billing
 # header's own subagent flag.
 SUBAGENT_MARKER = "cc_is_subagent=true"
+
+# cc_version rides in the billing-header block, not the prompt body itself.
+CC_VERSION_RE = re.compile(r"\bcc_version=([^;\s\"]+)")
+
+
+def cc_version_of(system) -> str:
+    """The Claude Code build that sent this request, or "unknown" when the
+    billing header is absent or unparseable. Accepts any `system` -- a
+    caller holding a request field shouldn't have to narrow it first."""
+    if isinstance(system, list) and system:
+        first = system[0]
+        if isinstance(first, dict) and isinstance(first.get("text"), str):
+            m = CC_VERSION_RE.search(first["text"])
+            if m is not None:
+                return m.group(1)
+    return "unknown"
 
 
 def locate_prompt_bodies(system: list) -> list[dict]:

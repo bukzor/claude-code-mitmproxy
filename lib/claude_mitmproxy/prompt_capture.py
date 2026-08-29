@@ -27,7 +27,6 @@ promotion duty (and survey_captures.py) enumerates promotion candidates.
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from claude_mitmproxy import incidents
@@ -36,23 +35,10 @@ from claude_mitmproxy import rule_templates
 
 PROMPTS_DIR = repo_paths.LOG / "prompt-captures"
 
-# cc_version rides in the billing-header block, not the prompt body itself.
-CC_VERSION_RE = re.compile(r"\bcc_version=([^;\s\"]+)")
-
 # {directory: (mask set the digests were taken under, those digests)}. Held per
 # process rather than on disk: the .raw.md files are the only durable input, so
 # a rebuild is always available and can never disagree with them.
 _CAPTURED: dict[Path, tuple[tuple[rule_templates.Template, ...], set[str]]] = {}
-
-
-def cc_version_of(system) -> str:
-    if isinstance(system, list) and system:
-        first = system[0]
-        if isinstance(first, dict) and isinstance(first.get("text"), str):
-            m = CC_VERSION_RE.search(first["text"])
-            if m is not None:
-                return m.group(1)
-    return "unknown"
 
 
 def load_masked_digests(

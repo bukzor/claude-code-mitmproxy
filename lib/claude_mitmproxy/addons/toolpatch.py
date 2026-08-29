@@ -11,6 +11,7 @@ import json
 import logging
 
 from claude_mitmproxy import incidents
+from claude_mitmproxy import prompt_location
 from claude_mitmproxy import tool_patches
 
 UNCAUGHT_RULE = "_uncaught-toolpatch"
@@ -63,7 +64,14 @@ def _request(flow):
     if not isinstance(tools, list):
         return
 
+    origin = incidents.Origin(
+        prompt_location.cc_version_of(request.get("system")),
+        request.get("model", "unknown"),
+    )
     tool_patches.apply_tool_patches(
-        tools, tool_patches.load_tool_patches(tool_patches.PATCHES_DIR)
+        tools,
+        tool_patches.load_tool_patches(tool_patches.PATCHES_DIR),
+        incidents.CAPTURE_DIR,
+        origin,
     )
     flow.request.set_content(json.dumps(request).encode())

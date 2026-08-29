@@ -39,6 +39,18 @@ class Incident(NamedTuple):
     kind: str
 
 
+class Origin(NamedTuple):
+    """Which Claude Code build and model an incident came from -- provenance
+    for the record, never an input to the digest. Masks deliberately neutralize
+    cc_version in the body so one drift dedups across the versions that carry
+    it; that is what leaves the record itself the only place the version can be
+    written down. Defaults name the gap rather than hiding it: a caller with no
+    request in scope (`capture_uncaught`) files "unknown" instead of nothing."""
+
+    cc_version: str = "unknown"
+    model: str = "unknown"
+
+
 def masks() -> tuple[rule_templates.Template, ...]:
     """The compiled mask set, re-read per call exactly as patches are: an edit
     is live on the next request, with no restart, and nothing anywhere holds a
@@ -95,11 +107,17 @@ def save_body(body: str, digest: str, capture_dir: Path) -> Path:
     return body_path
 
 
-def save_incident(incident: Incident, digest: str, capture_dir: Path) -> Path | None:
+def save_incident(
+    incident: Incident, digest: str, capture_dir: Path, origin: Origin = Origin()
+) -> Path | None:
     """Write one incident at capture_dir/{rule}/{digest}.json, referencing the
     shared body. Returns the path when freshly written, None when this
     (rule, content) was already recorded — so the caller warns exactly once
-    per distinct failure, across restarts."""
+    per distinct failure, across restarts.
+
+    `origin` is first-seen, not latest, for the same reason `at` is: the write
+    is skipped once the record exists, and a live proxy re-hitting the failure
+    on every request must not keep rewriting it."""
     rule_dir = capture_dir / incident.rule
     rule_dir.mkdir(parents=True, exist_ok=True)
     meta_path = rule_dir / f"{digest}.json"
@@ -107,6 +125,8 @@ def save_incident(incident: Incident, digest: str, capture_dir: Path) -> Path | 
         return None
     meta = {
         "at": datetime.now(timezone.utc).isoformat(),
+        "cc_version": origin.cc_version,
+        "model": origin.model,
         "rule": incident.rule,
         "kind": incident.kind,
         "body": digest,
@@ -154,7 +174,12 @@ def archive_incident(rule: str, digest: str, capture_dir: Path) -> None:
             body_dest.touch()
 
 
-def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -> None:
+def report_issues(
+    body: str,
+    issues: list[Incident],
+    capture_dir: Path | None,
+    origin: Origin = Origin(),
+) -> None:
     """Warn about rules that didn't apply cleanly; when capture_dir is given,
     save the body once (content-addressed) plus one incident record per
     (rule, content) so it can be diagnosed later.
@@ -172,7 +197,7 @@ def report_issues(body: str, issues: list[Incident], capture_dir: Path | None) -
     digest = masked_hash(body)
     save_body(body, digest, capture_dir)
     for issue in issues:
-        saved = save_incident(issue, digest, capture_dir)
+        saved = save_incident(issue, digest, capture_dir, origin)
         # logging (not stderr): the console TUI routes records to its event log /
         # status bar; raw stderr corrupts curses. Warn only on a fresh capture.
         if saved is not None:

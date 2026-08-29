@@ -74,13 +74,16 @@ def _request(flow):
     # Re-read per request: editing `*-patches.d/` takes effect without a
     # restart (`CLAUDE.kb/patches-reread-per-request.md`).
     patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
+    origin = incidents.Origin(
+        prompt_location.cc_version_of(system), request.get("model", "unknown")
+    )
 
     if isinstance(system, str):
-        patched = prompt_patches.apply_patches(system, patches)
+        patched = prompt_patches.apply_patches(system, patches, incidents.CAPTURE_DIR, origin)
         request["system"] = patched
         if prompt_location.BODY_MARKER in system:
             prompt_patches.check_strip_floor(
-                system, patched, patches, incidents.CAPTURE_DIR
+                system, patched, patches, incidents.CAPTURE_DIR, origin
             )
     elif isinstance(system, list):
         bodies = prompt_location.locate_prompt_bodies(system)
@@ -100,14 +103,15 @@ def _request(flow):
                     prompt_location.render_system_blocks(system),
                     [issue],
                     incidents.CAPTURE_DIR,
+                    origin,
                 )
             return
         body = bodies[0]
         original = body["text"]
-        patched = prompt_patches.apply_patches(original, patches)
+        patched = prompt_patches.apply_patches(original, patches, incidents.CAPTURE_DIR, origin)
         body["text"] = patched
         prompt_patches.check_strip_floor(
-            original, patched, patches, incidents.CAPTURE_DIR
+            original, patched, patches, incidents.CAPTURE_DIR, origin
         )
     else:
         raise AssertionError(("unexpected system type", type(system)))

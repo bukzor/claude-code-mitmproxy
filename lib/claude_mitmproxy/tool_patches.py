@@ -75,6 +75,7 @@ def apply_tool_patches(
     tools: list,
     patches: Mapping[str, ToolPatch],
     capture_dir: Path | None = incidents.CAPTURE_DIR,
+    origin: incidents.Origin = incidents.Origin(),
 ) -> None:
     """Mutate `tools` in place: replace each patched tool's description with
     its slim stub. A live description that no longer matches upstream.md still
@@ -91,6 +92,6 @@ def apply_tool_patches(
         live = tool["description"].rstrip("\n")
         if live not in patch.upstreams:
             issue = incidents.Incident(f"tooldesc-{patch.name}", "changed-upstream")
-            incidents.report_issues(live, [issue], capture_dir)
+            incidents.report_issues(live, [issue], capture_dir, origin)
         tool["description"] = patch.replacement
 

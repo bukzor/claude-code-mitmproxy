@@ -27,6 +27,7 @@ def apply_patches(
     text: str,
     patches: tuple[rule_templates.Rule, ...],
     capture_dir: Path | None = incidents.CAPTURE_DIR,
+    origin: incidents.Origin = incidents.Origin(),
 ) -> str:
     """`rule_templates.apply_rules` plus this project's loudness policy: a patch
     that proved itself in scope and then failed to find its target is an
@@ -36,7 +37,7 @@ def apply_patches(
     patched, misses = rule_templates.apply_rules(text, patches)
     if misses:
         issues = [incidents.Incident(*miss) for miss in misses]
-        incidents.report_issues(text, issues, capture_dir)
+        incidents.report_issues(text, issues, capture_dir, origin)
     return patched
 
 
@@ -106,6 +107,7 @@ def check_strip_floor(
     patched: str,
     patches: tuple[rule_templates.Rule, ...],
     capture_dir: Path | None,
+    origin: incidents.Origin = incidents.Origin(),
 ) -> None:
     """The aggregate check no per-patch rule can provide: an upstream
     rewrite sends every shape-scoped patch silently out of scope at once,
@@ -124,7 +126,7 @@ def check_strip_floor(
         )
     else:
         return
-    incidents.report_issues(original, [issue], capture_dir)
+    incidents.report_issues(original, [issue], capture_dir, origin)
 
 
 # Re-read per request by the addon, so editing a patch takes effect without a

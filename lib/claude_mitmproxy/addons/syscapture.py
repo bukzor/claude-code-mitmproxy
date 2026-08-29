@@ -54,7 +54,7 @@ def _request(flow):
         return
 
     model = request.get("model", "unknown")
-    cc_version = prompt_capture.cc_version_of(system)
+    cc_version = prompt_location.cc_version_of(system)
     for body in bodies:
         saved = prompt_capture.save_prompt(body, cc_version, model)
         if saved is not None:

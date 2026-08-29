@@ -7,6 +7,17 @@ body at `_bodies/{digest}.md`, and one record per `(rule, kind)` at
 its per-session environment (cwd, scratchpad path, git status) neutralized, so
 the same prompt dedups to a single incident across sessions and proxy restarts.
 
+Each record also names the `cc_version` and `model` it came from
+(`incidents.Origin`, supplied by the addon off the request it is already
+patching). Both are **first-seen, not latest**, exactly like `at`: the write is
+skipped once the record exists, which is what stops a live proxy rewriting it
+on every request. cc_version is masked *out* of the body on purpose -- one
+drift should dedup across every build carrying it -- so the record is the only
+place it survives. `_uncaught-*` records say `unknown`: the hook wrapper
+catches before anything is parsed, and re-parsing inside the `except` could
+raise over the exception being reported. Date those from the traceback and the
+reflog instead (see live-edit transients below).
+
 The capture primitives (`masked_hash`, `save_body`, `save_incident`, the
 `Incident` record) live in `incidents.py`, not `prompt_patches.py` — they're
 generic over what's being captured. `prompt_patches.py`'s `report_issues` call
@@ -70,7 +81,9 @@ gets the stub -- it's self-contained -- but captures kind
 keeping into `description.md` (or the `must-read.kb` entry it defers to),
 then add the captured body as a new `upstream.d/*.md` named for the axis
 that varies (model family, cc_version) -- wordings vary concurrently, so
-accumulate rather than replace. Verify with
+accumulate rather than replace. The record's own `cc_version`/`model` are
+what name that file; nothing else in the capture carries them, since a tool
+description has no billing header to read them off. Verify with
 `.venv/bin/claude-mitmproxy-check-tool-patches`
 (expect zero warnings), then archive. Format and rationale: that
 directory's `README.md`.
