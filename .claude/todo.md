@@ -61,6 +61,19 @@ Narrative in `../session.kb/`.
         or similar) so it dedups per content and lands in the one queue
         that remains. Sequence after the `blocks.d/` additions below —
         they merge spurious copies out of the very table this reads.
+        **Blocked on the veto; the dependency is done (ec771f2) and the
+        evidence now argues against the proposed predicate.** `seen>=2`
+        fires on 7 copies today, every one of them historical — the newest
+        span ends at 2.1.250.257 — while saying nothing about the two
+        2.1.251 harness-fable copies that are what upstream is actually
+        serving with no fixture. So it inverts the signal it was meant to
+        carry: red on backlog, silent on news. Counter-proposal: fire when
+        an uncovered core is carried at the newest cc_version on disk.
+        That is 2 rows today (both 2.1.251 fable, already the subject of
+        the concurrent-copies ruling below), it goes quiet the moment they
+        are promoted, and it matches what the duty is actually for —
+        patches keeping up with what is served now, not with 2.1.212.
+        Recurrence then belongs in the *message*, not the predicate.
   - [ ] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
         single queue-triage duty; fold the event-driven checks into the
         hook's own description; `compress_traffic` bullet already needs no
@@ -103,9 +116,10 @@ Narrative in `../session.kb/`.
       path is the better half of the fix.
 - [ ] Rule on how to promote two *concurrent* copies of one shape at one
       cc_version. `harness-fable` at 2.1.251 has two (`ada19cdbceea` from
-      2.1.251.d59, `6ee2dac2d820` from 2.1.251.171) differing on a reworded
+      2.1.251.d59, `cb735fcae57c` from 2.1.251.171 -- was `6ee2dac2d820`
+      until ec771f2 moved that core) differing on a reworded
       `<system-reminder>` harness bullet -- genuine copy drift, so the
-      `blocks.d/` fix above will not merge them. `system-prompts.kb/CLAUDE.md`
+      `blocks.d/` fix above did not merge them, as predicted. `system-prompts.kb/CLAUDE.md`
       names variants per *shape* (`-opus`, `-fable`), which has no slot for
       two copies of the same shape at the same version. Either pick one
       (which one, on what rule?) or extend the naming.
