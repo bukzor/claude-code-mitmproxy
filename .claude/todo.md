@@ -74,6 +74,14 @@ Narrative in `../session.kb/`.
         are promoted, and it matches what the duty is actually for —
         patches keeping up with what is served now, not with 2.1.212.
         Recurrence then belongs in the *message*, not the predicate.
+        Reviewed 2026-08-29: the recurrence proposer concedes — the table
+        was re-run and confirms it (all 7 `seen>=2` rows end <=2.1.250;
+        both 2.1.251 rows are `seen=1`). Recurrence measures how long a
+        copy survived the backlog, not whether it is current, and the
+        original nag objection mostly dissolves anyway once emission is
+        incident-store dedup rather than a permanently-red check. One
+        awaiting-veto predicate now: uncovered core at the newest
+        cc_version on disk.
   - [ ] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
         single queue-triage duty; fold the event-driven checks into the
         hook's own description; `compress_traffic` bullet already needs no
