@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from claude_mitmproxy import survey_captures
 
 
@@ -73,3 +75,17 @@ def test_newest_shape_group_sorts_first():
     ]
     drifts = survey_captures.drifted(rows, set())
     assert [d.core for d in drifts] == ["core-new", "core-old"], drifts
+
+
+def test_unknown_flag_is_refused():
+    """An unrecognized flag used to be taken as a name substring, match no
+    capture, and report "no uncovered prompt copies in 0 captures" -- a
+    confident wrong answer. `--data-only` is the one that provokes it: a real
+    convention, but of the `check_*` commands, and this is a tool."""
+    with pytest.raises(AssertionError):
+        survey_captures.parse_argv(["--data-only"])
+
+
+def test_drift_flag_is_separated_from_filters():
+    assert survey_captures.parse_argv(["--drift", "v2.1.251"]) == (True, ["v2.1.251"])
+    assert survey_captures.parse_argv(["v2.1.251"]) == (False, ["v2.1.251"])

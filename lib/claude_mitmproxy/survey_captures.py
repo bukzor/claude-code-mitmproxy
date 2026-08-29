@@ -204,10 +204,24 @@ def render(rows: list[tuple[str, ...]]) -> str:
     )
 
 
-def main() -> None:
-    argv = sys.argv[1:]
+def parse_argv(argv: list[str]) -> tuple[bool, list[str]]:
+    """`--drift`, plus name substrings to narrow the captures.
+
+    An unrecognized flag is refused rather than taken as a filter. `--data-only`
+    is the one that provokes it -- a real convention, but of the `check_*`
+    commands, and this is a tool with no verdict to suppress -- and as a filter
+    it matched no capture and reported "no uncovered prompt copies in 0
+    captures": a confident, wrong, and entirely silent answer to the one
+    question this tool exists to ask."""
     drift_only = "--drift" in argv
     filters = [arg for arg in argv if arg != "--drift"]
+    unknown = [arg for arg in filters if arg.startswith("-")]
+    assert not unknown, (unknown, "unknown flag; other arguments are name substrings")
+    return drift_only, filters
+
+
+def main() -> None:
+    drift_only, filters = parse_argv(sys.argv[1:])
     raws = sorted(CAPTURES_DIR.glob("*.raw.md"))
     assert raws, CAPTURES_DIR
     captures = [
