@@ -190,13 +190,38 @@ Narrative in `../session.kb/`.
         `v2.1.251-harness.md` carries the new wording, `v2.1.251-opus.md` the
         old, and harness-opus has one core across `.c03` and `.d59`, so it has
         not flipped yet.
-  - [ ] Recommendation: promote `ada19cdbceea` as `v2.1.251-fable.md`, leave
-        the naming scheme alone, and say in `system-prompts.kb/CLAUDE.md` that
-        when a shape's copy changes inside one release the fixture holds the
-        newer and the superseded core ages out of `--current` when the release
-        advances. Revisit only if a patch ever anchors on text that varies
-        within a release, which `check_dark_patches`'s matrix is already the
-        tripwire for.
+  - [ ] Superseded recommendation, kept because it is the fallback if the one
+        below is rejected: promote `ada19cdbceea` as `v2.1.251-fable.md` and
+        let the loser age out of `--current` when the release advances.
+  - [ ] Better: promote *both*, because nothing needs a single winner. Of the
+        four consumers, two want the group (`prompt_corpus.fixtures()` globs
+        `*.md` for the dark-patch matrix; `survey_captures.promoted_cores()`
+        is a set comprehension over every fixture), one cannot see variant
+        fixtures at all (`prompt_corpus.latest_fixture()` matches
+        `^v\d+\.\d+\.\d+\.md$`, so `check_patches`' target is unaffected by any
+        suffixed file), and only `prompt_patches.strip_floors()` picks a
+        per-shape winner -- which it already resolves itself, by
+        `(version, len(text))`, without needing the filesystem to enforce
+        uniqueness. Here it does not even bite: the copies differ by one bullet
+        no patch matches, so both strip identically. The single-winner pressure
+        came from the filename shape alone.
+  - [ ] Naming, if both are promoted: `v<release>-<shape>-<core8>.md` once a
+        slot holds more than one, applied to both so neither is privileged by
+        promotion order. No route work -- `_fixture_version` is already suffix
+        tolerant (`path.stem.removeprefix("v").split("-")[0]`), so the extra
+        segment parses. Costs one `git mv` when the second copy arrives.
+  - [ ] That also answers the flip-flop worry, which is narrower than it
+        looks. `--current` is a pure function of disk state, so it cannot
+        oscillate between checks; a copy can only re-enter when the release
+        advances *and* a stalled rollout serves that body again under the new
+        release -- at most once per copy per release. It only bites at all if
+        declining to promote is a legal outcome, and today declining is forced
+        by the one-name-per-slot limit. Remove that and promotion is always the
+        answer, coverage is monotone, and the fixture doubles as the durable
+        "seen and accounted for" record a mute would otherwise need. Consequence
+        worth noting: promotion then becomes mechanical, which by this repo's
+        own doctrine makes it a candidate for binding to its occasion rather
+        than staying a notified duty.
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,
