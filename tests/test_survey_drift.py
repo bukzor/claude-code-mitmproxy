@@ -87,5 +87,50 @@ def test_unknown_flag_is_refused():
 
 
 def test_drift_flag_is_separated_from_filters():
-    assert survey_captures.parse_argv(["--drift", "v2.1.251"]) == (True, ["v2.1.251"])
-    assert survey_captures.parse_argv(["v2.1.251"]) == (False, ["v2.1.251"])
+    assert survey_captures.parse_argv(["--drift", "v2.1.251"]) == (True, False, ["v2.1.251"])
+    assert survey_captures.parse_argv(["v2.1.251"]) == (False, False, ["v2.1.251"])
+
+
+def test_current_flag_implies_drift():
+    """`--current` narrows the drift table; asking for it without `--drift`
+    can only mean the drift question."""
+    assert survey_captures.parse_argv(["--current"]) == (True, True, [])
+
+
+def test_release_drops_the_build_tag():
+    capture = survey_captures.Capture("2.1.251.da4", "opus-5", "r", Path("/x"))
+    assert capture.release == (2, 1, 251), capture
+
+
+def test_current_drift_keeps_only_the_newest_release():
+    rows = [
+        surveyed("2.1.250.aaa", "fable-5", "old", "core-old", "harness-fable", 100),
+        surveyed("2.1.251.bbb", "fable-5", "new", "core-new", "harness-fable", 100),
+    ]
+    drifts = survey_captures.drifted(rows, set())
+    current = survey_captures.current_drift(drifts, [row.capture for row in rows])
+    assert [drift.core for drift in current] == ["core-new"], current
+
+
+def test_build_tag_never_decides_currency():
+    """Build tags are hashes, so the highest-sorting tag is not the newest
+    capture. A copy uncovered at a lower-sorting tag of the current release is
+    still what upstream serves, and comparing whole version strings hides it."""
+    rows = [
+        surveyed("2.1.251.171", "fable-5", "uncovered", "core1", "harness-fable", 100),
+        surveyed("2.1.251.da4", "opus-5", "covered", "core2", "harness-opus", 100),
+    ]
+    drifts = survey_captures.drifted(rows, {("harness-opus", "core2")})
+    current = survey_captures.current_drift(drifts, [row.capture for row in rows])
+    assert [drift.core for drift in current] == ["core1"], current
+
+
+def test_covered_newest_release_leaves_nothing_current():
+    """The predicate clears itself: promoting the newest release's copies is
+    what makes it quiet again, so backlog alone must never keep it red."""
+    rows = [
+        surveyed("2.1.250.aaa", "fable-5", "old", "core-old", "harness-fable", 100),
+        surveyed("2.1.251.bbb", "fable-5", "new", "core-new", "harness-fable", 100),
+    ]
+    drifts = survey_captures.drifted(rows, {("harness-fable", "core-new")})
+    assert survey_captures.current_drift(drifts, [row.capture for row in rows]) == []

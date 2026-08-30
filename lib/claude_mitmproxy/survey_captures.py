@@ -11,7 +11,12 @@ per prompt copy (shape + core digest) that no fixture covers, newest first,
 naming the raw to promote. The plain table is still the way to read what is on
 disk; at ~100 captures it is not the way to spot what is missing.
 
-Usage: survey_captures.py [--drift] [SUBSTRING ...]
+`--current` narrows that to the copies carried at the newest release -- the
+predicate that earns an interruption, and so the one `driftwatch.sh` polls.
+Everything it drops is backlog, which is why the full drift table is the wrong
+thing to wire a signal to.
+
+Usage: survey_captures.py [--drift] [--current] [SUBSTRING ...]
 Rows are filtered to filenames containing any SUBSTRING (e.g. "2.1.221").
 """
 from __future__ import annotations
@@ -36,9 +41,20 @@ class Capture(NamedTuple):
     path: Path
 
     @property
+    def release(self) -> tuple[int, ...]:
+        """The numeric version, build tag dropped.
+
+        Build tags are hashes, so ordering two of them is noise -- only the
+        release orders. Keeping them apart is what lets `current_drift` ask
+        whether upstream is serving a copy now instead of whether its capture
+        happened to carry the highest-sorting tag."""
+        release, _, _ = self.version.rpartition(".")
+        return tuple(int(part) for part in release.split("."))
+
+    @property
     def sort_key(self) -> tuple:
-        release, _, build = self.version.rpartition(".")
-        return tuple(int(part) for part in release.split(".")) + (build, self.model)
+        _, _, build = self.version.rpartition(".")
+        return self.release + (build, self.model)
 
 
 def parse_name(path: Path) -> Capture:
@@ -84,6 +100,7 @@ class Drift(NamedTuple):
     span: str
     size: int
     candidate: Capture
+    newest: Capture  # latest capture of this copy -- what dates it
 
 
 def survey(
@@ -153,6 +170,7 @@ def drifted(rows: list[Surveyed], covered: set[tuple[str, str]]) -> list[Drift]:
                 ),
                 size=len(fullest.text),
                 candidate=fullest.capture,
+                newest=newest,
             ),
         ))
 
@@ -162,6 +180,20 @@ def drifted(rows: list[Surveyed], covered: set[tuple[str, str]]) -> list[Drift]:
     dated.sort(key=lambda pair: pair[0], reverse=True)
     dated.sort(key=lambda pair: pair[1].shape)
     return [drift for _, drift in dated]
+
+
+def current_drift(drifts: list[Drift], captures: list[Capture]) -> list[Drift]:
+    """The uncovered copies upstream is serving now -- the ones that earn an
+    interruption (`design/040-design.kb/every-duty-has-an-occasion.md`).
+
+    The rest of the drift table is backlog: real, but no evidence anything
+    moved, and a signal that fires on it is red forever. Newest release across
+    every shape rather than per shape, since a shape absent from newer releases
+    is one upstream stopped serving."""
+    if not captures:
+        return []
+    newest = max(capture.release for capture in captures)
+    return [drift for drift in drifts if drift.newest.release == newest]
 
 
 def inventory_table(rows: list[Surveyed]) -> list[tuple[str, ...]]:
@@ -196,6 +228,23 @@ def drift_table(drifts: list[Drift]) -> list[tuple[str, ...]]:
     ]
 
 
+def trailer(count: int, current: bool) -> str:
+    """What the reader should do with the table above."""
+    if current:
+        return (
+            f"{count} uncovered at the newest release: upstream is serving prompt"
+            " text no fixture covers, so every patch verified against a fixture is"
+            " unverified against what ships. Promote per system-prompts.kb/CLAUDE.md;"
+            " `seen` separates a recurring copy from a one-off to archive instead."
+        )
+    else:
+        return (
+            f"{count} uncovered copies."
+            " Each shape's newest is the promotion due; weigh it against `seen`,"
+            " since a one-off can be newer than the copy that keeps recurring."
+        )
+
+
 def render(rows: list[tuple[str, ...]]) -> str:
     widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
     return "".join(
@@ -204,8 +253,17 @@ def render(rows: list[tuple[str, ...]]) -> str:
     )
 
 
-def parse_argv(argv: list[str]) -> tuple[bool, list[str]]:
-    """`--drift`, plus name substrings to narrow the captures.
+class Args(NamedTuple):
+    drift: bool
+    current: bool
+    filters: list[str]
+
+
+FLAGS = ("--drift", "--current")
+
+
+def parse_argv(argv: list[str]) -> Args:
+    """The two flags, plus name substrings to narrow the captures.
 
     An unrecognized flag is refused rather than taken as a filter. `--data-only`
     is the one that provokes it -- a real convention, but of the `check_*`
@@ -213,21 +271,21 @@ def parse_argv(argv: list[str]) -> tuple[bool, list[str]]:
     it matched no capture and reported "no uncovered prompt copies in 0
     captures": a confident, wrong, and entirely silent answer to the one
     question this tool exists to ask."""
-    drift_only = "--drift" in argv
-    filters = [arg for arg in argv if arg != "--drift"]
+    filters = [arg for arg in argv if arg not in FLAGS]
     unknown = [arg for arg in filters if arg.startswith("-")]
     assert not unknown, (unknown, "unknown flag; other arguments are name substrings")
-    return drift_only, filters
+    current = "--current" in argv
+    return Args("--drift" in argv or current, current, filters)
 
 
 def main() -> None:
-    drift_only, filters = parse_argv(sys.argv[1:])
+    args = parse_argv(sys.argv[1:])
     raws = sorted(CAPTURES_DIR.glob("*.raw.md"))
     assert raws, CAPTURES_DIR
     captures = [
         parse_name(path)
         for path in raws
-        if not filters or any(f in path.name for f in filters)
+        if not args.filters or any(f in path.name for f in args.filters)
     ]
     kb_texts = {
         p.stem: p.read_text()
@@ -238,17 +296,17 @@ def main() -> None:
     blocks = rule_templates.load_templates(prompt_patches.BLOCKS_DIR)
     rows = survey(captures, kb_texts, blocks)
 
-    if drift_only:
+    if args.drift:
         drifts = drifted(rows, promoted_cores(kb_texts, blocks))
+        scope = ""
+        if args.current:
+            drifts = current_drift(drifts, captures)
+            scope = " at the newest release"
         if not drifts:
-            print(f"no uncovered prompt copies in {len(rows)} captures")
-            return
-        sys.stdout.write(render(drift_table(drifts)))
-        print(
-            f"\n{len(drifts)} uncovered copies."
-            " Each shape's newest is the promotion due; weigh it against `seen`,"
-            " since a one-off can be newer than the copy that keeps recurring."
-        )
+            print(f"no uncovered prompt copies{scope} in {len(rows)} captures")
+        else:
+            sys.stdout.write(render(drift_table(drifts)))
+            print("\n" + trailer(len(drifts), args.current))
     else:
         sys.stdout.write(render(inventory_table(rows)))
 
