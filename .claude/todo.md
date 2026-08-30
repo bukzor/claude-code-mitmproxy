@@ -95,6 +95,38 @@ Narrative in `../session.kb/`.
         duty took which, and what makes an occasion usable. The drift
         predicate is a `[!QUESTION]` block there now, so the open decision
         lives in the tower rather than only in this file.
+- [ ] Revamp the logging story across the addons. Every addon logs through
+      `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
+      and nothing captures it -- `log/` holds only `compress_traffic.log`, from
+      the compressor subprocess. So the proxy announces facts it knows exactly
+      once and then discards the announcement. A `logging_handlers.py` addon is
+      the likely shape: one place deciding where addon output lands, live-
+      reloadable like everything else, and `-s`-loaded first so the other
+      `load` hooks' startup inventories are captured too. It has precedent --
+      `reload.py` and `quietconn.py` are both module-level config addons rather
+      than hook carriers, and `quietconn` (capping `mitmproxy.proxy.server` at
+      WARNING so connection chatter cannot bury real events) is already a
+      fragment of this story that probably folds in.
+  - [ ] Separate *logs* from *events*. `syscapture` logging "captured new
+        system prompt -> path" is the exactly-once, deduplicated fact that a
+        prompt copy was seen for the first time; a consumer wants that as a
+        line in a tailable file, not as prose in a stream. Give those a logger
+        name or handler of their own so nothing has to parse the mixed stream.
+  - [ ] First consumer, and why this came up: `driftwatch.sh` waits on inotify
+        across three directories with a 300s ceiling, so it wakes ~290 times a
+        day and re-derives the whole answer (~1s) each time. Waiting on a
+        capture-event line instead is ~5 wakes a day, on news rather than on
+        file movement. The stronger version -- proxy evaluates the promotion
+        predicate itself and logs only drift -- was weighed and set aside: it
+        makes `system-prompts.kb/` a runtime input to the request path,
+        reversing the direction `020-goals.kb/pristine-fixture-supply.md` and
+        `offline-validation.md` establish.
+  - [ ] Keep the existing output conventions: gitignored under `log/`, append
+        rather than truncate across restarts, sharded by day if unbounded
+        (`design/040-design.kb/ease-of-operation.kb/sharded-logs.md`). Capture
+        events run a few lines a day, so one appended file is likely right.
+        Leaving mitmdump's own event log on stderr is a feature, not an
+        oversight -- that stream is for watching a proxy interactively.
 - [ ] <https:../proxy-memory-leak-2026-08-18/todo.kb/2026-08-18-000-confirm-store-retention-and-adopt-a-bound.md>
       (outside `.claude/`, so this breadcrumb is its only sweep visibility):
       restart done, fix-verification RSS capture done 2026-08-21 (99 MiB →
