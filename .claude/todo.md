@@ -168,6 +168,20 @@ Narrative in `../session.kb/`.
 
 ## Later
 
+- [ ] Consider injecting the attention signal into live session context, as a
+      patch, instead of only filing it in `log/patch-failures/` (operator idea,
+      2026-08-29, alongside the PID musing the design entry records). The pull
+      it fixes is real: "triage the queue when nonempty" is itself polled, so
+      routing drift there consolidates two polls into one rather than making
+      anything loud, and prompt rewriting is the only *push* channel this
+      system has. Costs to answer first: it would ride every request of every
+      session until the condition clears (so it wants one-shot gating on the
+      same content-addressed dedup, not a standing paragraph), it reaches every
+      subagent rather than the operator, and it perturbs the patched/original
+      ratio `check_strip_floor` reads. It does *not* contaminate the drift
+      measurement -- `syscapture` loads before `syspatch`, so captures stay
+      pre-patch -- which is the objection worth checking first and the one that
+      comes back clean.
 - [x] Stash `cc_version` on `Incident` records. Landed as `ffea89a`, three
       commits before the plan above filed it -- same session as the toil
       evaluation that proposed it. Source is the billing header's
