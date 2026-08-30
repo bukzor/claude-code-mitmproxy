@@ -89,9 +89,17 @@ noise, and on 2026-08-29 the newest tag (`2.1.251.da4`) carried no uncovered
 core while its release carried two -- compared whole, the predicate goes silent
 on exactly the drift it exists to catch. So compared, it restates the duty
 rather than approximating it, and it clears itself: promoting the named raws
-quiets it until the next release. A one-off capture at a current release fires
-it too, and triage ends that one by archiving, so `seen` belongs in the message
-to keep that call cheap.
+quiets it until the next release.
+
+Every row it reports is promoted; declining is not an outcome. That is what
+keeps the signal monotone. A copy can otherwise leave the report when the
+release advances and return when a stalled rollout serves it again under the
+new one, and a copy previously refused would come back with it. Promotion is
+also the durable record that a copy was seen and accounted for, so no muted
+or snoozed state has to exist -- which [earned-silence] would have objected to
+anyway. Several copies of one shape can coexist while upstream reworks it;
+`system-prompts.kb/CLAUDE.md` says how to name them, and nothing requires
+choosing between them.
 
 Two alternatives were weighed and withdrawn. **Recurrence** -- an uncovered
 core seen in two or more captures -- measures how long a copy survived the

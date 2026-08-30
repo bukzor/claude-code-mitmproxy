@@ -234,14 +234,15 @@ def trailer(count: int, current: bool) -> str:
         return (
             f"{count} uncovered at the newest release: upstream is serving prompt"
             " text no fixture covers, so every patch verified against a fixture is"
-            " unverified against what ships. Promote per system-prompts.kb/CLAUDE.md;"
-            " `seen` separates a recurring copy from a one-off to archive instead."
+            " unverified against what ships. Promote every row per"
+            " system-prompts.kb/CLAUDE.md -- copies of one shape coexist while"
+            " upstream reworks it, and covering all of them is what makes this quiet."
         )
     else:
         return (
             f"{count} uncovered copies."
-            " Each shape's newest is the promotion due; weigh it against `seen`,"
-            " since a one-off can be newer than the copy that keeps recurring."
+            " Only the newest release is a duty (`--current`); the rest is backlog,"
+            " left uncovered because promotion tracks what upstream serves now."
         )
 
 

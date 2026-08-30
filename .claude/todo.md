@@ -162,7 +162,16 @@ Narrative in `../session.kb/`.
       between two captures of one copy. Needs a `$` hole for the path (no
       mask tokenizes it today), so check whether a `masks.d/` rule for the
       path is the better half of the fix.
-- [ ] Rule on how to promote two copies of one shape at one cc_version.
+- [x] Rule on how to promote two copies of one shape at one cc_version.
+      **Ruled 2026-08-30: promote them all.** Both 2.1.251 fable copies are in
+      as `v2.1.251-fable-61a97372.md` and `v2.1.251-fable-e7dd358b.md`;
+      `--current` is quiet, backlog 19 -> 17, all five checks and 65 tests
+      green. One correction while naming them: the suffix is the **raw**
+      digest, not the core digest recommended below -- core digests move
+      whenever `blocks.d/` changes (this very copy was `6ee2dac2d820` until
+      ec771f2), and a name a rule edit can invalidate is what
+      `content-addressed-capture.md` forbids. Detail below is the reasoning,
+      kept because the policy rests on it.
       `harness-fable` at 2.1.251 has two (`ada19cdbceea` from 2.1.251.d59,
       `cb735fcae57c` from 2.1.251.171 -- was `6ee2dac2d820` until ec771f2
       moved that core). `system-prompts.kb/CLAUDE.md` names variants per

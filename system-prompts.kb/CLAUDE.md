@@ -36,6 +36,26 @@ anchoring its own `match.md` on a heading unique to that shape (see
 newest *unsuffixed* full capture — variant fixtures are validated by
 `check_dark_patches.py`'s matrix.
 
+`v<MAJOR>.<MINOR>.<PATCH>-<variant>-<digest>.md` — one of *several* copies of
+one shape at one cc_version. Upstream reworks a shape's copy mid-release, and
+both copies keep arriving while sessions that started before the change are
+still running. **Promote every one of them.** Nothing needs a single winner:
+coverage is a question about the fixture *set* (`promoted_cores` reads them
+all), `check_patches` targets only the unsuffixed fixture, and the one
+consumer that does pick a per-shape winner — the `_strip-rate` floor — breaks
+its own ties by (version, size). The pressure to choose was only ever that two
+files cannot share a name.
+
+The digest is the first 8 of the **raw** body's, which the capture filename
+already carries — *not* the core digest `--drift` prints. Core digests move
+whenever `blocks.d/` changes, and a name that a rule edit can invalidate is
+exactly what `design/040-design.kb/content-addressed-capture.md` forbids. To
+find the fixture for a reported core, use the raw path in the same row.
+
+Suffix *both* copies when a second appears, rather than leaving the first
+bare: which file lacks a digest would otherwise record nothing but which
+happened to be promoted first.
+
 Likewise, patches sunset to `upstream-removed.bool` assert against the
 *current* prompt: run against an old capture they report
 `matched-despite-upstream-removed`, because the removed text is still present
