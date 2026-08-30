@@ -7,7 +7,7 @@ managed-by: Skill(llm-subtask)
 Use subtasks, not sections for organization. Ordered by intended completion.
 Narrative in `../session.kb/`.
 
-- [ ] Collapse "Standing maintenance" to demand-driven: every polled duty
+- [x] Collapse "Standing maintenance" to demand-driven: every polled duty
       becomes loud or event-driven, so the whole section reduces to "triage
       `log/patch-failures/` when nonempty" (2026-08-29 toil evaluation;
       `--drift` itself already landed as deda83e). One small commit per
@@ -50,31 +50,35 @@ Narrative in `../session.kb/`.
         deliberately dark mask). `pre-commit install` chained the existing
         git-localhost-store hook as `pre-commit.legacy`; README says so,
         since `.git/hooks/` isn't versioned.
-  - [ ] Make `--drift` loud. The predicate and the two alternatives it beat
-        (recurrence; a PID-shaped continuous drift score) are settled
-        agent-side and vetoable in
-        `design/040-design.kb/every-duty-has-an-occasion.md`: fire on an
-        uncovered core carried at the newest *release* on disk, comparing
-        `Capture.sort_key`'s numeric triple and ignoring the build tag —
-        compared whole, today's newest tag (`2.1.251.da4`) carries no
-        uncovered core and the predicate would say nothing while two 2.1.251
-        copies go uncovered. Emit through the incident store (rule
-        `_unpromoted-drift` or similar) so it dedups per content and lands in
-        the one queue that remains; put `seen` and the raw path in the
-        message, since a one-off at a current release fires it too and triage
-        ends that by archiving. Sequence *after* the concurrent-copies naming
-        ruling below: the two rows this fires on today are that ruling's
-        subject, so landing it first files an incident triage cannot clear.
-  - [~] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
+  - [x] Make `--drift` loud. Landed as `092e61a`: `Capture.release` (numeric
+        triple, build tag dropped), `current_drift`, and the `--current` flag
+        that applies the ratified predicate — 19 uncovered copies on disk, 2
+        of them current. The channel changed on the operator's counter-
+        proposal and is the better half of the design: not an incident record
+        but `driftwatch.sh`, polled and arriving as a `Monitor` notification.
+        Drift is a pure function of on-disk state, so a record of it would
+        cache a derived value, and the incident queue is itself polled —
+        routing drift there would have consolidated two polls, not retired
+        one. Polling beats inotify because a capture event is a superset of a
+        drift event (and inotify-tools isn't installed). The sequencing
+        constraint dissolved with the channel: a notification has no clearing
+        semantics, so this no longer waits on the naming ruling. Bug caught
+        by testing the failure path: merging stderr does not capture a shell's
+        own "No such file" for an unexecutable check, so the first version
+        went silent on exactly the failure it existed to report; it reads the
+        exit status now.
+  - [x] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
         single queue-triage duty; fold the event-driven checks into the
         hook's own description; `compress_traffic` bullet already needs no
         change (self-scheduling, failures already file incidents — a log
         tail was never a duty). Done except for the part that waits on the
         subtask above: the section is **two** duties, not one, because
-        fixture promotion stays polled until the drift predicate is *built*
-        (ratifying it changed nothing here). The `compress_traffic` bullet
-        went anyway -- with gc now self-scheduling too, "these run
-        themselves" is one clause pointing
+        fixture promotion stayed polled until the drift predicate was built.
+        Now closed: the section is one duty (triage), with arming
+        `driftwatch.sh` named as session setup rather than as a second duty,
+        and the by-hand commands kept as a trailing note. The
+        `compress_traffic` bullet went earlier -- with gc now self-scheduling
+        too, "these run themselves" is one clause pointing
         at the design entry rather than a paragraph per job, and the
         `_compress-traffic` detail was already in the triage kb.
         Also landed, which the plan did not anticipate: the theory itself.
@@ -169,19 +173,18 @@ Narrative in `../session.kb/`.
 ## Later
 
 - [ ] Consider injecting the attention signal into live session context, as a
-      patch, instead of only filing it in `log/patch-failures/` (operator idea,
-      2026-08-29, alongside the PID musing the design entry records). The pull
-      it fixes is real: "triage the queue when nonempty" is itself polled, so
-      routing drift there consolidates two polls into one rather than making
-      anything loud, and prompt rewriting is the only *push* channel this
-      system has. Costs to answer first: it would ride every request of every
-      session until the condition clears (so it wants one-shot gating on the
-      same content-addressed dedup, not a standing paragraph), it reaches every
-      subagent rather than the operator, and it perturbs the patched/original
-      ratio `check_strip_floor` reads. It does *not* contaminate the drift
-      measurement -- `syscapture` loads before `syspatch`, so captures stay
-      pre-patch -- which is the objection worth checking first and the one that
-      comes back clean.
+      patch. Mostly superseded by `driftwatch.sh`, which covers the same ground
+      far more cheaply; what is left is the one gap the design entry admits —
+      the watch is only as live as the session that armed it, so drift that
+      lands while no maintenance window is open waits for the next one. Prompt
+      rewriting is the only push channel that does not need a window. Costs, if
+      it is ever worth closing that gap: it rides every request until the
+      condition clears (wants one-shot gating on the content-addressed dedup,
+      not a standing paragraph), it reaches every subagent rather than the
+      operator, and it moves the patched/original ratio `check_strip_floor`
+      reads. It does *not* contaminate the drift measurement -- `syscapture`
+      loads before `syspatch`, so captures stay pre-patch -- which was the
+      objection worth checking first, and it comes back clean.
 - [x] Stash `cc_version` on `Incident` records. Landed as `ffea89a`, three
       commits before the plan above filed it -- same session as the toil
       evaluation that proposed it. Source is the billing header's

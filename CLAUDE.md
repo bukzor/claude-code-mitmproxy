@@ -85,9 +85,9 @@ it (`.pre-commit-config.yaml`).
 
 ## Standing maintenance
 
-Two duties, always implicitly appended to the todo list. That there are only
-two is a design commitment, not an accident: every other recurring obligation
-has been bound to the occasion that creates it or argued away
+One duty, always implicitly appended to the todo list. That there is only one
+is a design commitment, not an accident: every other recurring obligation has
+been bound to the occasion that creates it or argued away
 (`design/040-design.kb/every-duty-has-an-occasion.md`), so a duty listed here
 is a claim that neither was possible.
 
@@ -98,13 +98,16 @@ is a claim that neither was possible.
   sweeps it, expiring `_uncaught-*` transients unread and reclaiming archives
   past their window.
 
-- **Promote fixtures.** `survey_captures.py --drift` lists the prompt copies no
-  fixture covers, one row per (shape, core), newest first, naming the raw to
-  promote (`cp` per `system-prompts.kb/CLAUDE.md`; the checks then run
-  themselves, on the commit). Each shape's top row is the due one, but weigh it
-  against `seen`: a one-off capture can be newer than the copy that keeps
-  recurring. This is still a duty because additive drift is invisible to every
-  loud mechanism until someone looks -- the `_strip-rate` tripwire catches only
-  subtractive and rewrite drift -- and making it a signal instead is an open
-  question in `every-duty-has-an-occasion.md`. Bare `survey_captures.py` is the
-  full inventory, for reading what is on disk rather than what is missing.
+Fixture promotion left that list by becoming a signal. Arm `./driftwatch.sh`
+through `Monitor` (persistent) when a maintenance session opens: it polls
+whether upstream is serving prompt text no fixture covers -- the one drift no
+tripwire catches, since `_strip-rate` sees only subtractive and rewrite drift
+-- and prints on its first pass, then only when the answer changes. Act on it
+by `cp`ing the named raw per `system-prompts.kb/CLAUDE.md`; the checks run
+themselves on the commit. Arming is setup rather than a duty: it asks nothing
+of you when nothing happened, which is the distinction the design entry draws.
+
+Ask by hand with `claude-mitmproxy-survey-captures --current`. Without
+`--current` you also get the backlog the watch deliberately drops, and with no
+argument at all the full inventory -- what is on disk, rather than what is
+missing.
