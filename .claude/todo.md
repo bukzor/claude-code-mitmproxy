@@ -162,15 +162,41 @@ Narrative in `../session.kb/`.
       between two captures of one copy. Needs a `$` hole for the path (no
       mask tokenizes it today), so check whether a `masks.d/` rule for the
       path is the better half of the fix.
-- [ ] Rule on how to promote two *concurrent* copies of one shape at one
-      cc_version. `harness-fable` at 2.1.251 has two (`ada19cdbceea` from
-      2.1.251.d59, `cb735fcae57c` from 2.1.251.171 -- was `6ee2dac2d820`
-      until ec771f2 moved that core) differing on a reworded
-      `<system-reminder>` harness bullet -- genuine copy drift, so the
-      `blocks.d/` fix above did not merge them, as predicted. `system-prompts.kb/CLAUDE.md`
-      names variants per *shape* (`-opus`, `-fable`), which has no slot for
-      two copies of the same shape at the same version. Either pick one
-      (which one, on what rule?) or extend the naming.
+- [ ] Rule on how to promote two copies of one shape at one cc_version.
+      `harness-fable` at 2.1.251 has two (`ada19cdbceea` from 2.1.251.d59,
+      `cb735fcae57c` from 2.1.251.171 -- was `6ee2dac2d820` until ec771f2
+      moved that core). `system-prompts.kb/CLAUDE.md` names variants per
+      *shape*, which has no slot for two copies of one shape at one version.
+      Investigated 2026-08-30; the facts argue for picking one, and "concurrent"
+      turns out to be the wrong word:
+  - [ ] The whole difference is one `# Harness` bullet, reworded. Old
+        (`.171`, seen Aug 28): "The system may send updates, reminders, or
+        modifications to rules via mid-conversation system turns. These are
+        system-controlled, unlike function results." New (`.d59`, seen Aug 29):
+        "`<system-reminder>` tags in messages and tool results are injected by
+        the harness, not the user." Cores are 37 lines each and differ on that
+        line alone.
+  - [ ] No patch anchors there, so the copies are patch-equivalent: nothing
+        green against one goes red against the other. The only file under
+        `~/.claude/system-prompt-patches.d/` mentioning the bullet is
+        `strip-agent-prohibitions/README.md`, as prose about a different
+        user-turn reminder; that patch's `match.md` is "Do not call the
+        AgentTool $REST". Picking one therefore costs no coverage.
+  - [ ] Not two simultaneous variants but the before and after of one
+        rewording, both on disk because captures are permanent and sessions
+        outlive a build. The build tag does not select the copy: `.d59` served
+        harness-fable-new, harness-opus-old and long-form on the same day. The
+        other three 2.1.251 shapes are already covered and consistent --
+        `v2.1.251-harness.md` carries the new wording, `v2.1.251-opus.md` the
+        old, and harness-opus has one core across `.c03` and `.d59`, so it has
+        not flipped yet.
+  - [ ] Recommendation: promote `ada19cdbceea` as `v2.1.251-fable.md`, leave
+        the naming scheme alone, and say in `system-prompts.kb/CLAUDE.md` that
+        when a shape's copy changes inside one release the fixture holds the
+        newer and the superseded core ages out of `--current` when the release
+        advances. Revisit only if a patch ever anchors on text that varies
+        within a release, which `check_dark_patches`'s matrix is already the
+        tripwire for.
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,
