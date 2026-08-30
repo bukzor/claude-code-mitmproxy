@@ -61,18 +61,44 @@ What survives both routes goes through the incident store, where
 [earned-silence] already governs it -- one warning per distinct content,
 deduped on disk, triaged by the one procedure.
 
-> [!QUESTION] which uncovered prompt copies deserve a warning?
-> Fixture promotion is the last polled duty: nothing is loud when upstream
-> ships prompt text no fixture covers, because additive drift trips no
-> tripwire ([fixture-lifecycle]). `survey_captures.py --drift` computes the
-> answer but must be run by someone. The predicate awaiting ratification is
-> *an uncovered core carried at the newest cc_version on disk* -- true of two
-> copies today, and quiet again once they are promoted. A recurrence
-> predicate (an uncovered core seen in two or more captures) was weighed and
-> withdrawn: it measures how long a copy survived the backlog rather than
-> whether upstream serves it now, and on today's data it fires on seven
-> historical copies while saying nothing about either current one. Settles by
-> operator veto.
+Fixture promotion is what survives them. Nothing is loud when upstream ships
+prompt text no fixture covers, because additive drift trips no tripwire
+([fixture-lifecycle]); `survey_captures.py --drift` computes the answer but
+must be run by someone.
+
+> [!DECISION] an uncovered core at the newest release on disk gets the warning
+> Agent-ratified and vetoable -- asked to choose, the operator had no
+> preference, so a session chose. Decided, not built: CLAUDE.md carries
+> promotion as a duty until it is.
+
+Compare `Capture.sort_key`'s numeric triple only. Excluding the build tag is
+load-bearing rather than pedantic: tags are hashes, so order between them is
+noise, and on 2026-08-29 the newest tag (`2.1.251.da4`) carried no uncovered
+core while its release carried two -- compared whole, the predicate goes silent
+on exactly the drift it exists to catch. So compared, it restates the duty
+rather than approximating it, and it clears itself: promoting the named raws
+quiets it until the next release. A one-off capture at a current release fires
+it too, and triage ends that one by archiving, so `seen` belongs in the message
+to keep that call cheap.
+
+Two alternatives were weighed and withdrawn. **Recurrence** -- an uncovered
+core seen in two or more captures -- measures how long a copy survived the
+backlog rather than whether upstream serves it: it fires on seven copies today,
+none newer than 2.1.250.257, and says nothing about either 2.1.251 copy. **A
+continuous drift score**, PID-shaped (uncovered count, its sum over a recent
+window, its rate of change) and thresholded into the same warning, fails
+differently. Drift's cost is categorical rather than proportional -- one
+uncovered copy of what is served now is the whole problem, and eighteen copies
+of what nobody serves is none of it -- so a sum over copies has units nothing
+cares about. The integral also cannot fire in time: upstream ships a build most
+days, and a copy's entire service life can hold one capture (`cb735fcae57c` was
+served at 2.1.251.171, captured once, superseded within its own release), so
+any threshold above one capture is silent by construction on the copies that
+matter, while a threshold of one is the predicate again. And a score cannot
+carry its own remedy -- this alarm exists to hand over a raw path to promote,
+which a row does and a number cannot. What survives is the derivative
+intuition, and the predicate is already it: a step detector on release
+identity rather than on a count.
 
 ## What stays a duty
 

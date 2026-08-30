@@ -50,47 +50,31 @@ Narrative in `../session.kb/`.
         deliberately dark mask). `pre-commit install` chained the existing
         git-localhost-store hook as `pre-commit.legacy`; README says so,
         since `.git/hooks/` isn't versioned.
-  - [ ] Make `--drift` loud (promoted from ## Later, which asked for a
-        ruling: the ruling landed as the 2026-08-29 "get us to that state"
-        direction; the predicate below is agent-proposed, veto before
-        building). Predicate: an unpromoted core that *recurs* (>=2 raw
-        captures) per shape — recurrence answers the noted "goes red the
-        moment upstream ships anything" objection, since a single fresh
-        capture stays silent until a second session confirms the shape
-        stuck. Emit through the incident store (rule `_unpromoted-drift`
-        or similar) so it dedups per content and lands in the one queue
-        that remains. Sequence after the `blocks.d/` additions below —
-        they merge spurious copies out of the very table this reads.
-        **Blocked on the veto; the dependency is done (ec771f2) and the
-        evidence now argues against the proposed predicate.** `seen>=2`
-        fires on 7 copies today, every one of them historical — the newest
-        span ends at 2.1.250.257 — while saying nothing about the two
-        2.1.251 harness-fable copies that are what upstream is actually
-        serving with no fixture. So it inverts the signal it was meant to
-        carry: red on backlog, silent on news. Counter-proposal: fire when
-        an uncovered core is carried at the newest cc_version on disk.
-        That is 2 rows today (both 2.1.251 fable, already the subject of
-        the concurrent-copies ruling below), it goes quiet the moment they
-        are promoted, and it matches what the duty is actually for —
-        patches keeping up with what is served now, not with 2.1.212.
-        Recurrence then belongs in the *message*, not the predicate.
-        Reviewed 2026-08-29: the recurrence proposer concedes — the table
-        was re-run and confirms it (all 7 `seen>=2` rows end <=2.1.250;
-        both 2.1.251 rows are `seen=1`). Recurrence measures how long a
-        copy survived the backlog, not whether it is current, and the
-        original nag objection mostly dissolves anyway once emission is
-        incident-store dedup rather than a permanently-red check. One
-        awaiting-veto predicate now: uncovered core at the newest
-        cc_version on disk.
+  - [ ] Make `--drift` loud. The predicate and the two alternatives it beat
+        (recurrence; a PID-shaped continuous drift score) are settled
+        agent-side and vetoable in
+        `design/040-design.kb/every-duty-has-an-occasion.md`: fire on an
+        uncovered core carried at the newest *release* on disk, comparing
+        `Capture.sort_key`'s numeric triple and ignoring the build tag —
+        compared whole, today's newest tag (`2.1.251.da4`) carries no
+        uncovered core and the predicate would say nothing while two 2.1.251
+        copies go uncovered. Emit through the incident store (rule
+        `_unpromoted-drift` or similar) so it dedups per content and lands in
+        the one queue that remains; put `seen` and the raw path in the
+        message, since a one-off at a current release fires it too and triage
+        ends that by archiving. Sequence *after* the concurrent-copies naming
+        ruling below: the two rows this fires on today are that ruling's
+        subject, so landing it first files an incident triage cannot clear.
   - [~] Docs last: rewrite CLAUDE.md "Standing maintenance" down to the
         single queue-triage duty; fold the event-driven checks into the
         hook's own description; `compress_traffic` bullet already needs no
         change (self-scheduling, failures already file incidents — a log
         tail was never a duty). Done except for the part that waits on the
         subtask above: the section is **two** duties, not one, because
-        fixture promotion is still polled until the drift predicate is
-        ratified. The `compress_traffic` bullet went anyway -- with gc now
-        self-scheduling too, "these run themselves" is one clause pointing
+        fixture promotion stays polled until the drift predicate is *built*
+        (ratifying it changed nothing here). The `compress_traffic` bullet
+        went anyway -- with gc now self-scheduling too, "these run
+        themselves" is one clause pointing
         at the design entry rather than a paragraph per job, and the
         `_compress-traffic` detail was already in the triage kb.
         Also landed, which the plan did not anticipate: the theory itself.
