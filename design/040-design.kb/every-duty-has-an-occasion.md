@@ -112,12 +112,25 @@ which a row does and a number cannot. What survives is the derivative
 intuition, and the predicate is already it: a step detector on release
 identity rather than on a count.
 
-The watch polls the predicate rather than watching `log/prompt-captures/` with
-inotify, because a capture event is a superset of a drift event -- most new
-captures carry a copy some fixture already covers -- and notifying on those
-spends the attention the signal exists to protect. Reshaping the question so an
-existing tool answers it beats adding a dependency to answer a looser one; at a
-release most days, a minute of lag costs nothing.
+`driftwatch.sh` waits on inotify across the predicate's three inputs and
+re-evaluates when any changes -- `system-prompts.kb/` and `blocks.d/` included,
+since promoting a fixture is what clears a standing report and watching only
+the captures would hold it red until some unrelated capture arrived.
+
+Two questions live here and are easy to fuse: what *wakes* the loop, and what
+decides to *notify*. A capture event really is a superset of a drift event, but
+that argues only against notifying on the event. With the predicate still
+filtering, waking on a capture that turns out to be covered costs one
+evaluation and says nothing. Polling instead costs about a second of CPU per
+evaluation, so any interval short enough to feel responsive buys a duty cycle
+paid for the life of the session -- to re-derive an answer whose inputs are
+usually untouched.
+
+A ceiling on the wait is what keeps that honest. A change landing between an
+evaluation and the next wait would otherwise sit undetected, and a watch that
+quietly stopped working would be indistinguishable from no drift. When the
+watcher cannot run at all the loop sleeps instead, degrading to a slow poll
+rather than spinning or dying.
 
 What this route does *not* deliver, stated rather than smuggled: the signal is
 only as live as the session that armed it. Coverage is "within a minute while a

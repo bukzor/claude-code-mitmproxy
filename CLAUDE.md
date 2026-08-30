@@ -99,7 +99,7 @@ is a claim that neither was possible.
   past their window.
 
 Fixture promotion left that list by becoming a signal. Arm `./driftwatch.sh`
-through `Monitor` (persistent) when a maintenance session opens: it polls
+through `Monitor` (persistent) when a maintenance session opens: it watches
 whether upstream is serving prompt text no fixture covers -- the one drift no
 tripwire catches, since `_strip-rate` sees only subtractive and rewrite drift
 -- and prints on its first pass, then only when the answer changes. Act on it

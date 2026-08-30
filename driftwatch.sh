@@ -1,13 +1,12 @@
 #!/bin/bash
-# Poll the promotion predicate and print only when its answer changes, so a
-# maintenance session can arm it once (Monitor) and be told about upstream
-# prompt drift instead of remembering to look for it.
+# Re-evaluate the promotion predicate whenever its inputs change, and print only
+# when its answer changes, so a maintenance session can arm it once (Monitor)
+# and be told about upstream prompt drift instead of remembering to look.
 #
-# Why polling rather than inotify on log/prompt-captures/: a capture event is a
-# superset of a drift event -- most new captures are copies a fixture already
-# covers -- and notifying on those spends the attention the signal exists to
-# protect. The predicate is the filter, and at a release most days a 60s lag is
-# not worth a dependency. Rationale: design/040-design.kb/every-duty-has-an-occasion.md
+# inotify only decides *when to look*; the predicate still decides what is worth
+# saying. That split is the whole design -- a capture event is a superset of a
+# drift event, so waking on one is right and notifying on one would not be.
+# Rationale: design/040-design.kb/every-duty-has-an-occasion.md
 set -euo pipefail
 export DEBUG="${DEBUG:-0}"
 
@@ -20,13 +19,38 @@ trap onerror ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SURVEY="${SCRIPT_DIR}/.venv/bin/claude-mitmproxy-survey-captures"
-INTERVAL="${DRIFTWATCH_INTERVAL:-60}"
+
+# Everything the predicate reads. system-prompts.kb/ and blocks.d/ are not
+# optional: promoting a fixture is what clears a standing report, and watching
+# only the captures would leave it red until the next unrelated capture.
+WATCHED=(log/prompt-captures system-prompts.kb blocks.d)
+
+# Write-side events only. `access`/`open` would be woken by the predicate's own
+# reads of these very files, which is a spin, not a watch.
+EVENTS=close_write,create,delete,moved_to,moved_from
+
+# A re-check ceiling, not a poll interval: it covers a change landing in the
+# window between a check and the next wait, and keeps a watch that quietly
+# stopped working from being indistinguishable from no drift.
+FLOOR="${DRIFTWATCH_FLOOR:-300}"
 
 if (( DEBUG > 0 )); then
   set -x
 fi
 
 cd "$SCRIPT_DIR"
+
+wait_for_change() {
+  # Blocks until an input changes or the ceiling expires. inotifywait exits 2
+  # on that timeout, which is normal; any other failure means the watcher
+  # itself is unusable, so fall back to sleeping and let the loop degrade to
+  # polling at the ceiling rate rather than spinning or dying.
+  local status=0
+  inotifywait -qq -t "$FLOOR" -e "$EVENTS" "${WATCHED[@]}" || status="$?"
+  if (( status != 0 && status != 2 )); then
+    sleep "$FLOOR"
+  fi
+}
 
 # Empty, so the first pass always prints: arming the watch reports whatever
 # accumulated while no session was open, and an all-clear proves it is live.
@@ -47,5 +71,5 @@ while true; do
     printf '%s\n' "$current"
     previous="$current"
   fi
-  sleep "$INTERVAL"
+  wait_for_change
 done

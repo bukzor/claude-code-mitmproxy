@@ -59,8 +59,12 @@ Narrative in `../session.kb/`.
         Drift is a pure function of on-disk state, so a record of it would
         cache a derived value, and the incident queue is itself polled —
         routing drift there would have consolidated two polls, not retired
-        one. Polling beats inotify because a capture event is a superset of a
-        drift event (and inotify-tools isn't installed). The sequencing
+        one. First cut polled every 60s; corrected to an inotify wait over the
+        predicate's three inputs, with a ceiling, after the operator installed
+        inotify-tools: the "a capture event is a superset of a drift event"
+        objection argues against *notifying* on the event, not against *waking*
+        on it, and an evaluation measured ~1s of CPU, which polling pays for
+        the life of the session. The sequencing
         constraint dissolved with the channel: a notification has no clearing
         semantics, so this no longer waits on the naming ruling. Bug caught
         by testing the failure path: merging stderr does not capture a shell's
