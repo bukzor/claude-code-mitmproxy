@@ -130,4 +130,10 @@ for module in RELOADED:
 # module-reload and addon-reload synonymous; importing must stay side-effect
 # free, so the call belongs at the two reload sites rather than in that module.
 logging_handlers.reinstall_log_handlers()
-logging.info("reloaded %s", ", ".join(m.__name__ for m in RELOADED))
+# An event, not a log line: which code a live proxy is actually running is a
+# fact that was previously announced once, to a terminal nobody reads, and then
+# lost -- so a reload that half-succeeded looked exactly like one that never
+# happened. Emitted after the reinstall above, which is what gives it a file.
+logging.getLogger(logging_handlers.LIFECYCLE_RELOAD).info(
+    "reloaded %s", ", ".join(m.__name__ for m in RELOADED)
+)

@@ -181,6 +181,21 @@ Narrative in `../session.kb/`.
         categories, never emitting modules, so a refactor is not a breaking
         change. `log/compress_traffic.log` (3.6K, undated, the one existing
         append log with no date) folds into `housekeeping.compress`.
+  - [ ] Wire the six taxonomy names that still have no emitter. `capture.*` and
+        `lifecycle.reload` are live; `lifecycle.startup` (the three `load`-hook
+        inventories in `syspatch`/`toolpatch`), `incident.{patch-miss,
+        strip-floor,uncaught}` (beside the `logging.warning` in `incidents`,
+        which stays -- the warning is the alarm, the event is the record) and
+        `housekeeping.{gc,compress}` are still announcing to stderr only.
+        Publishing a name and leaving it dead is the same defect this task
+        exists to fix, one rung out.
+  - [ ] Known edge, found by verifying against the live proxy: it holds the
+        shard's flock for its lifetime, so a *second* process that emits an
+        event gets `BlockingIOError` -- correct by design (one writer, loud on
+        contention), but it means a CLI or check that ever emits would fail
+        while the proxy runs. Today nothing outside `addons/` emits, and the
+        full suite plus `monitoring/` are green with the proxy holding fd 20.
+        Decide whether offline tools should emit at all before that changes.
   - [ ] Growth tripwire, since the size estimate predates the system:
         ~13 KB/month predicted for `events.capture.*`, so alarm at 2 MB across
         `log/events/` (>100x). Occasion: proxy start, beside
