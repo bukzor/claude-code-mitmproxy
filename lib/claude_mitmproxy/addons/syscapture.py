@@ -12,6 +12,7 @@ import json
 import logging
 
 from claude_mitmproxy import incidents
+from claude_mitmproxy import logging_handlers
 from claude_mitmproxy import prompt_capture
 from claude_mitmproxy import prompt_location
 
@@ -55,13 +56,21 @@ def _request(flow):
 
     model = request.get("model", "unknown")
     cc_version = prompt_location.cc_version_of(system)
+    # An event, not a log line: `save_prompt` returns a path only for content
+    # never seen before, so this is the deduplicated fact that a copy exists --
+    # which is what a consumer waits on, and why it goes to a file of its own
+    # rather than into the mixed stderr stream.
     for body in bodies:
         saved = prompt_capture.save_prompt(body, cc_version, model)
         if saved is not None:
-            logging.info("captured new system prompt -> %s", saved)
+            logging.getLogger(logging_handlers.CAPTURE_SYSTEM_PROMPT).info(
+                "captured new system prompt -> %s", saved
+            )
     if subagent_body is not None:
         saved = prompt_capture.save_prompt(
             subagent_body, cc_version, model, prompt_capture.PROMPTS_DIR / "subagents"
         )
         if saved is not None:
-            logging.info("captured new subagent prompt -> %s", saved)
+            logging.getLogger(logging_handlers.CAPTURE_SUBAGENT_PROMPT).info(
+                "captured new subagent prompt -> %s", saved
+            )

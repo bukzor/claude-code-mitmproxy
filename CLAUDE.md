@@ -51,6 +51,15 @@ lives under `log/` -- never at repo root, never committed. Why unbounded
 outputs are day-sharded and restarts append instead of truncate:
 `design/040-design.kb/ease-of-operation.kb/`.
 
+`log/events/` is the exception worth knowing: it holds *events*, not prose --
+one tailable file per event type, named by the logger that emitted it
+(`claude_mitmproxy.events.capture.system-prompt` writes
+`log/events/capture/system-prompt.<date>.log`). The taxonomy is a published
+interface, so those names are spelled once in `logging_handlers` and a rename
+is a breaking change: `design/040-design.kb/events-are-separate-from-logs.md`.
+`addons/logging_handlers.py` is `-s`-loaded before everything else so the other
+addons' startup inventories are captured too.
+
 ## Collections
 
 - `design/` — layered why-chain (mission → goals → design) per

@@ -21,8 +21,10 @@ import logging
 import re
 from pathlib import Path
 
+from claude_mitmproxy import flocked_logs
 from claude_mitmproxy import gc_patch_failures
 from claude_mitmproxy import incidents
+from claude_mitmproxy import logging_handlers
 from claude_mitmproxy import prompt_capture
 from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
@@ -35,6 +37,11 @@ from claude_mitmproxy import tool_patches
 # to see already-reloaded versions of what it builds on.
 RELOADED = (
     repo_paths,
+    flocked_logs,
+    # Re-executing this reinstalls the events handler, which is the whole
+    # reason it may be reloaded at all: it holds no module state, so the
+    # replacement finds the live handler by name and its fd by scanning.
+    logging_handlers,
     rule_templates,
     prompt_shape,
     incidents,
@@ -117,4 +124,10 @@ check_addons_unimported()
 check_reloaded_covers_addon_imports()
 for module in RELOADED:
     importlib.reload(module)
+# Reloading logging_handlers rebinds its class but not the live instance, which
+# would go on running pre-edit code from the old class -- the exact staleness
+# this file exists to prevent, one rung out. Reinstalling here is what makes
+# module-reload and addon-reload synonymous; importing must stay side-effect
+# free, so the call belongs at the two reload sites rather than in that module.
+logging_handlers.reinstall_log_handlers()
 logging.info("reloaded %s", ", ".join(m.__name__ for m in RELOADED))

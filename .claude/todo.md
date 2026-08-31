@@ -107,11 +107,22 @@ Narrative in `../session.kb/`.
       than hook carriers, and `quietconn` (capping `mitmproxy.proxy.server` at
       WARNING so connection chatter cannot bury real events) is already a
       fragment of this story that probably folds in.
-  - [ ] Separate *logs* from *events*. `syscapture` logging "captured new
-        system prompt -> path" is the exactly-once, deduplicated fact that a
-        prompt copy was seen for the first time; a consumer wants that as a
-        line in a tailable file, not as prose in a stream. Give those a logger
-        name or handler of their own so nothing has to parse the mixed stream.
+  - [x] Separate *logs* from *events*. Landed: `logging_handlers.py` (the
+        `EventFileHandler` routing logger name to path, plus
+        `reinstall_log_handlers`/`uninstall_log_handlers`), the `-s` addon that
+        loads before everything else, `syscapture` emitting both capture events
+        to their own loggers, and `reload.py` reinstalling after a module
+        reload so both reload paths converge on one function while importing
+        stays side-effect free. `tests/test_logging_handlers.py` (6, three
+        mutations verified). Design:
+        `design/040-design.kb/events-are-separate-from-logs.md`.
+        Two findings worth keeping. The events logger must set its own level:
+        inheriting leaves it at root's `WARNING` under a bare CLI, so every
+        event silently vanished outside mitmproxy (which sets root to `DEBUG`).
+        And pytest's `caplog` captures records by a route that survives
+        `propagate = False`, so the first propagation test passed against a
+        handler that had stopped reaching the root at all -- it uses a root
+        handler of its own now.
   - [ ] First consumer, and why this came up: `driftwatch.sh`. **The original
         arithmetic here was wrong and is corrected: the events file buys
         almost none of the claimed reduction.** Measured 2026-08-31: the
@@ -160,9 +171,9 @@ Narrative in `../session.kb/`.
         fd is recovered by scanning `/proc/self/fd`, and flock's
         same-fd-idempotent / second-fd-conflicting pair makes a leaked reload
         distinguishable from a second proxy for free.
-  - [ ] Still open before the handler can land: the logger taxonomy, which is
-        the published interface. Agent-drafted and awaiting the operator's
-        veto pass -- `events.capture.{system-prompt,subagent-prompt}`,
+  - [x] The logger taxonomy, the published interface. **Ratified 2026-08-31**
+        (agent-drafted, approved on no comment):
+        `events.capture.{system-prompt,subagent-prompt}`,
         `events.incident.{patch-miss,strip-floor,uncaught}`,
         `events.lifecycle.{startup,reload}`,
         `events.housekeeping.{gc,compress}`. Four domains because each

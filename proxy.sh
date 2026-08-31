@@ -38,6 +38,7 @@ exec mitmdump \
   --listen-port "$PORT" \
   --set flow_detail=0 \
   -w "$FLOW_FILE" \
+  -s "${ADDON_DIR}/logging_handlers.py" \
   -s "${ADDON_DIR}/reload.py" \
   -s "${ADDON_DIR}/quietconn.py" \
   -s "${ADDON_DIR}/syscapture.py" \
