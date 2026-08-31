@@ -30,19 +30,18 @@ def test_unpromoted_core_is_drift():
     (drift,) = survey_captures.drifted(rows, set())
     assert drift.shape == "long-form", drift
     assert drift.core == "core1", drift
-    assert drift.seen == 1, drift
 
 
 def test_same_core_across_versions_is_one_group():
-    """A core is a prompt copy, not a capture: the group is the evidence that
-    this copy is recurring rather than a one-off blip."""
+    """A core is a prompt copy, not a capture: many captures of one copy are
+    one promotion, and the span is how long upstream has been serving it --
+    which the arrival order of the captures must not disturb."""
     rows = [
         surveyed("2.1.241.aaa", "fable-5", "r1", "core1", "harness-fable", 100),
         surveyed("2.1.250.bbb", "fable-5", "r2", "core1", "harness-fable", 300),
         surveyed("2.1.246.ccc", "fable-5", "r3", "core1", "harness-fable", 200),
     ]
     (drift,) = survey_captures.drifted(rows, set())
-    assert drift.seen == 3, drift
     assert drift.span == "2.1.241.aaa..2.1.250.bbb", drift
 
 
@@ -123,6 +122,14 @@ def test_build_tag_never_decides_currency():
     drifts = survey_captures.drifted(rows, {("harness-opus", "core2")})
     current = survey_captures.current_drift(drifts, [row.capture for row in rows])
     assert [drift.core for drift in current] == ["core1"], current
+
+
+def test_current_drift_refuses_an_empty_capture_set():
+    """Answering "is anything uncovered" from no captures is the confident
+    wrong answer this tool exists not to give -- the same one an unrecognized
+    flag used to produce, reachable again through a filter matching nothing."""
+    with pytest.raises(AssertionError):
+        survey_captures.current_drift([], [])
 
 
 def test_covered_newest_release_leaves_nothing_current():

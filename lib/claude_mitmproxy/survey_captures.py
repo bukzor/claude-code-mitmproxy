@@ -96,7 +96,6 @@ class Drift(NamedTuple):
 
     shape: str
     core: str
-    seen: int  # captures carrying this copy -- 1 is a blip, many is a trend
     span: str
     size: int
     candidate: Capture
@@ -162,7 +161,6 @@ def drifted(rows: list[Surveyed], covered: set[tuple[str, str]]) -> list[Drift]:
             Drift(
                 shape=shape,
                 core=core,
-                seen=len(members),
                 span=(
                     oldest.version
                     if oldest.version == newest.version
@@ -190,8 +188,7 @@ def current_drift(drifts: list[Drift], captures: list[Capture]) -> list[Drift]:
     moved, and a signal that fires on it is red forever. Newest release across
     every shape rather than per shape, since a shape absent from newer releases
     is one upstream stopped serving."""
-    if not captures:
-        return []
+    assert captures, "no captures to date: 'nothing uncovered' would be vacuous"
     newest = max(capture.release for capture in captures)
     return [drift for drift in drifts if drift.newest.release == newest]
 
@@ -214,12 +211,11 @@ def inventory_table(rows: list[Surveyed]) -> list[tuple[str, ...]]:
 
 
 def drift_table(drifts: list[Drift]) -> list[tuple[str, ...]]:
-    header = ("shape", "core", "seen", "versions", "bytes", "promote")
+    header = ("shape", "core", "versions", "bytes", "promote")
     return [header] + [
         (
             drift.shape,
             drift.core,
-            str(drift.seen),
             drift.span,
             str(drift.size),
             str(drift.candidate.path),
@@ -288,6 +284,7 @@ def main() -> None:
         for path in raws
         if not args.filters or any(f in path.name for f in args.filters)
     ]
+    assert captures, (args.filters, "matched no capture; every answer below would be vacuous")
     kb_texts = {
         p.stem: p.read_text()
         for p in sorted(KB_DIR.iterdir())
