@@ -181,6 +181,28 @@ Narrative in `../session.kb/`.
         categories, never emitting modules, so a refactor is not a breaking
         change. `log/compress_traffic.log` (3.6K, undated, the one existing
         append log with no date) folds into `housekeeping.compress`.
+  - [ ] Restart the proxy so `-s logging_handlers.py` takes effect. The running
+        instance predates that line in `proxy.sh` and installed the handler via
+        `reload.py`'s call instead, which works but is incidental: the intended
+        load-first ordering, so the other addons' `load`-hook startup
+        inventories are captured too, only happens at the next start. Until
+        then `lifecycle.startup` would miss the very records it exists for.
+  - [ ] Rule on four defaults a session chose, none of them ratified
+        (`Skill(review-open-questions)` batch, not loose ends -- the work
+        around them is finished, so no sweep will surface them):
+    - [ ] The events logger sets its own level to `INFO`. That makes a
+          `debug`-grade event impossible by construction. Deliberate -- a
+          durable record must not depend on console verbosity -- but it forecloses
+          the "perhaps with a debug-grade note" channel named for the rotator.
+    - [ ] Emit-time flock contention goes to `logging`'s `handleError` (stderr)
+          rather than filing an incident. An earlier draft proposed
+          `logging.error` + an incident record; that was never implemented, so
+          a second proxy silently degrades the events file to console-only.
+    - [ ] The 2 MB growth tripwire threshold, and `MIN_COMPRESS_BYTES = 1 MiB`.
+          Both are round numbers over a measured ~13 KB/month, not derived.
+    - [ ] The two testing rules added to `design/040-design.kb/` are marked
+          agent-authored and vetoable in place; they are normative text a
+          session wrote, not a ruling.
   - [ ] Wire the six taxonomy names that still have no emitter. `capture.*` and
         `lifecycle.reload` are live; `lifecycle.startup` (the three `load`-hook
         inventories in `syspatch`/`toolpatch`), `incident.{patch-miss,

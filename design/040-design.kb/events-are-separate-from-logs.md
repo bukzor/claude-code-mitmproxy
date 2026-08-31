@@ -56,10 +56,13 @@ incident and a status-bar flash. An event file is a record, not an alarm.
 
 ## Testing note
 
+> Agent-authored and vetoable. The facts below were verified in this repo, but
+> stating them as a rule future sessions follow is a session's choice, not a
+> ruling.
+
 Do not assert propagation with pytest's `caplog`. Its logging plugin captures
 records by a route that survives `propagate = False`, so such a test passes
-against a handler that has stopped reaching the root entirely -- observed here,
-against the mutation that should have killed it. Attach a handler of your own
-to the root logger instead.
+against a handler that has stopped reaching the root entirely. Attach a handler
+of your own to the root logger instead.
 
 [loudness-policy]: loudness-policy.md

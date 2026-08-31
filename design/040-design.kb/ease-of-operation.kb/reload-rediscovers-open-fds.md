@@ -43,11 +43,12 @@ derived per call and the fd is found by scanning, so the desync it repairs is
 not representable. New writers should take this shape; `flow2jsonl` keeps the
 older one until something else makes it worth moving.
 
+> The testing rule below is agent-authored and vetoable; the mechanism above is
+> the operator's ruling.
+
 Testing this needs one warning. Assertions about a *closed* fd number prove
 nothing, because `os.open` immediately recycles it -- a test written that way
 passes against code that closes the wrong file. Assert on lock state observed
-from another process, and on `self_fd_targets()`, never on fd identity. Both
-tests written the wrong way here survived the mutation that should have killed
-them.
+from another process, and on `self_fd_targets()`, never on fd identity.
 
 [rotation-self-heals]: rotation-self-heals.md
