@@ -112,21 +112,75 @@ Narrative in `../session.kb/`.
         prompt copy was seen for the first time; a consumer wants that as a
         line in a tailable file, not as prose in a stream. Give those a logger
         name or handler of their own so nothing has to parse the mixed stream.
-  - [ ] First consumer, and why this came up: `driftwatch.sh` waits on inotify
-        across three directories with a 300s ceiling, so it wakes ~290 times a
-        day and re-derives the whole answer (~1s) each time. Waiting on a
-        capture-event line instead is ~5 wakes a day, on news rather than on
-        file movement. The stronger version -- proxy evaluates the promotion
+  - [ ] First consumer, and why this came up: `driftwatch.sh`. **The original
+        arithmetic here was wrong and is corrected: the events file buys
+        almost none of the claimed reduction.** Measured 2026-08-31: the
+        predicate costs 1.03s, the 300s ceiling accounts for 288 of the ~290
+        daily wakes, and real capture events run ~4/day (30-day sample of
+        `log/prompt-captures/` mtimes, 2 files per new body). Because
+        `save_prompt` writes only on a new masked digest, that directory is
+        already content-addressed and *already* changes only on news -- so
+        swapping it for an events file removes ~0.7% of the wakes. The lever
+        is the ceiling, and it is independent of this task.
+        What the swap does genuinely buy: a `masks.d/` edit makes
+        `load_masked_digests` rewrite every stale masked sibling on the next
+        request, up to ~150 `close_write` events in a burst, each costing a
+        re-derivation for an input the predicate does not even read (it reads
+        `blocks.d/`). Watching an events file drops that burst. Note also that
+        only one of the three watches can ever be replaced: `system-prompts.kb/`
+        and `blocks.d/` change when a fixture is promoted by hand, which is not
+        a proxy event, and promoting is what clears a standing report.
+        The shape that delivers ~10x: keep inotify on those two, swap
+        `log/prompt-captures` for `log/events/capture`, raise
+        `DRIFTWATCH_FLOOR` to 3600 (~30 wakes/day, ~31s CPU against ~5 min).
+        The stronger version -- proxy evaluates the promotion
         predicate itself and logs only drift -- was weighed and set aside: it
         makes `system-prompts.kb/` a runtime input to the request path,
         reversing the direction `020-goals.kb/pristine-fixture-supply.md` and
         `offline-validation.md` establish.
   - [ ] Keep the existing output conventions: gitignored under `log/`, append
-        rather than truncate across restarts, sharded by day if unbounded
-        (`design/040-design.kb/ease-of-operation.kb/sharded-logs.md`). Capture
-        events run a few lines a day, so one appended file is likely right.
+        rather than truncate across restarts. Ruled 2026-08-31, against the
+        earlier guess that one unsharded file would do: events are time-series
+        output like `log/traffic/`, not content-addressed artifacts like
+        `log/prompt-captures/`, and the date in the path is what makes a shard
+        *finished* -- the unit compression, retention and `held_open()` all
+        need. Naming is `log/events/<category…>/<type>.$DATE.log`, date as a
+        leaf suffix so a type's whole history is one glob and `.log` stays the
+        suffix `compress_traffic` reads. A stable `tail -F` target is a
+        symlink beside it (verified: GNU tail 9.7 follows a symlink swap,
+        reopening from the start, so no line is lost at midnight).
         Leaving mitmdump's own event log on stderr is a feature, not an
         oversight -- that stream is for watching a proxy interactively.
+  - [x] Reload-safe flocked fds, the primitive the handler needs.
+        Landed: `flocked_logs.py` (`reopen_flocked_file`, `reopen_log_file`)
+        plus `tests/test_flocked_logs.py` (7, both discriminating assertions
+        mutation-verified). Design: `design/040-design.kb/ease-of-operation.kb/
+        reload-rediscovers-open-fds.md` -- addon-reload and module-reload are
+        exactly synonymous, so no `done()`/`DoneHook` and no module state; the
+        fd is recovered by scanning `/proc/self/fd`, and flock's
+        same-fd-idempotent / second-fd-conflicting pair makes a leaked reload
+        distinguishable from a second proxy for free.
+  - [ ] Still open before the handler can land: the logger taxonomy, which is
+        the published interface. Agent-drafted and awaiting the operator's
+        veto pass -- `events.capture.{system-prompt,subagent-prompt}`,
+        `events.incident.{patch-miss,strip-floor,uncaught}`,
+        `events.lifecycle.{startup,reload}`,
+        `events.housekeeping.{gc,compress}`. Four domains because each
+        plausibly wants different handler config; segments are message
+        categories, never emitting modules, so a refactor is not a breaking
+        change. `log/compress_traffic.log` (3.6K, undated, the one existing
+        append log with no date) folds into `housekeeping.compress`.
+  - [ ] Growth tripwire, since the size estimate predates the system:
+        ~13 KB/month predicted for `events.capture.*`, so alarm at 2 MB across
+        `log/events/` (>100x). Occasion: proxy start, beside
+        `gc_patch_failures.sweep_at_startup`; files an `_events-log-growth`
+        incident rather than inventing a channel. Re-derive the threshold from
+        measured rate once the taxonomy is populated.
+  - [ ] Compression: wire `log/events` in, but give `compressible()` a minimum
+        size so it self-noops (a 440-byte shard must not become a 300-byte
+        `.zst`). One constant, and it correctly covers a tiny traffic shard
+        too. Generalizing is `TRAFFIC_DIR`/`SUFFIXES` becoming parameters with
+        a second call site under the existing lock -- not a second compressor.
 - [ ] <https:../proxy-memory-leak-2026-08-18/todo.kb/2026-08-18-000-confirm-store-retention-and-adopt-a-bound.md>
       (outside `.claude/`, so this breadcrumb is its only sweep visibility):
       restart done, fix-verification RSS capture done 2026-08-21 (99 MiB →
