@@ -262,14 +262,22 @@ Narrative in `../session.kb/`.
       at all, which is the general rule and worth remembering: a floor is
       what the *patch set* strips from a core, so deleting more core only
       moves it when a patch was matching inside the deleted text.
-- [ ] Add a `blocks.d/` rule for the fork-provenance paragraph ("This
+- [x] Add a `blocks.d/` rule for the fork-provenance paragraph ("This
       conversation was forked out of {path}..."), the third uncovered
       session-optional block. Found the same way as the two above, while
       diffing v2.1.212.f03 harness-fable cores: with auto-mode and
       model-identity stripped, it is the remaining unexplained difference
-      between two captures of one copy. Needs a `$` hole for the path (no
-      mask tokenizes it today), so check whether a `masks.d/` rule for the
-      path is the better half of the fix.
+      between two captures of one copy. Landed as `blocks.d/`
+      `fork-provenance.md`, one paragraph with two holes (`$FORKDIR`,
+      `$CWD`); 18 -> 16 uncovered copies, both fork-carrying captures
+      merging into siblings. The `masks.d/` half of the fix is **not
+      available and not merely unchosen**: `check_masks.dark_masks` fails
+      any mask matching no committed fixture, and no fixture carries the
+      paragraph -- only two captures do. So the fork path stays untokenized
+      in `masked_hash`, and two forks from different directories still mint
+      two captures of one prompt copy. That costs nothing the core digest
+      cares about, and the mask becomes writable the day a fork-carrying
+      body is promoted for its own reasons.
 - [x] Rule on how to promote two copies of one shape at one cc_version.
       **Ruled 2026-08-30: promote them all.** Both 2.1.251 fable copies are in
       as `v2.1.251-fable-61a97372.md` and `v2.1.251-fable-e7dd358b.md`;
