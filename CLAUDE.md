@@ -51,15 +51,6 @@ lives under `log/` -- never at repo root, never committed. Why unbounded
 outputs are day-sharded and restarts append instead of truncate:
 `design/040-design.kb/ease-of-operation.kb/`.
 
-`log/events/` is the exception worth knowing: it holds *events*, not prose --
-one tailable file per event type, named by the logger that emitted it
-(`claude_mitmproxy.events.capture.system-prompt` writes
-`log/events/capture/system-prompt.<date>.log`). The taxonomy is a published
-interface, so those names are spelled once in `logging_handlers` and a rename
-is a breaking change: `design/040-design.kb/events-are-separate-from-logs.md`.
-`addons/logging_handlers.py` is `-s`-loaded before everything else so the other
-addons' startup inventories are captured too.
-
 ## Collections
 
 - `design/` — layered why-chain (mission → goals → design) per
@@ -80,9 +71,9 @@ addons' startup inventories are captured too.
 - `.claude/todo.kb/` — strategic task breakdowns (per `Skill(llm-subtask)`).
 
 Two in-repo rule sets share the patch template language, each with its own
-`README.md`: `masks.d/` neutralizes session-volatile *content* for
+`README.md`: `masks.d/` neutralizes session-volatile _content_ for
 `incidents.masked_hash` (an edit needs no follow-up -- nothing stored is named
-by a masked digest), and `blocks.d/` deletes session-optional *blocks* to
+by a masked digest), and `blocks.d/` deletes session-optional _blocks_ to
 answer "what would a session that switched nothing on have sent?" --
 `survey_captures.py`'s core-digest column offline, and the live `_strip-rate`
 floor. `check_laws.py` validates the algebra both rest on -- masking idempotent
@@ -103,7 +94,7 @@ is a claim that neither was possible.
 - **Triage `log/patch-failures/` when it is nonempty**, per
   `CLAUDE.kb/patch-failure-triage.md`. Reading a drifted body and deciding what
   upstream did to a patch's target is judgment about someone else's prose, and
-  no occasion produces it. The queue's *upkeep* is not yours: a proxy start
+  no occasion produces it. The queue's _upkeep_ is not yours: a proxy start
   sweeps it, expiring `_uncaught-*` transients unread and reclaiming archives
   past their window.
 
