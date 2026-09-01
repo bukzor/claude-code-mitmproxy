@@ -47,12 +47,13 @@ def test_promote_writes_the_raw_body_verbatim(tmp_path):
     captures = tmp_path / "captures"
     captures.mkdir()
     body = "You are an interactive agent\n"
-    (done,) = survey_captures.promote(
+    written, skipped = survey_captures.promote(
         [drift("harness-opus", text=body, tmp_path=captures)], kb
     )
-    written = kb / "v2.1.257-opus-cad91c75.md"
-    assert written.read_text() == body, done
-    assert "promoted" in done
+    (fixture, _), = written
+    assert fixture == kb / "v2.1.257-opus-cad91c75.md", fixture
+    assert fixture.read_text() == body
+    assert skipped == []
 
 
 def test_an_unknown_shape_is_left_for_a_human(tmp_path):
@@ -60,8 +61,9 @@ def test_an_unknown_shape_is_left_for_a_human(tmp_path):
     a body carrying no known marker is what a shape rename looks like."""
     kb = tmp_path / "kb"
     kb.mkdir()
-    (done,) = survey_captures.promote([drift("?'# Something New'")], kb)
-    assert "read it yourself" in done, done
+    written, (skipped,) = survey_captures.promote([drift("?'# Something New'")], kb)
+    assert "read it yourself" in skipped, skipped
+    assert written == []
     assert list(kb.iterdir()) == []
 
 
@@ -73,3 +75,21 @@ def test_promoting_over_an_existing_fixture_is_a_bug(tmp_path):
     (kb / "v2.1.257-opus-cad91c75.md").write_text("already here\n")
     with pytest.raises(AssertionError):
         survey_captures.promote([drift("harness-opus")], kb)
+
+
+def test_commit_message_names_every_promotion(tmp_path):
+    """The message is derived too: what was filed, from what, and nothing about
+    why upstream changed -- which the promoter cannot know and the diff shows."""
+    promoted = [
+        (tmp_path / "v2.1.257-opus-cad91c75.md", drift("harness-opus")),
+        (tmp_path / "v2.1.257-92b0bb81.md", drift("long-form", raw="92b0bb817064")),
+    ]
+    message = survey_captures.commit_message(promoted)
+    assert message.startswith("Promote 2 prompt copies at v2.1.257\n"), message
+    assert "  v2.1.257-opus-cad91c75.md <- v2.1.257.c00_claude-fable-5_cad91c751e18.raw.md" in message
+    assert "  v2.1.257-92b0bb81.md <- v2.1.257.c00_claude-fable-5_92b0bb817064.raw.md" in message
+
+
+def test_a_single_promotion_is_not_pluralised(tmp_path):
+    promoted = [(tmp_path / "v2.1.257-opus-cad91c75.md", drift("harness-opus"))]
+    assert survey_captures.commit_message(promoted).startswith("Promote 1 prompt copy at v2.1.257")

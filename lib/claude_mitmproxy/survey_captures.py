@@ -26,6 +26,7 @@ Rows are filtered to filenames containing any SUBSTRING (e.g. "2.1.221").
 """
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
@@ -228,16 +229,67 @@ def promote(drifts: list[Drift], kb_dir: Path) -> list[str]:
     human's: it has no derivable name, and a body carrying no known marker is
     the one drift worth reading rather than filing.
     """
-    done = []
+    written, skipped = [], []
     for drift in drifts:
         if drift.shape not in prompt_shape.FIXTURE_SUFFIX:
-            done.append(f"unknown shape {drift.shape}, read it yourself: {drift.candidate.path}")
+            skipped.append(f"unknown shape {drift.shape}, read it yourself: {drift.candidate.path}")
             continue
         target = kb_dir / fixture_name(drift)
         assert not target.exists(), (target, "already promoted, yet its copy reads as uncovered")
         target.write_text(drift.candidate.path.read_text())
-        done.append(f"promoted {drift.candidate.path} -> {target}")
-    return done
+        written.append((target, drift))
+    return written, skipped
+
+
+def commit_message(promoted: list[tuple[Path, Drift]]) -> str:
+    """What the promoting commit says, which is what it did and nothing else.
+
+    Derived like the names are: a message claiming why upstream changed would
+    be a guess, and the diff already carries the bodies."""
+    releases = sorted({fixture.stem.split("-")[0] for fixture, _ in promoted})
+    lines = [
+        f"Promote {len(promoted)} prompt {'copy' if len(promoted) == 1 else 'copies'}"
+        f" at {', '.join(releases)}",
+        "",
+        "Filed by `survey-captures --promote`. Every name derives from its",
+        "capture -- release, shape, raw digest -- so nothing here was chosen.",
+        "",
+    ]
+    lines += [f"  {fixture.name} <- {drift.candidate.path.name}" for fixture, drift in promoted]
+    return "\n".join(lines) + "\n"
+
+
+def commit_promotions(promoted: list[tuple[Path, Drift]]) -> list[str]:
+    """Commit what was just written, letting the hook decide whether it stands.
+
+    Promotion *can* go wrong, in one way worth naming: an unruled
+    session-optional block makes two captures of one copy read as two copies,
+    and the fixture then carries that block inside its core, inflating the
+    `_strip-rate` floor `strip_floors` derives from it until ordinary traffic
+    trips it. Committing is not what risks that -- writing the file is -- and
+    committing is what *catches* it, because a commit touching
+    `system-prompts.kb/` runs the whole offline suite, `check_strip_floors`
+    included (`.pre-commit-config.yaml`).
+
+    So a red hook is the occasion this duty always wanted: the files stay in
+    the working tree, uncommitted and named, and a human looks exactly when
+    something is wrong instead of every time. Never pushes -- publishing stays
+    an act someone performs.
+    """
+    paths = [str(fixture) for fixture, _ in promoted]
+    done = subprocess.run(
+        ["git", "commit-files", *paths, "--", "-m", commit_message(promoted)],
+        capture_output=True,
+        text=True,
+    )
+    if done.returncode == 0:
+        return [f"committed {len(paths)} fixtures"]
+    return [
+        f"NOT COMMITTED: the offline checks refused this promotion (exit {done.returncode}).",
+        "The fixtures are in your working tree; read them before committing by hand.",
+        done.stdout.strip(),
+        done.stderr.strip(),
+    ]
 
 
 def inventory_table(rows: list[Surveyed]) -> list[tuple[str, ...]]:
@@ -352,7 +404,10 @@ def main() -> None:
         if not drifts:
             print(f"no uncovered prompt copies{scope} in {len(rows)} captures")
         elif args.promote:
-            print("\n".join(promote(drifts, KB_DIR)))
+            written, skipped = promote(drifts, KB_DIR)
+            for fixture, drift in written:
+                print(f"promoted {drift.candidate.path} -> {fixture}")
+            print("\n".join(skipped + (commit_promotions(written) if written else [])))
         else:
             sys.stdout.write(render(drift_table(drifts)))
             print("\n" + trailer(len(drifts), args.current))

@@ -103,16 +103,20 @@ through `Monitor` (persistent) when a maintenance session opens: it watches
 whether upstream is serving prompt text no fixture covers -- the one drift no
 tripwire catches, since `_strip-rate` sees only subtractive and rewrite drift
 -- and prints on its first pass, then only when the answer changes. Answer it
-with `claude-mitmproxy-survey-captures --promote`, which files every row and
-derives each name; then commit, which is the occasion the checks run
-themselves on. Arming is setup rather than a duty: it asks nothing of you when
-nothing happened, which is the distinction the design entry draws.
+with `claude-mitmproxy-survey-captures --promote`, which files every row,
+derives each name, and commits. Arming is setup rather than a duty: it asks
+nothing of you when nothing happened, which is the distinction the design
+entry draws.
 
 Reading the report is no longer part of the job. Since "promote every copy"
 there is no winner to pick and no name to award, so the report names work a
-function can do; what is left for you is the case it declines -- a body whose
-shape carries no marker this repo knows, which has no derivable name and is
-the drift actually worth reading.
+function can do. Two cases still reach you, and only two. A shape carrying no
+marker this repo knows is declined outright -- no derivable name, and the one
+drift worth reading. And a promotion that breaks a check is refused by the
+commit hook, which is why promoting commits rather than stopping short:
+filing a fixture is what can go wrong (an unruled `blocks.d/` block leaves
+session-optional text inside a core and inflates that shape's `_strip-rate`
+floor until ordinary traffic trips it), and committing is what detects it.
 
 Ask by hand with `claude-mitmproxy-survey-captures --current`. Without
 `--current` you also get the backlog the watch deliberately drops, and with no
