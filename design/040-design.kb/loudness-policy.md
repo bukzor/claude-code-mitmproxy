@@ -47,5 +47,26 @@ sparse session loud, which is precisely the noise `earned-silence`
 forbids. It is calibrated on fixture *cores* for that reason
 (`fixture-lifecycle.md`).
 
+## The same warrant applies to an `except` clause
+
+A handler either re-raises or **handles** -- and handling means producing the
+answer the failure implies, as distinct from doing nothing. `continue` and
+`pass` are where this hides, since both read as control flow while being
+neither: the silence is unclassified, which is what `earned-silence` forbids
+one rung down, in code.
+
+The repair is usually to convert the exception into the value it means, at the
+point it is raised, so the handler returns an answer instead of resuming:
+`flocked_logs.holds_lock` asks whether an fd holds the lock by trying to take
+it, and `fd_target` answers "what does this fd point at" with None once the fd
+is gone. What survives the conversion is a handler with a warrant, and the
+warrant belongs on the line beside it -- `flow2jsonl._default` passes on a
+`BadGzipFile` because bytes that were never gzipped are already the answer.
+
+Catch the class that was argued for, not its superclass. `fd_target` catches
+`FileNotFoundError` rather than `OSError` because its callers reason from an
+exhaustive view of our own fds: a permission error absorbed there would leave
+that reasoning intact and wrong.
+
 Triage procedure for the loud cases:
 `../../CLAUDE.kb/patch-failure-triage.md`.

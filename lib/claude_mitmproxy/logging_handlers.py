@@ -2,16 +2,13 @@
 
 Every addon logs through `logging` and mitmdump sends the lot to stderr, which
 `proxy.sh` never captures -- so the proxy announces a fact it knows exactly
-once and then discards the announcement. Records under `EVENTS_LOGGER` are the
-subset a consumer wants as *news*: deduplicated, one line each, in a tailable
-file per event type rather than as prose in a mixed stream.
+once and then discards the announcement. Records under the `events` tree below
+are the subset a consumer wants as *news*: deduplicated, one line each, in a
+tailable file per event type rather than as prose in a mixed stream.
 
-The logger name is the interface. `claude_mitmproxy.events.capture.system-prompt`
-writes `log/events/capture/system-prompt.<date>.log`, so a consumer subscribes
-by tailing a path and parses nothing. Segments name message *categories*, never
-the module that emitted them: a category is what a future handler, filter or
-level might differentiate, while an emitter is an implementation detail that a
-refactor would rename out from under anyone watching.
+The logger name is the interface: `events.capture.system_prompt` writes
+`log/events/capture/system-prompt.<date>.log`, so a consumer subscribes by
+tailing a path and parses nothing.
 
 Records still propagate to the root logger, so mitmproxy's own TermLogHandler
 prints them for an operator watching interactively (CLAUDE.kb/
@@ -29,25 +26,74 @@ from claude_mitmproxy import flocked_logs
 from claude_mitmproxy import incidents
 from claude_mitmproxy import repo_paths
 
-EVENTS_LOGGER = "claude_mitmproxy.events"
+PACKAGE_LOGGER = "claude_mitmproxy"
 HANDLER_NAME = "claude-mitmproxy-events"
 # Named like every addon's: a write we could not do is an uncaught exception in
 # the same sense, and belongs in the same store an operator already triages.
 UNCAUGHT_RULE = "_uncaught-events-log"
 
-# The ratified taxonomy. Named here rather than spelled at each emit site
-# because these strings are the published interface: a consumer's `tail -F`
-# path is derived from one, so renaming a domain is a breaking change and
-# should read like one in the diff.
-CAPTURE_SYSTEM_PROMPT = f"{EVENTS_LOGGER}.capture.system-prompt"
-CAPTURE_SUBAGENT_PROMPT = f"{EVENTS_LOGGER}.capture.subagent-prompt"
-INCIDENT_PATCH_MISS = f"{EVENTS_LOGGER}.incident.patch-miss"
-INCIDENT_STRIP_FLOOR = f"{EVENTS_LOGGER}.incident.strip-floor"
-INCIDENT_UNCAUGHT = f"{EVENTS_LOGGER}.incident.uncaught"
-LIFECYCLE_STARTUP = f"{EVENTS_LOGGER}.lifecycle.startup"
-LIFECYCLE_RELOAD = f"{EVENTS_LOGGER}.lifecycle.reload"
-HOUSEKEEPING_GC = f"{EVENTS_LOGGER}.housekeeping.gc"
-HOUSEKEEPING_COMPRESS = f"{EVENTS_LOGGER}.housekeeping.compress"
+
+def path_segment(attribute: str) -> str:
+    """`system_prompt` names `system-prompt`. An identifier at the call site, a
+    path segment on disk, and the underscore is the whole difference."""
+    return attribute.replace("_", "-")
+
+
+def loggers_named_by_nesting[T: type](tree: T) -> T:
+    """Bind each annotated name in a nest of classes to the logger it spells.
+
+    `events.capture.system_prompt` is the logger
+    `claude_mitmproxy.events.capture.system-prompt`, which writes
+    `log/events/capture/system-prompt.<date>.log`. The nesting is the only
+    place that name exists: a table of strings beside the classes would let the
+    two drift, and a rename would leave the published name behind.
+    """
+
+    def bind(node: type, dotted: str) -> None:
+        for attribute in list(node.__dict__.get("__annotations__", ())):
+            logger = logging.getLogger(f"{dotted}.{path_segment(attribute)}")
+            setattr(node, attribute, logger)
+        for attribute, value in list(node.__dict__.items()):
+            if isinstance(value, type):
+                bind(value, f"{dotted}.{path_segment(attribute)}")
+
+    bind(tree, f"{PACKAGE_LOGGER}.{path_segment(tree.__name__)}")
+    return tree
+
+
+@loggers_named_by_nesting
+class events:
+    """The ratified taxonomy, and the published interface: a consumer derives a
+    `tail -F` path from one of these names, so renaming one is a breaking
+    change and should read like one in the diff.
+
+    Emitters hold the logger, never its name -- a `str` says nothing about what
+    it is for, and every call site that spelled one was a place the taxonomy
+    could be misspelled. Domains are message *categories*, never the module
+    that emitted them: a category is what a future handler, filter or level
+    might differentiate, while an emitter is an implementation detail a
+    refactor renames out from under anyone watching.
+    """
+
+    class capture:
+        system_prompt: logging.Logger
+        subagent_prompt: logging.Logger
+
+    class incident:
+        patch_miss: logging.Logger
+        strip_floor: logging.Logger
+        uncaught: logging.Logger
+
+    class lifecycle:
+        startup: logging.Logger
+        reload: logging.Logger
+
+    class housekeeping:
+        gc: logging.Logger
+        compress: logging.Logger
+
+
+EVENTS_LOGGER = f"{PACKAGE_LOGGER}.{events.__name__}"
 EVENTS_DIR = repo_paths.LOG / "events"
 # Date first so `grep '^2026-08-31'` spans the whole tree with one pattern; the
 # path's date only partitions shards, and a reader should not need to know
@@ -73,7 +119,8 @@ class EventFileHandler(logging.Handler):
     record and finds any fd we already hold by scanning, which is what makes
     the day roll over with no rotation branch and makes re-executing this
     module harmless (design/040-design.kb/ease-of-operation.kb/
-    reload-rediscovers-open-fds.md). At a few events a day the scan is free.
+    open-files-are-rediscovered-not-remembered.md). At a few events a day, the
+    scan is free.
     """
 
     def __init__(self, root: Path, capture_dir: Path | None):

@@ -166,7 +166,7 @@ Narrative in `../session.kb/`.
         Landed: `flocked_logs.py` (`reopen_flocked_file`, `reopen_log_file`)
         plus `tests/test_flocked_logs.py` (7, both discriminating assertions
         mutation-verified). Design: `design/040-design.kb/ease-of-operation.kb/
-        reload-rediscovers-open-fds.md` -- addon-reload and module-reload are
+        open-files-are-rediscovered-not-remembered.md` -- addon-reload and module-reload are
         exactly synonymous, so no `done()`/`DoneHook` and no module state; the
         fd is recovered by scanning `/proc/self/fd`, and flock's
         same-fd-idempotent / second-fd-conflicting pair makes a leaked reload

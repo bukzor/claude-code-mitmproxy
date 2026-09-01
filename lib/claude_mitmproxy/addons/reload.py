@@ -17,8 +17,8 @@ requests and never inside one.
 from __future__ import annotations
 
 import importlib
-import logging
 import re
+import runpy
 from pathlib import Path
 
 from claude_mitmproxy import flocked_logs
@@ -125,16 +125,14 @@ check_addons_unimported()
 check_reloaded_covers_addon_imports()
 for module in RELOADED:
     importlib.reload(module)
-# Reloading logging_handlers rebinds its class but not the live instance, which
-# would go on running pre-edit code from the old class -- the exact staleness
-# this file exists to prevent, one rung out. Reinstalling here is what makes
-# module-reload and addon-reload synonymous; importing must stay side-effect
-# free, so the call belongs at the two reload sites rather than in that module.
-logging_handlers.reinstall_log_handlers()
-# An event, not a log line: which code a live proxy is actually running is a
-# fact that was previously announced once, to a terminal nobody reads, and then
-# lost -- so a reload that half-succeeded looked exactly like one that never
-# happened. Emitted after the reinstall above, which is what gives it a file.
-logging.getLogger(logging_handlers.LIFECYCLE_RELOAD).info(
+# The one addon a library edit also invalidates: the live handler instance goes
+# on running pre-edit code from a class that no longer exists. Re-executing its
+# file is the same act mitmproxy performs on mtime change, and copying the call
+# it makes would be a second copy to keep in step.
+runpy.run_path(str(ADDONS / "logging_handlers.py"))
+# An event, not a log line: which code a live proxy is running was previously
+# announced once, to a terminal nobody reads, so a reload that half-succeeded
+# looked exactly like one that never happened.
+logging_handlers.events.lifecycle.reload.info(
     "reloaded %s", ", ".join(m.__name__ for m in RELOADED)
 )

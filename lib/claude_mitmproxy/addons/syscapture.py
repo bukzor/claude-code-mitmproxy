@@ -63,7 +63,7 @@ def _request(flow):
     for body in bodies:
         saved = prompt_capture.save_prompt(body, cc_version, model)
         if saved is not None:
-            logging.getLogger(logging_handlers.CAPTURE_SYSTEM_PROMPT).info(
+            logging_handlers.events.capture.system_prompt.info(
                 "captured new system prompt -> %s", saved
             )
     if subagent_body is not None:
@@ -71,6 +71,6 @@ def _request(flow):
             subagent_body, cc_version, model, prompt_capture.PROMPTS_DIR / "subagents"
         )
         if saved is not None:
-            logging.getLogger(logging_handlers.CAPTURE_SUBAGENT_PROMPT).info(
+            logging_handlers.events.capture.subagent_prompt.info(
                 "captured new subagent prompt -> %s", saved
             )

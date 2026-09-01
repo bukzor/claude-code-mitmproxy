@@ -29,8 +29,12 @@ Segments name message **categories**, never the module that emitted them. An
 emitter is an implementation detail, so welding it into the name makes an
 ordinary refactor a breaking change to something people tail.
 
-The ratified taxonomy, spelled once in `logging_handlers` because these strings
-are published:
+The ratified taxonomy lives once in `logging_handlers`, as a nest of classes
+whose shape *is* the name: `events.capture.system_prompt` is the logger
+`claude_mitmproxy.events.capture.system-prompt`, derived from where it sits, so
+a rename cannot leave the published name behind. Emitters hold the logger, not
+its name -- `str` is the least specific thing a call site could hold, and every
+one that spelled a name was a place to misspell it.
 
 | Domain | Types |
 | --- | --- |

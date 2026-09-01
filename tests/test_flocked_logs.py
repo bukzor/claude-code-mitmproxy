@@ -11,6 +11,7 @@ fds is what makes a leftover lock distinguishable from a foreign one, with no
 
 from __future__ import annotations
 
+import fcntl
 import os
 import subprocess
 import sys
@@ -63,6 +64,27 @@ def test_second_call_reuses_our_fd_rather_than_self_conflicting(tmp_path):
     second = flocked_logs.reopen_flocked_file(tmp_path / "events.log")
     assert first == second, (first, second)
     os.close(first)
+
+
+def test_a_second_description_of_ours_does_not_shadow_the_holder(tmp_path):
+    """The scan asks every fd of ours, not just the first one on the path.
+
+    Only another opener can produce an unlocked fd of ours here -- this module
+    never leaves one -- so meeting one is unexpected, but it is not the
+    question being asked: the answer is which fd holds the lock, and one that
+    does not is simply not it. The lower fd number is scanned first, which is
+    what makes this the skipped case rather than the found one.
+    """
+    path = tmp_path / "events.log"
+    unlocked = os.open(path, os.O_WRONLY | os.O_CREAT)
+    holder = os.open(path, os.O_WRONLY | os.O_CREAT)
+    fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        assert unlocked < holder, (unlocked, holder)
+        assert flocked_logs.reopen_flocked_file(path) == holder
+    finally:
+        os.close(unlocked)
+        os.close(holder)
 
 
 def test_lock_is_released_once_the_fd_is_closed(tmp_path):

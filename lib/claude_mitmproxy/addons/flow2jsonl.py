@@ -98,7 +98,7 @@ def _default(obj):
     try:
         obj = gzip.decompress(obj)
     except gzip.BadGzipFile:
-        pass
+        pass  # not gzipped, so the bytes as they came are already the answer
     try:
         return json.loads(obj)
     except json.JSONDecodeError:

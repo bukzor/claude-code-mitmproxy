@@ -82,9 +82,7 @@ def test_reinstalling_does_not_lose_the_lock_or_drop_events(events_root):
 def test_a_debug_grade_event_is_still_written(events_root):
     """The logger's level gates nothing: how loud to be is the console
     handler's business, so an event too minor to print is still recorded."""
-    logging.getLogger(logging_handlers.HOUSEKEEPING_COMPRESS).debug(
-        "skipped an in-use log"
-    )
+    logging_handlers.events.housekeeping.compress.debug("skipped an in-use log")
     assert messages(events_root, "housekeeping/compress") == ["skipped an in-use log"]
 
 
@@ -100,7 +98,7 @@ def test_a_blocked_write_files_an_incident_instead_of_raising(tmp_path, events_r
     blocked.parent.mkdir(parents=True, exist_ok=True)
     child = flock_in_subprocess(blocked)
     try:
-        logging.getLogger(logging_handlers.LIFECYCLE_RELOAD).info("reloaded")
+        logging_handlers.events.lifecycle.reload.info("reloaded")
     finally:
         child.kill()
         child.wait()
@@ -123,14 +121,14 @@ def test_reporting_a_failure_cannot_recurse_through_this_handler(
 
     def report_by_emitting_an_event(rule, exc, capture_dir):
         reported.append(rule)
-        logging.getLogger(logging_handlers.LIFECYCLE_RELOAD).error("filed %s", rule)
+        logging_handlers.events.lifecycle.reload.error("filed %s", rule)
 
     monkeypatch.setattr(incidents, "capture_uncaught", report_by_emitting_an_event)
     blocked = shard(events_root, "lifecycle/reload")
     blocked.parent.mkdir(parents=True, exist_ok=True)
     child = flock_in_subprocess(blocked)
     try:
-        logging.getLogger(logging_handlers.LIFECYCLE_RELOAD).info("reloaded")
+        logging_handlers.events.lifecycle.reload.info("reloaded")
     finally:
         child.kill()
         child.wait()
