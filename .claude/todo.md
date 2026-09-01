@@ -173,6 +173,13 @@ Narrative in `../session.kb/`.
         reopening from the start, so no line is lost at midnight).
         Leaving mitmdump's own event log on stderr is a feature, not an
         oversight -- that stream is for watching a proxy interactively.
+        Built except the symlink: shards, dates, append-across-restart and the
+        gitignore are live, and `driftwatch.sh` consumes the directory rather
+        than a stable filename, so nothing needs the `tail -F` target yet.
+        Left unbuilt deliberately -- the constraint on its shape comes from the
+        compression subtask below, which must not compress a symlink to the
+        shard a proxy is holding open, so building it first would be building
+        it blind.
   - [x] Reload-safe flocked fds, the primitive the handler needs.
         Landed: `flocked_logs.py` (`reopen_flocked_file`, `reopen_log_file`)
         plus `tests/test_flocked_logs.py` (7, both discriminating assertions
