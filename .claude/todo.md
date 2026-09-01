@@ -294,59 +294,59 @@ Narrative in `../session.kb/`.
       *shape*, which has no slot for two copies of one shape at one version.
       Investigated 2026-08-30; the facts argue for picking one, and "concurrent"
       turns out to be the wrong word:
-  - [ ] The whole difference is one `# Harness` bullet, reworded. Old
-        (`.171`, seen Aug 28): "The system may send updates, reminders, or
-        modifications to rules via mid-conversation system turns. These are
-        system-controlled, unlike function results." New (`.d59`, seen Aug 29):
-        "`<system-reminder>` tags in messages and tool results are injected by
-        the harness, not the user." Cores are 37 lines each and differ on that
-        line alone.
-  - [ ] No patch anchors there, so the copies are patch-equivalent: nothing
-        green against one goes red against the other. The only file under
-        `~/.claude/system-prompt-patches.d/` mentioning the bullet is
-        `strip-agent-prohibitions/README.md`, as prose about a different
-        user-turn reminder; that patch's `match.md` is "Do not call the
-        AgentTool $REST". Picking one therefore costs no coverage.
-  - [ ] Not two simultaneous variants but the before and after of one
-        rewording, both on disk because captures are permanent and sessions
-        outlive a build. The build tag does not select the copy: `.d59` served
-        harness-fable-new, harness-opus-old and long-form on the same day. The
-        other three 2.1.251 shapes are already covered and consistent --
-        `v2.1.251-harness.md` carries the new wording, `v2.1.251-opus.md` the
-        old, and harness-opus has one core across `.c03` and `.d59`, so it has
-        not flipped yet.
-  - [ ] Superseded recommendation, kept because it is the fallback if the one
-        below is rejected: promote `ada19cdbceea` as `v2.1.251-fable.md` and
-        let the loser age out of `--current` when the release advances.
-  - [ ] Better: promote *both*, because nothing needs a single winner. Of the
-        four consumers, two want the group (`prompt_corpus.fixtures()` globs
-        `*.md` for the dark-patch matrix; `survey_captures.promoted_cores()`
-        is a set comprehension over every fixture), one cannot see variant
-        fixtures at all (`prompt_corpus.latest_fixture()` matches
-        `^v\d+\.\d+\.\d+\.md$`, so `check_patches`' target is unaffected by any
-        suffixed file), and only `prompt_patches.strip_floors()` picks a
-        per-shape winner -- which it already resolves itself, by
-        `(version, len(text))`, without needing the filesystem to enforce
-        uniqueness. Here it does not even bite: the copies differ by one bullet
-        no patch matches, so both strip identically. The single-winner pressure
-        came from the filename shape alone.
-  - [ ] Naming, if both are promoted: `v<release>-<shape>-<core8>.md` once a
-        slot holds more than one, applied to both so neither is privileged by
-        promotion order. No route work -- `_fixture_version` is already suffix
-        tolerant (`path.stem.removeprefix("v").split("-")[0]`), so the extra
-        segment parses. Costs one `git mv` when the second copy arrives.
-  - [ ] That also answers the flip-flop worry, which is narrower than it
-        looks. `--current` is a pure function of disk state, so it cannot
-        oscillate between checks; a copy can only re-enter when the release
-        advances *and* a stalled rollout serves that body again under the new
-        release -- at most once per copy per release. It only bites at all if
-        declining to promote is a legal outcome, and today declining is forced
-        by the one-name-per-slot limit. Remove that and promotion is always the
-        answer, coverage is monotone, and the fixture doubles as the durable
-        "seen and accounted for" record a mute would otherwise need. Consequence
-        worth noting: promotion then becomes mechanical, which by this repo's
-        own doctrine makes it a candidate for binding to its occasion rather
-        than staying a notified duty.
+  - The whole difference is one `# Harness` bullet, reworded. Old
+    (`.171`, seen Aug 28): "The system may send updates, reminders, or
+    modifications to rules via mid-conversation system turns. These are
+    system-controlled, unlike function results." New (`.d59`, seen Aug 29):
+    "`<system-reminder>` tags in messages and tool results are injected by
+    the harness, not the user." Cores are 37 lines each and differ on that
+    line alone.
+  - No patch anchors there, so the copies are patch-equivalent: nothing
+    green against one goes red against the other. The only file under
+    `~/.claude/system-prompt-patches.d/` mentioning the bullet is
+    `strip-agent-prohibitions/README.md`, as prose about a different
+    user-turn reminder; that patch's `match.md` is "Do not call the
+    AgentTool $REST". Picking one therefore costs no coverage.
+  - Not two simultaneous variants but the before and after of one
+    rewording, both on disk because captures are permanent and sessions
+    outlive a build. The build tag does not select the copy: `.d59` served
+    harness-fable-new, harness-opus-old and long-form on the same day. The
+    other three 2.1.251 shapes are already covered and consistent --
+    `v2.1.251-harness.md` carries the new wording, `v2.1.251-opus.md` the
+    old, and harness-opus has one core across `.c03` and `.d59`, so it has
+    not flipped yet.
+  - Superseded recommendation, kept because it is the fallback if the one
+    below is rejected: promote `ada19cdbceea` as `v2.1.251-fable.md` and
+    let the loser age out of `--current` when the release advances.
+  - Better: promote *both*, because nothing needs a single winner. Of the
+    four consumers, two want the group (`prompt_corpus.fixtures()` globs
+    `*.md` for the dark-patch matrix; `survey_captures.promoted_cores()`
+    is a set comprehension over every fixture), one cannot see variant
+    fixtures at all (`prompt_corpus.latest_fixture()` matches
+    `^v\d+\.\d+\.\d+\.md$`, so `check_patches`' target is unaffected by any
+    suffixed file), and only `prompt_patches.strip_floors()` picks a
+    per-shape winner -- which it already resolves itself, by
+    `(version, len(text))`, without needing the filesystem to enforce
+    uniqueness. Here it does not even bite: the copies differ by one bullet
+    no patch matches, so both strip identically. The single-winner pressure
+    came from the filename shape alone.
+  - Naming, if both are promoted: `v<release>-<shape>-<core8>.md` once a
+    slot holds more than one, applied to both so neither is privileged by
+    promotion order. No route work -- `_fixture_version` is already suffix
+    tolerant (`path.stem.removeprefix("v").split("-")[0]`), so the extra
+    segment parses. Costs one `git mv` when the second copy arrives.
+  - That also answers the flip-flop worry, which is narrower than it
+    looks. `--current` is a pure function of disk state, so it cannot
+    oscillate between checks; a copy can only re-enter when the release
+    advances *and* a stalled rollout serves that body again under the new
+    release -- at most once per copy per release. It only bites at all if
+    declining to promote is a legal outcome, and today declining is forced
+    by the one-name-per-slot limit. Remove that and promotion is always the
+    answer, coverage is monotone, and the fixture doubles as the durable
+    "seen and accounted for" record a mute would otherwise need. Consequence
+    worth noting: promotion then becomes mechanical, which by this repo's
+    own doctrine makes it a candidate for binding to its occasion rather
+    than staying a notified duty.
 - [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
       capture at that version shows up. The promoted body says "Prefer
       dedicated tools over PowerShell ... (Read, Edit, Write, Glob,
