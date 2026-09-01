@@ -16,7 +16,12 @@ predicate that earns an interruption, and so the one `driftwatch.sh` polls.
 Everything it drops is backlog, which is why the full drift table is the wrong
 thing to wire a signal to.
 
-Usage: survey_captures.py [--drift] [--current] [SUBSTRING ...]
+`--promote` answers it instead of printing it: every current row copied into
+`system-prompts.kb/` under a name derived from the capture. Nothing is chosen,
+so nothing is left for a reader to decide -- see `promote` for why what
+remained of this duty was toil.
+
+Usage: survey_captures.py [--drift] [--current] [--promote] [SUBSTRING ...]
 Rows are filtered to filenames containing any SUBSTRING (e.g. "2.1.221").
 """
 from __future__ import annotations
@@ -193,6 +198,48 @@ def current_drift(drifts: list[Drift], captures: list[Capture]) -> list[Drift]:
     return [drift for drift in drifts if drift.newest.release == newest]
 
 
+def fixture_name(drift: Drift) -> str:
+    """What a copy is promoted *as* -- derived, never chosen.
+
+    Release, shape and raw digest are all readable off the capture, so two
+    promoters agree and neither has to know which copy arrived first. The raw
+    digest rather than the core: core digests move whenever `blocks.d/`
+    changes, and a name a rule edit can invalidate is what
+    `design/040-design.kb/content-addressed-capture.md` forbids.
+    """
+    release = ".".join(str(part) for part in drift.candidate.release)
+    suffix = prompt_shape.FIXTURE_SUFFIX[drift.shape]
+    return f"v{release}{suffix}-{drift.candidate.raw[:8]}.md"
+
+
+def promote(drifts: list[Drift], kb_dir: Path) -> list[str]:
+    """Copy each uncovered copy's raw body into the fixture collection.
+
+    Nothing here decides anything, which is the point. Since "promote every
+    one of them" there is no winner to pick, and with `check_patches` reading
+    every fixture at the newest release there is no privileged name to award
+    either -- so what was left of this duty was a human performing a `cp` that
+    a function can derive. A duty with no decision in it is toil, and
+    `design/040-design.kb/every-duty-has-an-occasion.md` says to bind that to
+    its occasion rather than report it. The occasion is the commit that
+    follows: touching `system-prompts.kb/` runs the whole offline suite.
+
+    A shape this repo has no marker for is the exception, and it stays a
+    human's: it has no derivable name, and a body carrying no known marker is
+    the one drift worth reading rather than filing.
+    """
+    done = []
+    for drift in drifts:
+        if drift.shape not in prompt_shape.FIXTURE_SUFFIX:
+            done.append(f"unknown shape {drift.shape}, read it yourself: {drift.candidate.path}")
+            continue
+        target = kb_dir / fixture_name(drift)
+        assert not target.exists(), (target, "already promoted, yet its copy reads as uncovered")
+        target.write_text(drift.candidate.path.read_text())
+        done.append(f"promoted {drift.candidate.path} -> {target}")
+    return done
+
+
 def inventory_table(rows: list[Surveyed]) -> list[tuple[str, ...]]:
     header = ("version", "model", "raw", "core", "bytes", "shape", "promoted", "blocks")
     return [header] + [
@@ -230,9 +277,9 @@ def trailer(count: int, current: bool) -> str:
         return (
             f"{count} uncovered at the newest release: upstream is serving prompt"
             " text no fixture covers, so every patch verified against a fixture is"
-            " unverified against what ships. Promote every row per"
-            " system-prompts.kb/CLAUDE.md -- copies of one shape coexist while"
-            " upstream reworks it, and covering all of them is what makes this quiet."
+            " unverified against what ships. `--promote` files every row and"
+            " names it; copies of one shape coexist while upstream reworks it,"
+            " and covering all of them is what makes this quiet."
         )
     else:
         return (
@@ -253,10 +300,11 @@ def render(rows: list[tuple[str, ...]]) -> str:
 class Args(NamedTuple):
     drift: bool
     current: bool
+    promote: bool
     filters: list[str]
 
 
-FLAGS = ("--drift", "--current")
+FLAGS = ("--drift", "--current", "--promote")
 
 
 def parse_argv(argv: list[str]) -> Args:
@@ -271,8 +319,9 @@ def parse_argv(argv: list[str]) -> Args:
     filters = [arg for arg in argv if arg not in FLAGS]
     unknown = [arg for arg in filters if arg.startswith("-")]
     assert not unknown, (unknown, "unknown flag; other arguments are name substrings")
-    current = "--current" in argv
-    return Args("--drift" in argv or current, current, filters)
+    promote = "--promote" in argv
+    current = "--current" in argv or promote
+    return Args("--drift" in argv or current, current, promote, filters)
 
 
 def main() -> None:
@@ -302,6 +351,8 @@ def main() -> None:
             scope = " at the newest release"
         if not drifts:
             print(f"no uncovered prompt copies{scope} in {len(rows)} captures")
+        elif args.promote:
+            print("\n".join(promote(drifts, KB_DIR)))
         else:
             sys.stdout.write(render(drift_table(drifts)))
             print("\n" + trailer(len(drifts), args.current))

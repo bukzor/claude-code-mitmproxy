@@ -73,11 +73,18 @@ there. Expected — which is why `check_patches` defaults to the newest capture.
 Route Claude Code through `proxy.sh`; `syscapture.py` records each unique
 prompt body — pristine, pre-patch — to `prompt-captures/` (gitignored) as a
 `v<cc_version>_<model>_<digest>.raw.md` / `.md` pair (verbatim / hash-masked
-— see `syscapture.py`'s module docstring). Promote the **raw** one by copying:
+— see `syscapture.py`'s module docstring). Promote the **raw** ones with:
 
 ```bash
-cp prompt-captures/v<cc_version>_<model>_<digest>.raw.md system-prompts.kb/v<MAJOR.MINOR.PATCH>.md
+claude-mitmproxy-survey-captures --promote
 ```
+
+It copies every copy upstream is serving at the newest release and derives
+each name from its capture, which is the whole of what promoting is now:
+nothing chooses, so nothing waits on a human. Then commit -- that is the
+occasion the offline checks run themselves on. A body whose shape carries no
+marker this repo knows is the one thing it declines to file, because that name
+cannot be derived and that body is worth reading.
 
 The masked `.md` sibling has `cwd`/`gitStatus`/etc. replaced with
 placeholders — useful for a quick diff, wrong for a fixture: `check_patches.py`

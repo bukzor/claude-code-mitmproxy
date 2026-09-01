@@ -7,6 +7,15 @@ managed-by: Skill(llm-subtask)
 Use subtasks, not sections for organization. Ordered by intended completion.
 Narrative in `../session.kb/`.
 
+- [ ] Decide whether `driftwatch.sh` should run `--promote` itself rather than
+      report. Promotion is now a derivation (`survey_captures.promote`), so the
+      watch is notifying a human to run a command that cannot go wrong -- one
+      more rung of the same toil. Against: a background monitor writing into a
+      git-tracked directory unbidden removes the last look, and the notification
+      would change from "here is drift" to "I filed this, commit it". The case
+      it declines (unknown shape) is unaffected either way, and that is the only
+      row a human was ever needed for.
+
 - [ ] Revamp the logging story across the addons. Every addon logs through
       `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
       and nothing captures it -- `log/` holds only `compress_traffic.log`, from

@@ -86,14 +86,25 @@ def test_unknown_flag_is_refused():
 
 
 def test_drift_flag_is_separated_from_filters():
-    assert survey_captures.parse_argv(["--drift", "v2.1.251"]) == (True, False, ["v2.1.251"])
-    assert survey_captures.parse_argv(["v2.1.251"]) == (False, False, ["v2.1.251"])
+    parsed = survey_captures.parse_argv(["--drift", "v2.1.251"])
+    assert (parsed.drift, parsed.current, parsed.filters) == (True, False, ["v2.1.251"])
+    parsed = survey_captures.parse_argv(["v2.1.251"])
+    assert (parsed.drift, parsed.current, parsed.filters) == (False, False, ["v2.1.251"])
 
 
 def test_current_flag_implies_drift():
     """`--current` narrows the drift table; asking for it without `--drift`
     can only mean the drift question."""
-    assert survey_captures.parse_argv(["--current"]) == (True, True, [])
+    parsed = survey_captures.parse_argv(["--current"])
+    assert (parsed.drift, parsed.current, parsed.promote) == (True, True, False)
+
+
+def test_promote_flag_implies_current():
+    """Promoting answers the duty `--current` states, so it inherits its scope:
+    the backlog is deliberately uncovered, and filing it is not this command
+    quietly deciding that promotion tracks everything ever captured."""
+    parsed = survey_captures.parse_argv(["--promote"])
+    assert (parsed.drift, parsed.current, parsed.promote) == (True, True, True)
 
 
 def test_release_drops_the_build_tag():

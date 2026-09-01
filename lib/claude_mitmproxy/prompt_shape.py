@@ -18,6 +18,18 @@ SHAPE_MARKERS = (
 )
 
 
+# The fixture-name suffix each shape takes (`system-prompts.kb/CLAUDE.md`).
+# Beside the markers because both answer "which shape is this": a table
+# somewhere else would let a shape exist that nothing can file.
+FIXTURE_SUFFIX = {
+    "long-form": "",
+    "harness": "-harness",
+    "harness-fable": "-fable",
+    "harness-opus": "-opus",
+}
+assert FIXTURE_SUFFIX.keys() == {shape for _, shape in SHAPE_MARKERS}, FIXTURE_SUFFIX
+
+
 def shape_of(text: str) -> str:
     """The known shape name, or `?<first heading>` for an unrecognized
     body -- callers treat the `?` prefix as "no known shape"."""
