@@ -30,10 +30,11 @@ v2.1.233 shape correlated 1:1 with model class (sonnet/opus/fable), which is
 why the suffix reads like a model name — but at v2.1.237 fable-5 was observed
 receiving the `-opus` shape (`# Delivering work`), so don't assume the suffix
 predicts the serving model. The model still shows *inside* that shape: across
-every capture from v2.1.237 on, opus-5 bodies carry `# Corrections` (11/11)
-and fable-5 bodies do not (0/3), and fable-5 goes on receiving `harness-fable`
-too. So `condense-corrections` reporting dark on a `-opus` fixture promoted
-from a fable-5 capture is that split, not drift.
+every capture from v2.1.237 on, opus-5 bodies carry `# Corrections` (12/12)
+and fable-class bodies do not (0/4, fable-5 and fable-5.1 alike), and fable-5
+goes on receiving `harness-fable` too. So `condense-corrections` reporting
+dark on a `-opus` fixture promoted from a fable-class capture is that split,
+not drift.
 No separate registry to update: a patch scopes itself to a variant just by
 anchoring its own `match.md` on a heading unique to that shape (see
 `CLAUDE.kb/patch-failure-triage.md`). `check_patches` checks only the
@@ -59,6 +60,18 @@ find the fixture for a reported core, use the raw path in the same row.
 Suffix *both* copies when a second appears, rather than leaving the first
 bare: which file lacks a digest would otherwise record nothing but which
 happened to be promoted first.
+
+> Agent-authored and vetoable: the long-form exception below was decided by a
+> session promoting the first pair of concurrent long-form copies, not ruled.
+
+The unsuffixed shape is the exception, because there its bare name is not a
+record of promotion order -- `prompt_corpus.latest_fixture()` matches
+`^v\d+\.\d+\.\d+\.md$`, so the bare file *is* `check_patches`' target, and
+suffixing every copy would silently leave that target pinned to an older
+release. One long-form copy keeps the bare name and the rest take digests.
+Which one: the largest, matching how `strip_floors` already breaks its own tie
+`(version, len(text))`, so the two consumers cannot disagree about which body
+is "the" one for that release.
 
 Likewise, patches sunset to `upstream-removed.bool` assert against the
 *current* prompt: run against an old capture they report

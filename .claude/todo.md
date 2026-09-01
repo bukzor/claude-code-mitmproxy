@@ -365,15 +365,22 @@ Narrative in `../session.kb/`.
     worth noting: promotion then becomes mechanical, which by this repo's
     own doctrine makes it a candidate for binding to its occasion rather
     than staying a notified duty.
-- [ ] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
-      capture at that version shows up. The promoted body says "Prefer
-      dedicated tools over PowerShell ... (Read, Edit, Write, Glob,
-      Grep)" while its own `# Environment` says `Shell: bash`, and all 20
-      other captures on disk say Bash and list only Read/Edit/Write.
-      Either upstream A/B'd a reworded bullet with the shell name
-      mis-substituted, or the rewording is real and the shell name is a
-      bug. A second 2.1.226 long-form capture settles it; until then the
-      fixture carries a sample of one.
+- [x] Reconcile `v2.1.226.md`'s tools bullet when a sonnet long-form
+      capture at that version shows up. **Settled 2026-09-01 by a better
+      witness than the one this asked for: upstream A/B'd it.** At
+      v2.1.257.f0d two long-form captures of the same build and the same
+      model (haiku) differ on exactly that bullet -- one "over PowerShell
+      ... (Read, Edit, Write, Glob, Grep)", one "over Bash ... (Read, Edit,
+      Write)" -- so the shell name cannot be a substitution of the session's
+      shell, which was bash for both. The PowerShell copy has now been served
+      3 times across 2 releases and 2 models (v2.1.226.167 haiku,
+      v2.1.257.0eb sonnet-5, v2.1.257.f0d haiku): a real concurrent copy, not
+      a mis-capture, so `v2.1.226.md` was never a sample of one prompt but one
+      sample of two prompts. Both v2.1.257 copies are promoted. The A/B runs
+      deeper than the bullet -- the same copy reworded the Explore bullet to
+      "Otherwise use the Glob or Grep directly", which `blocks.d/`
+      `agent-tool-explore.md` did not transcribe, so it survived into 2 cores;
+      `blocks.d/agent-tool-explore-glob-grep.md` is the second whole form.
 - [x] Confirm the v2.1.237 shape convergence with a second capture per
       model. **Settled 2026-09-01, and it is neither hypothesis: the split
       is by serving model, inside one shape.** Over all 34 captures at
