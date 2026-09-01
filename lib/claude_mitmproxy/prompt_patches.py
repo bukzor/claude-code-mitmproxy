@@ -48,7 +48,7 @@ BLOCKS_DIR = repo_paths.ROOT / "blocks.d"
 STRIP_RULE = "_strip-rate"
 
 
-def _fixture_version(path: Path) -> tuple[int, ...]:
+def fixture_version(path: Path) -> tuple[int, ...]:
     release = path.stem.removeprefix("v").split("-")[0]
     return tuple(int(part) for part in release.split("."))
 
@@ -84,7 +84,7 @@ def strip_floors(patches: tuple[rule_templates.Rule, ...]) -> dict[str, int]:
         shape = prompt_shape.shape_of(text)
         if shape.startswith("?"):
             continue
-        key = (_fixture_version(path), len(text))
+        key = (fixture_version(path), len(text))
         if shape not in newest or key > newest[shape][0]:
             newest[shape] = (key, text)
     assert newest, (KB_DIR, "no classifiable fixtures")

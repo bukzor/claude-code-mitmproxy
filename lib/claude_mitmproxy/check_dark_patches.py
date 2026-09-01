@@ -92,7 +92,7 @@ def collect(paths: list[Path] | None = None) -> PatchMatrix:
                 # they'd really see. Skipped for upstream-removed patches: they
                 # never modify text (see apply_patches), and replaying them here
                 # only emits "matched-despite-upstream-removed" -- expected on
-                # any pre-removal fixture (see `prompt_corpus.latest_fixture`), not a
+                # any pre-removal fixture (see `prompt_corpus.current_fixtures`), not a
                 # defect this matrix is trying to surface.
                 patched_so_far = prompt_patches.apply_patches(
                     patched_so_far, (patch,), capture_dir=None

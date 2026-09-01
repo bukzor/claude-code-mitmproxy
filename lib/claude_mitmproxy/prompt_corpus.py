@@ -8,14 +8,11 @@ two halves of a check cannot disagree about which bodies they examined.
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from claude_mitmproxy import prompt_capture
+from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
-
-# Full-body fixture name; -scope partials (e.g. v2.1.128-doing-tasks.md) excluded.
-FIXTURE_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)\.md$")
 
 
 def fixtures() -> dict[Path, str]:
@@ -28,18 +25,31 @@ def fixtures() -> dict[Path, str]:
     return {p: t if t.endswith("\n") else t + "\n" for p, t in texts.items()}
 
 
-def latest_fixture() -> Path:
-    """Highest-versioned full fixture. Validating against the current prompt
-    keeps upstream-removed assertions silent; older fixtures still trip them
-    (their text predates the removal), so anything asking "do the patches still
-    land" means this one."""
+def current_fixtures() -> list[Path]:
+    """Every full fixture at the highest promoted release, name-sorted.
+
+    Plural because upstream serves several bodies at one release -- shapes it
+    picks per model, and copies of one shape while it reworks the text -- and
+    a patch that misses on any of them misses in production. Validating one of
+    them and calling it "the current prompt" is how half of what ships goes
+    unchecked while a green run says otherwise.
+
+    Newest only: an older fixture predates every upstream removal, so sunset
+    rules still match it and report a miss that means nothing.
+
+    Full bodies only: a `-scope` partial carries one section, so patches
+    anchored outside it would miss for a reason that is not drift. The test is
+    the marker the proxy itself patches on, not the filename -- a suffix says
+    nothing about whether a body is whole.
+    """
     versioned = [
-        (tuple(int(g) for g in m.groups()), p)
-        for p in prompt_patches.KB_DIR.iterdir()
-        if (m := FIXTURE_RE.match(p.name))
+        (prompt_patches.fixture_version(path), path)
+        for path in sorted(prompt_patches.KB_DIR.glob("v*.md"))
+        if prompt_location.BODY_MARKER in path.read_text()
     ]
-    assert versioned, ("no vMAJOR.MINOR.PATCH.md fixtures in", prompt_patches.KB_DIR)
-    return max(versioned)[1]
+    assert versioned, ("no full fixtures in", prompt_patches.KB_DIR)
+    newest = max(version for version, _ in versioned)
+    return [path for version, path in versioned if version == newest]
 
 
 def captures() -> list[Path]:

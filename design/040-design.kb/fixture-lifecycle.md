@@ -15,9 +15,11 @@ why:
 2. A human promotes noteworthy captures' `.raw.md` into
    `system-prompts.kb/` under that collection's naming rules (version,
    `-variant`, `-scope`).
-3. `check_patches.py` defaults to the newest *unsuffixed* full capture:
-   sunset patches assert against the current prompt, so warnings
-   against older fixtures are expected, not regressions.
+3. `check_patches.py` reads every full fixture at the newest release:
+   upstream serves several bodies at once, and a patch that misses on any
+   of them misses in production. Newest only, because sunset patches
+   assert against the current prompt, so warnings against older fixtures
+   are expected, not regressions.
 4. On promotion, run `check_patches.py` (expect zero warnings) and
    `check_dark_patches.py` (expect no unexplained newly-dark patches).
    Running them by hand is for seeing the answer before committing, not

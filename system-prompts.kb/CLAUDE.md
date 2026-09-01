@@ -37,19 +37,20 @@ dark on a `-opus` fixture promoted from a fable-class capture is that split,
 not drift.
 No separate registry to update: a patch scopes itself to a variant just by
 anchoring its own `match.md` on a heading unique to that shape (see
-`CLAUDE.kb/patch-failure-triage.md`). `check_patches` checks only the
-newest *unsuffixed* full capture — variant fixtures are validated by
-`check_dark_patches.py`'s matrix.
+`CLAUDE.kb/patch-failure-triage.md`). `check_patches` checks every full
+fixture at the newest release, whatever its suffix; `check_dark_patches.py`'s
+matrix covers the older ones.
 
 `v<MAJOR>.<MINOR>.<PATCH>-<variant>-<digest>.md` — one of *several* copies of
 one shape at one cc_version. Upstream reworks a shape's copy mid-release, and
 both copies keep arriving while sessions that started before the change are
 still running. **Promote every one of them.** Nothing needs a single winner:
-coverage is a question about the fixture *set* (`promoted_cores` reads them
-all), `check_patches` targets only the unsuffixed fixture, and the one
-consumer that does pick a per-shape winner — the `_strip-rate` floor — breaks
-its own ties by (version, size). The pressure to choose was only ever that two
-files cannot share a name.
+coverage is a question about the fixture *set* — `promoted_cores` reads them
+all, and so does `check_patches`, which validates every full fixture at the
+newest release rather than electing one. The only consumer that picks a
+per-shape winner is the `_strip-rate` floor, which breaks its own ties by
+(version, size). The pressure to choose was only ever that two files cannot
+share a name.
 
 The digest is the first 8 of the **raw** body's, which the capture filename
 already carries — *not* the core digest `--drift` prints. Core digests move
@@ -59,19 +60,8 @@ find the fixture for a reported core, use the raw path in the same row.
 
 Suffix *both* copies when a second appears, rather than leaving the first
 bare: which file lacks a digest would otherwise record nothing but which
-happened to be promoted first.
-
-> Agent-authored and vetoable: the long-form exception below was decided by a
-> session promoting the first pair of concurrent long-form copies, not ruled.
-
-The unsuffixed shape is the exception, because there its bare name is not a
-record of promotion order -- `prompt_corpus.latest_fixture()` matches
-`^v\d+\.\d+\.\d+\.md$`, so the bare file *is* `check_patches`' target, and
-suffixing every copy would silently leave that target pinned to an older
-release. One long-form copy keeps the bare name and the rest take digests.
-Which one: the largest, matching how `strip_floors` already breaks its own tie
-`(version, len(text))`, so the two consumers cannot disagree about which body
-is "the" one for that release.
+happened to be promoted first. This holds for the unsuffixed shape too: no
+consumer reads the bare name, so nothing is lost by vacating it.
 
 Likewise, patches sunset to `upstream-removed.bool` assert against the
 *current* prompt: run against an old capture they report
