@@ -123,7 +123,7 @@ Narrative in `../session.kb/`.
         `propagate = False`, so the first propagation test passed against a
         handler that had stopped reaching the root at all -- it uses a root
         handler of its own now.
-  - [ ] First consumer, and why this came up: `driftwatch.sh`. **The original
+  - [x] First consumer, and why this came up: `driftwatch.sh`. **The original
         arithmetic here was wrong and is corrected: the events file buys
         almost none of the claimed reduction.** Measured 2026-08-31: the
         predicate costs 1.03s, the 300s ceiling accounts for 288 of the ~290
@@ -149,6 +149,17 @@ Narrative in `../session.kb/`.
         makes `system-prompts.kb/` a runtime input to the request path,
         reversing the direction `020-goals.kb/pristine-fixture-supply.md` and
         `offline-validation.md` establish.
+        Landed as planned, plus two things the plan did not have. `modify` had
+        to join the event set: the handler appends through an fd it holds for
+        the proxy's lifetime, so a capture event's `close_write` arrives only
+        when the proxy exits, and the swap as written would have been a watch
+        that never fired -- the exact silent failure the ceiling exists to
+        bound. And the loop `mkdir -p`s the watched directory, which the first
+        event of its kind would otherwise create days later: inotifywait on a
+        missing path fails, and this loop answers a failed watch by degrading
+        to polling at the ceiling, which is now an hour. Verified live: an
+        append through a held-open fd wakes it inside the ceiling (twice --
+        the write, then the close), and the arming pass still prints once.
   - [ ] Keep the existing output conventions: gitignored under `log/`, append
         rather than truncate across restarts. Ruled 2026-08-31, against the
         earlier guess that one unsharded file would do: events are time-series

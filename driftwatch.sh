@@ -20,25 +20,44 @@ trap onerror ERR
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SURVEY="${SCRIPT_DIR}/.venv/bin/claude-mitmproxy-survey-captures"
 
-# Everything the predicate reads. system-prompts.kb/ and blocks.d/ are not
-# optional: promoting a fixture is what clears a standing report, and watching
-# only the captures would leave it red until the next unrelated capture.
-WATCHED=(log/prompt-captures system-prompts.kb blocks.d)
+# What the predicate reads, one signal per input. system-prompts.kb/ and
+# blocks.d/ are not optional: promoting a fixture is what clears a standing
+# report, and watching only the captures would leave it red until the next
+# unrelated capture. Neither is a proxy event -- a fixture is promoted by hand
+# -- so only the capture side can be an events file.
+#
+# log/events/capture rather than log/prompt-captures, which is the same news
+# through a noisier door: a masks.d/ edit makes the next request rewrite every
+# stale masked sibling, up to ~150 close_writes in a burst, each costing a
+# re-derivation of a predicate that does not read them.
+WATCHED=(log/events/capture system-prompts.kb blocks.d)
 
-# Write-side events only. `access`/`open` would be woken by the predicate's own
-# reads of these very files, which is a spin, not a watch.
-EVENTS=close_write,create,delete,moved_to,moved_from
+# The events file is appended through an fd the proxy holds open for its
+# lifetime, so a capture event arrives as `modify` and its `close_write` comes
+# only when the proxy exits -- watching for the close alone is a watch that
+# never fires. Still write-side only: `access`/`open` would be woken by the
+# predicate's own reads of these very files, which is a spin, not a watch.
+EVENTS=modify,close_write,create,delete,moved_to,moved_from
 
 # A re-check ceiling, not a poll interval: it covers a change landing in the
 # window between a check and the next wait, and keeps a watch that quietly
-# stopped working from being indistinguishable from no drift.
-FLOOR="${DRIFTWATCH_FLOOR:-300}"
+# stopped working from being indistinguishable from no drift. An hour because
+# the ceiling, not the wakes, is what this costs: at 300s it accounted for 288
+# of ~290 daily wakes against ~4 real capture events, so it -- not which
+# directory is watched -- is the whole bill.
+FLOOR="${DRIFTWATCH_FLOOR:-3600}"
 
 if (( DEBUG > 0 )); then
   set -x
 fi
 
 cd "$SCRIPT_DIR"
+
+# The events directory is created by the first event of its kind, which may be
+# days out; inotifywait on a missing path fails, and this loop answers a failed
+# watch by degrading to polling at the ceiling. Make the precondition true
+# instead of discovering it as an hourly poll.
+mkdir -p log/events/capture
 
 wait_for_change() {
   # Blocks until an input changes or the ceiling expires. inotifywait exits 2
