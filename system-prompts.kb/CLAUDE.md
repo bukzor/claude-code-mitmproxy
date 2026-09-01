@@ -23,13 +23,17 @@ served, structurally distinct prompt shape at that same cc_version. Unlike a
 The suffix names the *shape* (by `prompt_shape.py`'s `SHAPE_MARKERS`, itself
 named for the heading that distinguishes it), not the model that happened to
 receive it: unsuffixed = the long-form `# System` shape, `-opus` = the
-`# Harness` shape with `# Delivering work`/`# Corrections`, `-fable` =
+`# Harness` shape with `# Delivering work`, `-fable` =
 the `# Harness` shape with `# Communicating with the user`. Earlier captures
 use `-harness` for the pre-split Fable-class shape. From v2.1.221 through
 v2.1.233 shape correlated 1:1 with model class (sonnet/opus/fable), which is
 why the suffix reads like a model name — but at v2.1.237 fable-5 was observed
-receiving the `-opus` shape verbatim (`# Delivering work`, no
-`# Corrections`), so don't assume the suffix predicts the serving model.
+receiving the `-opus` shape (`# Delivering work`), so don't assume the suffix
+predicts the serving model. The model still shows *inside* that shape: across
+every capture from v2.1.237 on, opus-5 bodies carry `# Corrections` (11/11)
+and fable-5 bodies do not (0/3), and fable-5 goes on receiving `harness-fable`
+too. So `condense-corrections` reporting dark on a `-opus` fixture promoted
+from a fable-5 capture is that split, not drift.
 No separate registry to update: a patch scopes itself to a variant just by
 anchoring its own `match.md` on a heading unique to that shape (see
 `CLAUDE.kb/patch-failure-triage.md`). `check_patches` checks only the

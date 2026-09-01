@@ -356,21 +356,22 @@ Narrative in `../session.kb/`.
       mis-substituted, or the rewording is real and the shell name is a
       bug. A second 2.1.226 long-form capture settles it; until then the
       fixture carries a sample of one.
-- [ ] Confirm the v2.1.237 shape convergence with a second capture per
-      model. `system-prompts.kb/v2.1.237-opus.md` is a fable-5 session
-      carrying the `-opus` shape verbatim (`# Delivering work`, but no
-      `# Corrections` — present in every prior `-opus` fixture) and
-      `system-prompts.kb/v2.1.237.md` is a sonnet-5 long-form session with
-      neither `# Delivering work` nor `# Corrections` (present in
-      v2.1.233's long-form). Each is a sample of one: could be a genuine
-      version-level shift (fable folded into `-opus` outright, sonnet
-      reverted the v2.1.233 merge) or per-session variance (e.g.
-      `# Corrections` is itself session-optional, not static). A second
-      capture per model at >=2.1.237 settles it; until then
-      `condense-corrections` silently not firing on either new fixture is
-      expected, not a regression (`check_dark_patches.py` confirms).
-      `system-prompts.kb/CLAUDE.md`'s naming section already documents
-      that shape and model decoupled as of this version.
+- [x] Confirm the v2.1.237 shape convergence with a second capture per
+      model. **Settled 2026-09-01, and it is neither hypothesis: the split
+      is by serving model, inside one shape.** Over all 34 captures at
+      v2.1.237 or newer, `harness-opus` bodies carry `# Corrections` when opus-5
+      is served (11/11) and never when fable-5 is (0/3), while fable-5 goes
+      on receiving `harness-fable` as well (6) -- so fable did not fold into
+      `-opus` outright, and `# Corrections` is not session-optional. The
+      long-form half is a genuine version-level revert, confirmed by
+      v2.1.251.b50: sonnet-5 long-form still carries neither section, as at
+      v2.1.237 (9 sonnet + 3 haiku captures, none). `condense-corrections`
+      going dark on a fable-5-sourced `-opus` fixture is therefore that
+      split, not drift -- recorded in `system-prompts.kb/CLAUDE.md`, whose
+      `-opus` definition also stops claiming `# Corrections` as part of the
+      shape (`prompt_shape.py` keys it on `# Delivering work` alone).
+      The second captures came from promoting `v2.1.252-opus.md` (fable-5)
+      and `v2.1.257-opus.md` (opus-5).
 - [x] Decide whether `git-status` should strip a commit-less repo. Yes,
       and the fix was one character: `$LINES` now matches zero or more
       lines. The miss was never in `blocks.d/git-status.md` — its
