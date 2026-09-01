@@ -49,10 +49,31 @@ stderr is deliberate: that stream is for watching a proxy, not for consuming.
 The events logger sets its own level rather than inheriting one. Whether a
 durable record gets written must not depend on how loud the console is --
 mitmproxy sets root to `DEBUG` and a bare CLI leaves it at `WARNING`, and the
-file has to say the same thing under both.
+file has to say the same thing under both. That level is `DEBUG`, which is to
+say it gates nothing: the file takes every event, and how loud to be is the
+console handler's business (mitmproxy's `TermLogHandler` filters at
+`termlog_verbosity`). A debug-grade event stays possible that way -- the log
+rotator's "quietly skipped an in-use log" is recorded without being printed.
 
 Loudness is unaffected: [loudness-policy] still decides what warrants an
 incident and a status-bar flash. An event file is a record, not an alarm.
+
+## A failed write is an incident
+
+Contention on a shard means a second process holds it, which is unexpected and
+warrants attention -- but the report cannot go to stderr, the unwatched stream
+this whole channel exists to stop relying on, least of all when what failed is
+the recording system itself. Nor can it be raised: a handler that raises takes
+down whatever was logging, which is an addon hook mid-request, over a *logging*
+failure. It files an incident instead (`_uncaught-events-log`), which is
+durable, content-addressed so a proxy failing on every request records and
+warns once, and already on the operator's triage path. The line that failed is
+lost, and the incident is what says so.
+
+Reporting goes through `logging`, so it can arrive back at this handler; the
+reporting path is guarded against re-entering itself. The loop that guard
+closes opens for real as soon as `incidents` emits an `events.incident.*`
+record of its own, which is the next planned step.
 
 ## Testing note
 

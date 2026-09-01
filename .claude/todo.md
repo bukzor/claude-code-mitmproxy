@@ -181,23 +181,26 @@ Narrative in `../session.kb/`.
         categories, never emitting modules, so a refactor is not a breaking
         change. `log/compress_traffic.log` (3.6K, undated, the one existing
         append log with no date) folds into `housekeeping.compress`.
-  - [ ] Restart the proxy so `-s logging_handlers.py` takes effect. The running
-        instance predates that line in `proxy.sh` and installed the handler via
-        `reload.py`'s call instead, which works but is incidental: the intended
-        load-first ordering, so the other addons' `load`-hook startup
-        inventories are captured too, only happens at the next start. Until
-        then `lifecycle.startup` would miss the very records it exists for.
+  - [x] Restart the proxy so `-s logging_handlers.py` takes effect. Done by the
+        operator 2026-09-01T10:00:34; pid 19086 carries the load-first ordering
+        and wrote its own `lifecycle.reload` line on the way up.
   - [ ] Rule on four defaults a session chose, none of them ratified
         (`Skill(review-open-questions)` batch, not loose ends -- the work
         around them is finished, so no sweep will surface them):
-    - [ ] The events logger sets its own level to `INFO`. That makes a
-          `debug`-grade event impossible by construction. Deliberate -- a
-          durable record must not depend on console verbosity -- but it forecloses
-          the "perhaps with a debug-grade note" channel named for the rotator.
-    - [ ] Emit-time flock contention goes to `logging`'s `handleError` (stderr)
-          rather than filing an incident. An earlier draft proposed
-          `logging.error` + an incident record; that was never implemented, so
-          a second proxy silently degrades the events file to console-only.
+    - [x] **Ruled 2026-09-01** ("i don't love 1/2"): the events logger is
+          `DEBUG`, not `INFO`. Setting a level at all is what keeps a durable
+          record independent of console verbosity, but `INFO` added a second
+          restriction nobody asked for -- it made a `debug`-grade event
+          impossible, foreclosing the "perhaps with a debug-grade note" channel
+          named for the rotator. `DEBUG` gates nothing here; `termlog_verbosity`
+          decides what prints.
+    - [x] **Ruled 2026-09-01** ("why direct to stderr? use the incident
+          system?"): a failed write files an `_uncaught-events-log` incident.
+          The stated default was also wrong -- `emit` had no `try`, so a
+          `BlockingIOError` propagated out of the `logging.info()` call into
+          the addon hook rather than reaching `handleError` at all. Now caught,
+          filed, deduplicated, and guarded against re-entering this handler
+          when `incidents` grows an `events.incident.*` record.
     - [ ] The 2 MB growth tripwire threshold, and `MIN_COMPRESS_BYTES = 1 MiB`.
           Both are round numbers over a measured ~13 KB/month, not derived.
     - [ ] The two testing rules added to `design/040-design.kb/` are marked
@@ -213,11 +216,14 @@ Narrative in `../session.kb/`.
         exists to fix, one rung out.
   - [ ] Known edge, found by verifying against the live proxy: it holds the
         shard's flock for its lifetime, so a *second* process that emits an
-        event gets `BlockingIOError` -- correct by design (one writer, loud on
-        contention), but it means a CLI or check that ever emits would fail
-        while the proxy runs. Today nothing outside `addons/` emits, and the
-        full suite plus `monitoring/` are green with the proxy holding fd 20.
-        Decide whether offline tools should emit at all before that changes.
+        event is refused -- correct by design (one writer, loud on contention).
+        Since the 2026-09-01 ruling that is no longer fatal to the emitter: the
+        line is dropped and an `_uncaught-events-log` incident records why. But
+        an offline tool whose events all vanish while the proxy runs is a bad
+        deal either way. Today nothing outside `addons/` emits; decide whether
+        offline tools should emit at all before that changes, and note the
+        obvious alternative is a per-process shard suffix rather than one
+        writer per file.
   - [ ] Growth tripwire, since the size estimate predates the system:
         ~13 KB/month predicted for `events.capture.*`, so alarm at 2 MB across
         `log/events/` (>100x). Occasion: proxy start, beside

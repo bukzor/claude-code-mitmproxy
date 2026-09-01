@@ -38,13 +38,14 @@ from claude_mitmproxy import tool_patches
 RELOADED = (
     repo_paths,
     flocked_logs,
-    # Re-executing this reinstalls the events handler, which is the whole
-    # reason it may be reloaded at all: it holds no module state, so the
-    # replacement finds the live handler by name and its fd by scanning.
-    logging_handlers,
     rule_templates,
     prompt_shape,
     incidents,
+    # Re-executing this reinstalls the events handler, which is the whole
+    # reason it may be reloaded at all: it holds no module state, so the
+    # replacement finds the live handler by name and its fd by scanning. After
+    # incidents, which it reports a failed write through.
+    logging_handlers,
     gc_patch_failures,
     prompt_location,
     prompt_patches,

@@ -26,10 +26,14 @@ from datetime import date
 from pathlib import Path
 
 from claude_mitmproxy import flocked_logs
+from claude_mitmproxy import incidents
 from claude_mitmproxy import repo_paths
 
 EVENTS_LOGGER = "claude_mitmproxy.events"
 HANDLER_NAME = "claude-mitmproxy-events"
+# Named like every addon's: a write we could not do is an uncaught exception in
+# the same sense, and belongs in the same store an operator already triages.
+UNCAUGHT_RULE = "_uncaught-events-log"
 
 # The ratified taxonomy. Named here rather than spelled at each emit site
 # because these strings are the published interface: a consumer's `tail -F`
@@ -72,15 +76,51 @@ class EventFileHandler(logging.Handler):
     reload-rediscovers-open-fds.md). At a few events a day the scan is free.
     """
 
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, capture_dir: Path | None):
         super().__init__()
         self.root = root
+        self.capture_dir = capture_dir
         self.formatter = LINE_FORMAT
+        self.reporting = False
 
     def emit(self, record: logging.LogRecord) -> None:
-        base = log_base(self.root, record.name)
-        fd = flocked_logs.reopen_log_file(base, when=date.today())
-        os.write(fd, f"{self.format(record)}\n".encode())
+        try:
+            base = log_base(self.root, record.name)
+            fd = flocked_logs.reopen_log_file(base, when=date.today())
+            os.write(fd, f"{self.format(record)}\n".encode())
+        except Exception as exc:
+            self.report_failure(record, exc)
+
+    def report_failure(self, record: logging.LogRecord, exc: Exception) -> None:
+        """File the failed write as an incident.
+
+        Not stderr: an unwatched stream is the thing this module exists to stop
+        relying on, so reporting the *event system's* own failure there is the
+        one place it can least afford to. An incident record is durable,
+        content-addressed (so a proxy failing on every request records and
+        warns once), and lands in the queue an operator already triages.
+
+        Not a re-raise either, though contention is an error rather than
+        something to fail soft over: a handler that raises takes down its
+        caller -- an addon hook mid-request -- over a *logging* failure, which
+        is why `logging` gives handlers `handleError` instead. The error is
+        raised where it can be acted on rather than where it happened; the file
+        goes quiet, and the incident says so.
+
+        `incidents` warns through `logging`, so if it ever emits an
+        `events.incident.*` record, that record arrives right back here, fails
+        the same way, and reports forever -- hence the guard. Its import of
+        this module would have to be function-local, too; the cycle is why.
+        """
+        if self.reporting:
+            return
+        self.reporting = True
+        try:
+            incidents.capture_uncaught(UNCAUGHT_RULE, exc, self.capture_dir)
+        except Exception:
+            self.handleError(record)
+        finally:
+            self.reporting = False
 
 
 def uninstall_log_handlers() -> None:
@@ -91,7 +131,9 @@ def uninstall_log_handlers() -> None:
         stale.close()
 
 
-def reinstall_log_handlers(root: Path = EVENTS_DIR) -> None:
+def reinstall_log_handlers(
+    root: Path = EVENTS_DIR, capture_dir: Path | None = incidents.CAPTURE_DIR
+) -> None:
     """Install the events handler, replacing any earlier one. Idempotent.
 
     Both reload paths re-run this in a process that may already have installed
@@ -104,7 +146,7 @@ def reinstall_log_handlers(root: Path = EVENTS_DIR) -> None:
     so a concurrent `callHandlers` walk finishes over the list it started on.
     """
     stale = logging.getHandlerByName(HANDLER_NAME)
-    handler = EventFileHandler(root)
+    handler = EventFileHandler(root, capture_dir)
     # After the lookup above: naming a handler overwrites the registry entry,
     # which would otherwise hide the one we are replacing.
     handler.name = HANDLER_NAME
@@ -113,7 +155,12 @@ def reinstall_log_handlers(root: Path = EVENTS_DIR) -> None:
     # Set here rather than inherited: an event is a durable record, so whether
     # it is written must not depend on how loud the console happens to be.
     # mitmproxy sets root to DEBUG, a bare CLI leaves it at WARNING, and the
-    # file has to say the same thing under both.
-    events.setLevel(logging.INFO)
+    # file has to say the same thing under both. DEBUG rather than INFO because
+    # this level should gate nothing -- the file takes every event, and how
+    # loud to be stays the console handler's business (mitmproxy's
+    # TermLogHandler filters at `termlog_verbosity`, INFO by default). That is
+    # what leaves a debug-grade event possible: the rotator's "skipped an
+    # in-use log" note is recorded without being printed.
+    events.setLevel(logging.DEBUG)
     if stale is not None:
         stale.close()
