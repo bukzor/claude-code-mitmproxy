@@ -91,3 +91,4 @@ def save_prompt(
     raw_path.write_text(body)
     (directory / f"{base_name}.md").write_text(masked)
     captured.add(masked_digest)
+    return raw_path
