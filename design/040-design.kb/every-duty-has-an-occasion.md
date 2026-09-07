@@ -39,6 +39,7 @@ never on a clock and never in a checklist.
 | reclaim spent incidents and archives | proxy start (`gc_patch_failures.sweep_at_startup`, from `addons/syspatch.py`'s load hook) |
 | validate masks, blocks and fixtures | the commit that touches `masks.d/`, `blocks.d/` or `system-prompts.kb/` (`.pre-commit-config.yaml`) |
 | compress finished traffic shards | opening a shard ([compression-at-shard-open]) |
+| promote the prompt copies no fixture covers | a capture event (`driftwatch.sh` wakes on `log/events/capture/` and runs `survey_captures --promote`) |
 
 The check case is the cleanest fit, because the occasion is not merely
 convenient: those three directories are the entire input to every `check_*`
@@ -66,17 +67,21 @@ stores it. Those go through the incident store, where [earned-silence] already
 governs them: one warning per distinct content, deduped on disk, triaged by the
 one procedure.
 
-Fixture promotion is the other kind. Nothing is loud when upstream ships prompt
-text no fixture covers, because additive drift trips no tripwire
-([fixture-lifecycle]) -- but the fact is a pure function of on-disk state
-(`log/prompt-captures/`, `system-prompts.kb/`, `blocks.d/`) and recomputable
-whenever asked. A record of it would cache a derived value, which
-`prompt_capture` declines to do on the same grounds. So what drift needs is not
-durable emission but *timely* emission, and the incident queue cannot supply
-that: a nonempty queue is itself something someone has to notice, so routing
-drift there would consolidate two polls rather than retire either. It is polled
-by `driftwatch.sh` instead and arrives as a notification in a maintenance
-session.
+Fixture promotion was the other kind, until it was bound. Nothing is loud when
+upstream ships prompt text no fixture covers, because additive drift trips no
+tripwire ([fixture-lifecycle]) -- but the capture that carries it is an event,
+and the answer is a pure function of on-disk state (`log/prompt-captures/`,
+`system-prompts.kb/`, `blocks.d/`), recomputable whenever asked. A record of
+it would cache a derived value, which `prompt_capture` declines to do on the
+same grounds. So `driftwatch.sh` wakes on the capture event, re-evaluates, and
+promotes what it finds -- the operator's own proposal (ruled 2026-09-01: "Yes
+that's my proposal"), on the ground that the watch already holds every input
+the promotion reads. What still has to arrive on its own is the *report* of
+what the pass did, and that is what the watch prints: into a maintenance
+session, through `Monitor`.
+
+> [!TODO] The watch does not run the promotion yet; it reports uncovered
+> copies and leaves the promoting to a hand-run `--promote`.
 
 > [!DECISION] an uncovered core at the newest release on disk gets the warning
 > Agent-ratified and vetoable -- asked to choose, the operator had no
@@ -120,10 +125,12 @@ which a row does and a number cannot. What survives is the derivative
 intuition, and the predicate is already it: a step detector on release
 identity rather than on a count.
 
-`driftwatch.sh` waits on inotify across the predicate's three inputs and
-re-evaluates when any changes -- `system-prompts.kb/` and `blocks.d/` included,
-since promoting a fixture is what clears a standing report and watching only
-the captures would hold it red until some unrelated capture arrived.
+`driftwatch.sh` waits on inotify across the capture event file and the two
+fixture-side inputs, `system-prompts.kb/` and `blocks.d/`, and re-evaluates
+when any changes. The fixture side matters even though the watch promotes: a
+promotion the commit hook refused is cleared by an edit there, not by a
+capture, and watching only the captures would hold the report red until some
+unrelated capture arrived.
 
 Two questions live here and are easy to fuse: what *wakes* the loop, and what
 decides to *notify*. A capture event really is a superset of a drift event, but
@@ -155,6 +162,18 @@ Triage. Reading a captured body and deciding whether upstream reworded, moved
 or retired a patch's target is judgment about someone else's prose, and no
 occasion produces the answer. Leaving that as the only standing obligation is
 the point of the three routes above, not a gap in them.
+
+Noticing it has an occasion, though. An incident is an event
+(`events-are-separate-from-logs.md`), so the watch wakes on it and reports the
+queue's state, keyed by incident type, whenever that changes. The standing
+instruction then reduces to one sentence -- address the Monitor output -- and
+moving a responsibility onto or off the operator is an edit to what the watch
+prints (ruled 2026-09-01: "Simply: address the Monitor output? If so, then
+adjusting responsibilities amounts to adjusting monitor output"). Each line's
+key indexes the playbook entry that says what addressing it means.
+
+> [!TODO] Incidents are not events yet (`incidents` warns through the root
+> logger), the watch does not report the queue, and there is no playbook.
 
 [compression-at-shard-open]: ease-of-operation.kb/compression-at-shard-open.md
 [earned-silence]: ../020-goals.kb/earned-silence.md

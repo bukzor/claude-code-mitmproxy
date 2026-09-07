@@ -12,37 +12,57 @@ why:
    automatic, deduplicated by masked digest but *named* by the raw one, so
    a `masks.d/` edit never renames a capture
    (`content-addressed-capture.md`).
-2. A human promotes noteworthy captures' `.raw.md` into
-   `system-prompts.kb/` under that collection's naming rules (version,
-   `-variant`, `-scope`).
+2. `survey_captures --promote` files every copy the newest release serves
+   that no fixture covers: the `.raw.md`, copied verbatim into
+   `system-prompts.kb/` under a name derived from the capture (that
+   collection's naming rules -- release, `-variant`, `-<digest>`), and
+   committed. No step of that is a decision, so none of it waits on a
+   human (ruled 2026-09-01: "that's the usual case for correct handling of
+   the event. if that turns out to be false we should revisit").
 3. `check_patches.py` reads every full fixture at the newest release:
    upstream serves several bodies at once, and a patch that misses on any
    of them misses in production. Newest only, because sunset patches
    assert against the current prompt, so warnings against older fixtures
    are expected, not regressions.
-4. On promotion, run `check_patches.py` (expect zero warnings) and
-   `check_dark_patches.py` (expect no unexplained newly-dark patches).
-   Running them by hand is for seeing the answer before committing, not
-   for remembering to: promoting a fixture is a commit into
-   `system-prompts.kb/`, and that is one of the occasions that runs the
-   whole offline suite by itself (`every-duty-has-an-occasion.md`).
+4. The promoting commit runs `check_patches.py` (expect zero warnings) and
+   `check_dark_patches.py` (expect no unexplained newly-dark patches) by
+   itself: a commit into `system-prompts.kb/` is one of the occasions that
+   runs the whole offline suite (`every-duty-has-an-occasion.md`). Running
+   them by hand is for seeing the answer, not for remembering to. A refused
+   commit leaves the fixture on disk, uncommitted, and names what to fix.
 
-Step 2 has no automatic trigger — additive upstream drift is invisible
-to every loud mechanism until someone looks — so `survey_captures.py` is
-that look: one row per capture, with shape, session-optional blocks, and
-whether this exact body is already promoted.
+Step 2 has an occasion. Additive upstream drift -- text no fixture covers --
+is invisible to every tripwire, but the capture that carries it is an event
+(`events-are-separate-from-logs.md`), and `driftwatch.sh` wakes on it,
+re-evaluates which copies at the newest release lack a fixture, and promotes
+them (`every-duty-has-an-occasion.md`). `survey_captures.py` is the same
+question asked by hand: one row per capture, with shape, session-optional
+blocks, and whether this exact body is already promoted; `--drift` narrows
+that to one row per uncovered (shape, core), and `--current` to the newest
+release. Coverage is read off the fixtures rather than off captures that
+equal one, so a fixture whose capture has since been cleaned up still counts
+as covering its copy.
 
-Looking is not the same as finding, though, and at ~100 captures the
-inventory stopped fitting the duty it serves: the question is which
-*copies* lack a fixture, and the table answers it only by eye, one
-grouping and set-difference at a time. `--drift` computes that instead —
-one row per uncovered (shape, core), newest first, naming the raw to
-promote. Coverage is read off the fixtures rather than off captures that
-equal one, so a fixture whose capture has since been cleaned up still
-counts as covering its copy. The judgment stays human: the tool ranks by
-recency and reports how many captures carry each copy, because the newest
-copy and the copy that keeps recurring are not always the same one, and
-which to promote is a call about what upstream is actually serving.
+What a reader still owes each promotion is a glance, and the glance is for
+one failure. A fixture that differs from an existing one only in text a
+`masks.d/` or `blocks.d/` rule should have neutralized is not a new copy but
+flawed deduplication, and every fixture filed after it is the same mistake
+again. So each promotion is reported with its diff against the nearest
+fixture already on disk -- nearest meaning the smallest diff, found by
+diffing against every other fixture (ruled 2026-09-01: "What *I* would mean
+is the fixture with the smallest diff. Can we get away with exhaustive
+diffing?"). The reader is the maintenance session that armed the watch, and
+the diff arrives on its channel keyed by event type.
+
+Exhaustive is quadratic in the fixture set and cheap at its current size. It
+is kept honest by a time budget rather than by an index: a pass that overruns
+the budget says so, with what it measured (fixtures compared, seconds spent),
+so the moment to build something smarter announces itself instead of being
+guessed at now (`loudness-policy.md`, on what a tripwire is for).
+
+> [!TODO] The nearest-sibling diff, its budget, and the watch running the
+> promotion are not built yet: `--promote` prints what it filed, and the
+> watch prints whether anything is uncovered.
 
 Beside each capture's raw digest the survey prints a *core* digest: the
 masked body hashed again after the session-optional blocks (`blocks.d/`)

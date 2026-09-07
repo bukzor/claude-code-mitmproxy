@@ -47,6 +47,12 @@ sparse session loud, which is precisely the noise `earned-silence`
 forbids. It is calibrated on fixture *cores* for that reason
 (`fixture-lifecycle.md`).
 
+A tripwire is kept for the scale and the refactor nobody has seen yet, not
+for the inputs on disk -- "The point of having a tripwire is our ignorance of
+future scale, future refactoring" (ruled 2026-09-01). Showing that today's
+inputs cannot trip one does not argue it away; it says the tripwire is
+silent, which is the state it is supposed to be in.
+
 ## The same warrant applies to an `except` clause
 
 A handler either re-raises or **handles** -- and handling means producing the
@@ -62,11 +68,6 @@ it, and `fd_target` answers "what does this fd point at" with None once the fd
 is gone. What survives the conversion is a handler with a warrant, and the
 warrant belongs on the line beside it -- `flow2jsonl._default` passes on a
 `BadGzipFile` because bytes that were never gzipped are already the answer.
-
-Catch the class that was argued for, not its superclass. `fd_target` catches
-`FileNotFoundError` rather than `OSError` because its callers reason from an
-exhaustive view of our own fds: a permission error absorbed there would leave
-that reasoning intact and wrong.
 
 Triage procedure for the loud cases:
 `../../CLAUDE.kb/patch-failure-triage.md`.

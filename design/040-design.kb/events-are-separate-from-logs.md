@@ -43,6 +43,19 @@ one that spelled a name was a place to misspell it.
 | `lifecycle` | `startup`, `reload` |
 | `housekeeping` | `gc`, `compress` |
 
+## The type is the key into the playbook
+
+What `driftwatch.sh` prints into a maintenance session is the same taxonomy:
+every line starts with the type of the event it reports, and
+`playbook.kb/<type>.md` says what addressing that line means. The line carries
+the fact and the key, never the procedure, so the output is cheap to read and
+the procedure can change without a code change (ruled 2026-09-01: "just some
+kind of key that's usable as an index into the playbook. Point being two: DRY
+the output (better token usage) and documentation updates are decoupled from
+code in a good way").
+
+> [!TODO] `playbook.kb/` does not exist yet, and the watch's lines are prose.
+
 ## What this does not change
 
 Records still propagate to the root logger, so mitmproxy's `TermLogHandler`

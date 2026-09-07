@@ -79,12 +79,13 @@ prompt body — pristine, pre-patch — to `prompt-captures/` (gitignored) as a
 claude-mitmproxy-survey-captures --promote
 ```
 
-It copies every copy upstream is serving at the newest release and derives
-each name from its capture, which is the whole of what promoting is now:
-nothing chooses, so nothing waits on a human. Then commit -- that is the
-occasion the offline checks run themselves on. A body whose shape carries no
-marker this repo knows is the one thing it declines to file, because that name
-cannot be derived and that body is worth reading.
+It copies every copy upstream is serving at the newest release, derives each
+name from its capture, and commits -- that commit is the occasion the offline
+checks run themselves on, and a refused commit leaves the fixture on disk,
+uncommitted, until its cause is fixed. Nothing chooses, so nothing waits on a
+human. A body whose shape carries no marker this repo knows is the one thing
+it declines to file, because that name cannot be derived and that body is
+worth reading.
 
 The masked `.md` sibling has `cwd`/`gitStatus`/etc. replaced with
 placeholders — useful for a quick diff, wrong for a fixture: `check_patches.py`
@@ -93,8 +94,9 @@ needs pristine text so patch `match.md` anchors see real content.
 claude-code-guide, ...) — captured for visibility, never patched, never
 promotion candidates; nothing there belongs in this collection.
 
-Append a `-<variant>`/`-<scope>` suffix per the naming rules above when it
-isn't the default long-form shape. Do **not** capture from `traffic.jsonl`
+The `-<variant>` suffix is derived from the shape
+(`prompt_shape.FIXTURE_SUFFIX`); the naming rules above are what it derives,
+not a step to perform. Do **not** capture from `traffic.jsonl`
 or `traffic.flow`: the proxy records requests *after* patching, so bodies
 extracted there are contaminated whenever patches applied cleanly.
 
