@@ -169,8 +169,6 @@ prints (ruled 2026-09-01: "Simply: address the Monitor output? If so, then
 adjusting responsibilities amounts to adjusting monitor output"). Each line's
 key indexes the playbook entry that says what addressing it means.
 
-> [!TODO] `playbook.kb/` does not exist yet.
-
 [compression-at-shard-open]: ease-of-operation.kb/compression-at-shard-open.md
 [earned-silence]: ../020-goals.kb/earned-silence.md
 [fixture-lifecycle]: fixture-lifecycle.md

@@ -128,6 +128,27 @@ def key_of(logger_name: str) -> str:
     return key
 
 
+def event_keys() -> set[str]:
+    """Every type in the taxonomy, spelled as `event_key` spells it.
+
+    Walks the classes rather than `log/events/`: the taxonomy is the only
+    enumeration of the types, and a type with no emitter yet is still a
+    published name -- which is what lets `check_playbook` hold `playbook.kb/`
+    to what the code publishes rather than to whatever has happened to fire.
+    """
+    keys: set[str] = set()
+
+    def walk(node: type) -> None:
+        for value in vars(node).values():
+            if isinstance(value, logging.Logger):
+                keys.add(event_key(value))
+            elif isinstance(value, type):
+                walk(value)
+
+    walk(events)
+    return keys
+
+
 def log_base(root: Path, logger_name: str) -> Path:
     """Where records from `logger_name` are sharded, minus the date and suffix.
 

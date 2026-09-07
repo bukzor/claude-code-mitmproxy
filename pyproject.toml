@@ -24,6 +24,7 @@ claude-mitmproxy-check-patches = "claude_mitmproxy.check_patches:main"
 claude-mitmproxy-check-dark-patches = "claude_mitmproxy.check_dark_patches:main"
 claude-mitmproxy-check-strip-floors = "claude_mitmproxy.check_strip_floors:main"
 claude-mitmproxy-check-tool-patches = "claude_mitmproxy.check_tool_patches:main"
+claude-mitmproxy-check-playbook = "claude_mitmproxy.check_playbook:main"
 
 # Tools, not checks: they answer a question rather than pass or fail, so they
 # have no predicates and nothing to exit 2 about.

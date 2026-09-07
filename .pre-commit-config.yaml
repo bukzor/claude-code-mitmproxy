@@ -2,12 +2,14 @@
 #
 # `masks.d/`, `blocks.d/` and `system-prompts.kb/` are the inputs every
 # `check_*` module reads: nothing else under version control can move a
-# digest, a floor, or a verdict. That makes a commit touching one of them the
-# only occasion these checks have, and firing them there is what turns "run
-# check_laws after editing masks.d/" from a line someone has to remember into
-# something that cannot be skipped by forgetting.
+# digest, a floor, or a verdict. `playbook.kb/` and the event taxonomy in
+# `logging_handlers.py` are the two sides `check_playbook` holds in
+# correspondence. That makes a commit touching one of them the only occasion
+# these checks have, and firing them there is what turns "run check_laws
+# after editing masks.d/" from a line someone has to remember into something
+# that cannot be skipped by forgetting.
 #
-# `monitoring/` rather than the five commands by name: it parametrizes over
+# `monitoring/` rather than the check commands by name: it parametrizes over
 # every check module's PREDICATES, so a property added beside its data appears
 # here on the next run with nothing to update, and one failure doesn't hide
 # the rest (monitoring/CLAUDE.md).
@@ -24,8 +26,8 @@ repos:
   - repo: local
     hooks:
       - id: offline-checks
-        name: offline checks (masks, blocks, fixtures)
+        name: offline checks (masks, blocks, fixtures, playbook)
         entry: .venv/bin/pytest monitoring/ -q
         language: system
         pass_filenames: false
-        files: ^(masks\.d/|blocks\.d/|system-prompts\.kb/)
+        files: ^(masks\.d/|blocks\.d/|system-prompts\.kb/|playbook\.kb/|lib/claude_mitmproxy/logging_handlers\.py)

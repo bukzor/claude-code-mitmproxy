@@ -59,8 +59,6 @@ kind of key that's usable as an index into the playbook. Point being two: DRY
 the output (better token usage) and documentation updates are decoupled from
 code in a good way").
 
-> [!TODO] `playbook.kb/` does not exist yet.
-
 ## What this does not change
 
 Records still propagate to the root logger, so mitmproxy's `TermLogHandler`

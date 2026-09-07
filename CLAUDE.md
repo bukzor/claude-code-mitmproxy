@@ -68,6 +68,9 @@ outputs are day-sharded and restarts append instead of truncate:
 - `session.kb/` — dated incident/session narratives (what happened, why
   nothing was loud, what changed) — the durable record todo entries and
   commit messages point into.
+- `playbook.kb/` — what addressing a watch line means: one entry per event
+  type, named by the key the line starts with. `check_playbook` holds the
+  two in correspondence; read an entry when its line arrives.
 - `.claude/todo.kb/` — strategic task breakdowns (per `Skill(llm-subtask)`).
 
 Two in-repo rule sets share the patch template language, each with its own

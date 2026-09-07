@@ -24,6 +24,7 @@ from claude_mitmproxy import check_dark_patches
 from claude_mitmproxy import check_laws
 from claude_mitmproxy import check_masks
 from claude_mitmproxy import check_patches
+from claude_mitmproxy import check_playbook
 from claude_mitmproxy import check_strip_floors
 from claude_mitmproxy import check_tool_patches
 from claude_mitmproxy import prompt_capture
@@ -38,6 +39,7 @@ CHECKS = (
     check_dark_patches,
     check_strip_floors,
     check_tool_patches,
+    check_playbook,
 )
 
 # What each check needs on disk before its properties mean anything. The checks
