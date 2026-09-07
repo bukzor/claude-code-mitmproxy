@@ -36,12 +36,14 @@ from pathlib import Path
 from claude_mitmproxy import incidents
 from claude_mitmproxy import repo_paths
 
-# Non-patch rule, underscore-prefixed like _locate-system-prompt so it cannot
-# collide with a patch name. The child reports its own failures because nothing
+# An uncaught exception's rule (`incidents.UNCAUGHT_PREFIX`): it cannot collide
+# with a patch name, its type is read off the name, and a record older than the
+# retention window expires unread -- a still-live failure refiles on the next
+# run. The child reports its own failures because nothing
 # reads its exit code: flow2jsonl.py spawns one per shard it opens, which is
 # usually one per proxy lifetime, so the parent that could check a returncode
 # has already exited by the time there is one to check.
-FAILURE_RULE = "_compress-traffic"
+FAILURE_RULE = f"{incidents.UNCAUGHT_PREFIX}compress-traffic"
 # check_compression.py sets this None -- the seam check_patches already uses to
 # exercise the machinery without leaving incidents for someone to triage.
 CAPTURE_DIR = incidents.CAPTURE_DIR

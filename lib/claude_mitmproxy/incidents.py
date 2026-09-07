@@ -31,6 +31,12 @@ ARCHIVE_DIRNAME = "_archive"
 # (`prompt_patches.strip_floors`). Named here because it keys a store and an
 # event type of its own, and both are this module's to derive.
 STRIP_RULE = "_strip-rate"
+# Every rule an uncaught exception is recorded under starts with this, and no
+# other rule does (`capture_uncaught` insists). A record's type is read off
+# its rule name alone (`incident_type`), so a report over the store on disk
+# and the announcement made at the write agree by construction; the same
+# prefix is what gc expires unread (`gc_patch_failures.expire_transients`).
+UNCAUGHT_PREFIX = "_uncaught-"
 
 # In-repo, unlike the patches under ~/.claude: patches are one operator's
 # preferences, but masks define the capture system's identity function, and a
@@ -178,14 +184,26 @@ def archive_incident(rule: str, digest: str, capture_dir: Path) -> None:
             body_dest.touch()
 
 
+def incident_type(rule: str) -> str:
+    """Which `events.incident` type a record under `rule` is, spelled as its
+    event key is. Read off the name alone: the strip-rate floor is its own
+    kind of miss, an uncaught exception's rule carries the prefix, and
+    everything else is a patch that failed to apply. Nothing about the
+    record's contents enters, so `queue_report` over the store on disk and
+    `incident_event` at the write cannot classify one record two ways."""
+    if rule == STRIP_RULE:
+        return "strip-floor"
+    if rule.startswith(UNCAUGHT_PREFIX):
+        return "uncaught"
+    return "patch-miss"
+
+
 def incident_event(rule: str) -> logging.Logger:
     """The event type a fresh record under `rule` is announced as.
 
     An event is a fact learned once, and the store's idempotence is what makes
     a fresh record exactly that: the same failure on the next request finds
-    its record present and announces nothing. The type is read off the rule
-    -- the strip-rate floor is its own kind of miss, and everything else that
-    reaches `report_issues` is a patch that failed to apply.
+    its record present and announces nothing.
 
     Imported here rather than at the top: `logging_handlers` imports this
     module for the incident it files when an event write fails, and that
@@ -195,8 +213,32 @@ def incident_event(rule: str) -> logging.Logger:
     """
     from claude_mitmproxy import logging_handlers
 
-    incident = logging_handlers.events.incident
-    return incident.strip_floor if rule == STRIP_RULE else incident.patch_miss
+    return getattr(logging_handlers.events.incident, incident_type(rule).replace("-", "_"))
+
+
+def queue_report(capture_dir: Path) -> list[str]:
+    """The live queue as the watch reports it: one line per incident type
+    present, keyed by that type, counting records per rule.
+
+    Counts rather than names, so the line changes when the queue does and
+    not otherwise -- what a watch that prints on change needs -- and the
+    records themselves stay what `CLAUDE.kb/patch-failure-triage.md` reads.
+    Empty when the queue is, so a clean store says nothing."""
+    if not capture_dir.is_dir():
+        return []
+    from claude_mitmproxy import logging_handlers  # see incident_event
+
+    counts: dict[logging.Logger, dict[str, int]] = {}
+    for rule_dir in sorted(capture_dir.iterdir()):
+        if not rule_dir.is_dir() or rule_dir.name in (BODIES_DIRNAME, ARCHIVE_DIRNAME):
+            continue
+        records = len(list(rule_dir.glob("*.json")))
+        if records:
+            counts.setdefault(incident_event(rule_dir.name), {})[rule_dir.name] = records
+    return [
+        f"{key} " + " ".join(f"{rule}={n}" for rule, n in rules.items())
+        for key, rules in sorted((logging_handlers.event_key(e), r) for e, r in counts.items())
+    ]
 
 
 def report_issues(
@@ -238,6 +280,7 @@ def capture_uncaught(rule: str, exc: BaseException, capture_dir: Path | None) ->
     way as a patch-application issue, so a bug in an addon hook survives for
     offline triage instead of only flashing through mitmproxy's own log.
     Callers re-raise after this — it captures, it doesn't fail soft."""
+    assert rule.startswith(UNCAUGHT_PREFIX), (rule, "an uncaught exception's rule carries the prefix its type is read from")
     body = "".join(traceback.format_exception(exc))
     if capture_dir is None:
         logging.warning("%s: uncaught %s", rule, type(exc).__name__)
@@ -246,8 +289,4 @@ def capture_uncaught(rule: str, exc: BaseException, capture_dir: Path | None) ->
     save_body(body, digest, capture_dir)
     saved = save_incident(Incident(rule, type(exc).__name__), digest, capture_dir)
     if saved is not None:
-        from claude_mitmproxy import logging_handlers  # see incident_event
-
-        logging_handlers.events.incident.uncaught.warning(
-            "%s: uncaught %s -> %s", rule, type(exc).__name__, saved
-        )
+        incident_event(rule).warning("%s: uncaught %s -> %s", rule, type(exc).__name__, saved)

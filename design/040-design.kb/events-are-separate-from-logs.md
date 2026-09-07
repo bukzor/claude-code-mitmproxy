@@ -42,6 +42,11 @@ one that spelled a name was a place to misspell it.
 | `incident` | `patch-miss`, `strip-floor`, `uncaught` |
 | `lifecycle` | `startup`, `reload` |
 | `housekeeping` | `gc`, `compress` |
+| `promotion` | `filed`, `declined`, `refused`, `over-budget` |
+
+`promotion` is written by `survey_captures --promote` and never by the proxy.
+An offline tool may emit into a domain it owns outright: no shard then has
+two writers, which is the property the channel rests on.
 
 ## The type is the key into the playbook
 
@@ -54,7 +59,7 @@ kind of key that's usable as an index into the playbook. Point being two: DRY
 the output (better token usage) and documentation updates are decoupled from
 code in a good way").
 
-> [!TODO] `playbook.kb/` does not exist yet, and the watch's lines are prose.
+> [!TODO] `playbook.kb/` does not exist yet.
 
 ## What this does not change
 

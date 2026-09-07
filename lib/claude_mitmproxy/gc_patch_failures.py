@@ -38,12 +38,10 @@ from claude_mitmproxy import incidents
 
 DEFAULT_RETENTION_DAYS = 30
 
-# Rules whose incidents may expire unread. The prefix is the addon-hook
-# wrapper's (`incidents.capture_uncaught`), so this covers every addon
-# without naming them.
-TRANSIENT_RULE_PREFIX = "_uncaught-"
-
-FAILURE_RULE = "_gc-patch-failures"
+# What the sweep's own failure is recorded under. An uncaught exception's
+# rule, so it expires unread like any other transient: a sweep that failed
+# once and never again is not worth a reader.
+FAILURE_RULE = f"{incidents.UNCAUGHT_PREFIX}gc-patch-failures"
 
 
 def gc(archive_dir: Path, retention_days: float, *, dry_run: bool) -> list[Path]:
@@ -85,7 +83,7 @@ def expire_transients(
     stale = sorted(
         path
         for rule_dir in capture_dir.iterdir()
-        if rule_dir.is_dir() and rule_dir.name.startswith(TRANSIENT_RULE_PREFIX)
+        if rule_dir.is_dir() and rule_dir.name.startswith(incidents.UNCAUGHT_PREFIX)
         for path in rule_dir.glob("*.json")
         if path.stat().st_mtime < cutoff
     )
@@ -137,6 +135,13 @@ def sweep_at_startup() -> None:
 
 
 def main():
+    """`--queue` prints the live queue as `incidents.queue_report` lines and
+    nothing else -- what `driftwatch.sh` runs each pass. Here rather than as
+    a console script of its own because a new script is a `uv sync` away,
+    and `tests/CLAUDE.md` says why that waits for the proxy to stop."""
+    if "--queue" in sys.argv[1:]:
+        sys.stdout.write("".join(f"{line}\n" for line in incidents.queue_report(incidents.CAPTURE_DIR)))
+        return
     args = [a for a in sys.argv[1:] if a != "--dry-run"]
     dry_run = "--dry-run" in sys.argv[1:]
     retention_days = float(args[0]) if args else DEFAULT_RETENTION_DAYS

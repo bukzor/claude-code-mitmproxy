@@ -198,14 +198,16 @@ Two kinds:
 
 Triage ends with `archive_incident` like any other rule.
 
-### The `_compress-traffic` rule (capture retention)
+### The `_uncaught-compress-traffic` rule (capture retention)
 
 `compress_traffic.py` archives finished traffic shards and deletes the
 originals, so it reports its own failures instead of leaving them to an
 exit code: `addons/flow2jsonl.py` spawns one child per shard it opens -- usually
 one per proxy lifetime -- so the parent that could read a returncode has
 already exited by the time there is one to read. Kind is the exception
-class, body is its traceback.
+class, body is its traceback. An `_uncaught-` rule, so a record past the
+retention window expires unread like any other transient; a failure still
+live refiles on the next run.
 
 Nothing is lost when this fires. The capture is kept, its unverified
 `.zst.part` is never published under the `.zst` name, and the sweep

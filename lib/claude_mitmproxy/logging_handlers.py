@@ -92,6 +92,15 @@ class events:
         gc: logging.Logger
         compress: logging.Logger
 
+    # Written by `survey_captures --promote` and never by the proxy: an
+    # offline tool may emit into a domain it owns outright, since no shard
+    # then has two writers.
+    class promotion:
+        filed: logging.Logger
+        declined: logging.Logger
+        refused: logging.Logger
+        over_budget: logging.Logger
+
 
 EVENTS_LOGGER = f"{PACKAGE_LOGGER}.{events.__name__}"
 EVENTS_DIR = repo_paths.LOG / "events"
@@ -101,15 +110,31 @@ EVENTS_DIR = repo_paths.LOG / "events"
 LINE_FORMAT = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%dT%H:%M:%S%z")
 
 
+def event_key(logger: logging.Logger) -> str:
+    """The type below the events root, dotted: `promotion.filed`.
+
+    What a printed line that asks something of a reader starts with, and the
+    name of its `playbook.kb/` entry -- one spelling, derived from the
+    taxonomy, so the line and the entry cannot drift apart
+    (`design/040-design.kb/events-are-separate-from-logs.md`).
+    """
+    return key_of(logger.name)
+
+
+def key_of(logger_name: str) -> str:
+    """`event_key` off the name alone, for the handler, which has only that."""
+    key = logger_name.removeprefix(f"{EVENTS_LOGGER}.")
+    assert key != logger_name, (logger_name, EVENTS_LOGGER)
+    return key
+
+
 def log_base(root: Path, logger_name: str) -> Path:
     """Where records from `logger_name` are sharded, minus the date and suffix.
 
     The taxonomy below EVENTS_LOGGER becomes directories, with the event type
     as the filename -- so a category is a directory a consumer can watch whole.
     """
-    suffix = logger_name.removeprefix(f"{EVENTS_LOGGER}.")
-    assert suffix != logger_name, (logger_name, EVENTS_LOGGER)
-    return root.joinpath(*suffix.split("."))
+    return root.joinpath(*key_of(logger_name).split("."))
 
 
 class EventFileHandler(logging.Handler):

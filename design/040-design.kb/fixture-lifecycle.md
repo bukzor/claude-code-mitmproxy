@@ -60,10 +60,6 @@ the budget says so, with what it measured (fixtures compared, seconds spent),
 so the moment to build something smarter announces itself instead of being
 guessed at now (`loudness-policy.md`, on what a tripwire is for).
 
-> [!TODO] The nearest-sibling diff, its budget, and the watch running the
-> promotion are not built yet: `--promote` prints what it filed, and the
-> watch prints whether anything is uncovered.
-
 Beside each capture's raw digest the survey prints a *core* digest: the
 masked body hashed again after the session-optional blocks (`blocks.d/`)
 are stripped too. Rows sharing a core are the same prompt modulo which

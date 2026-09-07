@@ -91,3 +91,36 @@ def test_a_blocked_incident_shard_reports_once_and_stops(tmp_path, events_root):
             child.wait()
     filed = sorted((tmp_path / "incidents").glob("*/*.json"))
     assert [path.parent.name for path in filed] == [logging_handlers.UNCAUGHT_RULE]
+
+
+def test_the_type_is_read_off_the_rule():
+    assert incidents.incident_type("some-patch") == "patch-miss"
+    assert incidents.incident_type("_locate-system-prompt") == "patch-miss"
+    assert incidents.incident_type(incidents.STRIP_RULE) == "strip-floor"
+    assert incidents.incident_type("_uncaught-thinkpatch") == "uncaught"
+
+
+def test_an_uncaught_rule_must_say_so_in_its_name(tmp_path):
+    """The queue report classifies by name alone, so a rule filed as an
+    exception record that does not carry the prefix would be reported as a
+    patch miss."""
+    with pytest.raises(AssertionError):
+        incidents.capture_uncaught("_gc-patch-failures", ValueError("boom"), tmp_path)
+
+
+def test_the_queue_report_is_one_keyed_line_per_type(tmp_path):
+    store = tmp_path / "incidents"
+    incidents.report_issues("body a", [incidents.Incident("patch-x", "failed to match")], store)
+    incidents.report_issues("body b", [incidents.Incident("patch-x", "failed to match")], store)
+    incidents.report_issues("body c", [incidents.Incident("patch-y", "failed to match")], store)
+    incidents.capture_uncaught("_uncaught-thinkpatch", ValueError("boom"), store)
+    assert incidents.queue_report(store) == [
+        "incident.patch-miss patch-x=2 patch-y=1",
+        "incident.uncaught _uncaught-thinkpatch=1",
+    ]
+
+
+def test_the_queue_report_of_an_empty_or_missing_store_is_empty(tmp_path):
+    assert incidents.queue_report(tmp_path / "missing") == []
+    (tmp_path / "bodies-only" / incidents.BODIES_DIRNAME).mkdir(parents=True)
+    assert incidents.queue_report(tmp_path / "bodies-only") == []

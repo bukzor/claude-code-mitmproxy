@@ -52,7 +52,7 @@ cannot be skipped while the work continues. Proxy start qualifies against a
 such occasion has to take the third route instead.
 
 Housekeeping bound this way reports failures rather than raising them: a
-sweep that cannot run files a `_gc-patch-failures` incident, because a proxy
+sweep that cannot run files an `_uncaught-gc-patch-failures` incident, because a proxy
 that patches traffic with a cluttered `log/` is better than one that refused
 to start over disk hygiene.
 
@@ -79,9 +79,6 @@ that's my proposal"), on the ground that the watch already holds every input
 the promotion reads. What still has to arrive on its own is the *report* of
 what the pass did, and that is what the watch prints: into a maintenance
 session, through `Monitor`.
-
-> [!TODO] The watch does not run the promotion yet; it reports uncovered
-> copies and leaves the promoting to a hand-run `--promote`.
 
 > [!DECISION] an uncovered core at the newest release on disk gets the warning
 > Agent-ratified and vetoable -- asked to choose, the operator had no
@@ -172,7 +169,7 @@ prints (ruled 2026-09-01: "Simply: address the Monitor output? If so, then
 adjusting responsibilities amounts to adjusting monitor output"). Each line's
 key indexes the playbook entry that says what addressing it means.
 
-> [!TODO] The watch does not report the queue yet, and there is no playbook.
+> [!TODO] `playbook.kb/` does not exist yet.
 
 [compression-at-shard-open]: ease-of-operation.kb/compression-at-shard-open.md
 [earned-silence]: ../020-goals.kb/earned-silence.md

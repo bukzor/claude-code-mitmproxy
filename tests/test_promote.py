@@ -50,9 +50,10 @@ def test_promote_writes_the_raw_body_verbatim(tmp_path):
     written, skipped = survey_captures.promote(
         [drift("harness-opus", text=body, tmp_path=captures)], kb
     )
-    (fixture, _), = written
-    assert fixture == kb / "v2.1.257-opus-cad91c75.md", fixture
-    assert fixture.read_text() == body
+    (filed,) = written
+    assert filed.fixture == kb / "v2.1.257-opus-cad91c75.md", filed
+    assert filed.fixture.read_text() == body
+    assert filed.fresh, filed
     assert skipped == []
 
 
@@ -67,22 +68,41 @@ def test_an_unknown_shape_is_left_for_a_human(tmp_path):
     assert list(kb.iterdir()) == []
 
 
-def test_promoting_over_an_existing_fixture_is_a_bug(tmp_path):
-    """Same name means same raw body, which would already read as covered. If
-    both are true at once, the drift predicate and the namer disagree."""
+def test_promoting_over_a_different_fixture_is_a_bug(tmp_path):
+    """Same name means same raw body. A different body under it means the
+    namer and the capture disagree, which nothing should paper over."""
     kb = tmp_path / "kb"
     kb.mkdir()
+    captures = tmp_path / "captures"
+    captures.mkdir()
     (kb / "v2.1.257-opus-cad91c75.md").write_text("already here\n")
     with pytest.raises(AssertionError):
-        survey_captures.promote([drift("harness-opus")], kb)
+        survey_captures.promote([drift("harness-opus", text="a body\n", tmp_path=captures)], kb)
+
+
+def test_promoting_over_an_identical_fixture_is_a_retry(tmp_path):
+    """A refused commit leaves the fixture on disk, and the next pass finds it
+    there: not fresh, but still the pass's to commit."""
+    kb = tmp_path / "kb"
+    kb.mkdir()
+    captures = tmp_path / "captures"
+    captures.mkdir()
+    (kb / "v2.1.257-opus-cad91c75.md").write_text("a body\n")
+    written, skipped = survey_captures.promote(
+        [drift("harness-opus", text="a body\n", tmp_path=captures)], kb
+    )
+    (filed,) = written
+    assert not filed.fresh, filed
+    assert filed.fixture == kb / "v2.1.257-opus-cad91c75.md"
+    assert skipped == []
 
 
 def test_commit_message_names_every_promotion(tmp_path):
     """The message is derived too: what was filed, from what, and nothing about
     why upstream changed -- which the promoter cannot know and the diff shows."""
     promoted = [
-        (tmp_path / "v2.1.257-opus-cad91c75.md", drift("harness-opus")),
-        (tmp_path / "v2.1.257-92b0bb81.md", drift("long-form", raw="92b0bb817064")),
+        survey_captures.Filed(tmp_path / "v2.1.257-opus-cad91c75.md", drift("harness-opus"), True),
+        survey_captures.Filed(tmp_path / "v2.1.257-92b0bb81.md", drift("long-form", raw="92b0bb817064"), True),
     ]
     message = survey_captures.commit_message(promoted)
     assert message.startswith("Promote 2 prompt copies at v2.1.257\n"), message
@@ -91,5 +111,5 @@ def test_commit_message_names_every_promotion(tmp_path):
 
 
 def test_a_single_promotion_is_not_pluralised(tmp_path):
-    promoted = [(tmp_path / "v2.1.257-opus-cad91c75.md", drift("harness-opus"))]
+    promoted = [survey_captures.Filed(tmp_path / "v2.1.257-opus-cad91c75.md", drift("harness-opus"), True)]
     assert survey_captures.commit_message(promoted).startswith("Promote 1 prompt copy at v2.1.257")
