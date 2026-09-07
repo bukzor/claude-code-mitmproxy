@@ -45,7 +45,6 @@ def apply_patches(
 
 KB_DIR = repo_paths.ROOT / "system-prompts.kb"
 BLOCKS_DIR = repo_paths.ROOT / "blocks.d"
-STRIP_RULE = "_strip-rate"
 
 
 def fixture_version(path: Path) -> tuple[int, ...]:
@@ -119,10 +118,10 @@ def check_strip_floor(
     floor = strip_floors(patches).get(shape)
     stripped = len(original) - len(patched)
     if floor is None:
-        issue = incidents.Incident(STRIP_RULE, f"unknown-shape-{shape}")
+        issue = incidents.Incident(incidents.STRIP_RULE, f"unknown-shape-{shape}")
     elif stripped < floor:
         issue = incidents.Incident(
-            STRIP_RULE, f"low-strip-{shape}-{stripped}B-floor-{floor}B"
+            incidents.STRIP_RULE, f"low-strip-{shape}-{stripped}B-floor-{floor}B"
         )
     else:
         return

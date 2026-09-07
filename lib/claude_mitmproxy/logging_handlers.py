@@ -154,10 +154,11 @@ class EventFileHandler(logging.Handler):
         raised where it can be acted on rather than where it happened; the file
         goes quiet, and the incident says so.
 
-        `incidents` warns through `logging`, so if it ever emits an
-        `events.incident.*` record, that record arrives right back here, fails
-        the same way, and reports forever -- hence the guard. Its import of
-        this module would have to be function-local, too; the cycle is why.
+        `incidents` announces a fresh record as an `events.incident.uncaught`
+        event, so the report arrives right back here; if the incident shard is
+        what is blocked it fails the same way and would report forever --
+        hence the guard. Its import of this module is function-local for the
+        same reason: the cycle is real.
         """
         if self.reporting:
             return

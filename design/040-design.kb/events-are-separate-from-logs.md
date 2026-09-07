@@ -87,10 +87,22 @@ durable, content-addressed so a proxy failing on every request records and
 warns once, and already on the operator's triage path. The line that failed is
 lost, and the incident is what says so.
 
-Reporting goes through `logging`, so it can arrive back at this handler; the
-reporting path is guarded against re-entering itself. The loop that guard
-closes opens for real as soon as `incidents` emits an `events.incident.*`
-record of its own, which is the next planned step.
+Reporting goes through `logging`, so it arrives back at this handler:
+`incidents` announces every fresh record as an `events.incident.*` event, the
+failed-write incident included. The reporting path is guarded against
+re-entering itself, which is what keeps a blocked incident shard from
+reporting its own blockage forever.
+
+## An incident is an event
+
+A fresh incident record is a fact learned once -- the store's idempotence is
+what makes it fresh -- so `incidents` announces it under
+`events.incident.<type>`, the type read off the rule: the strip-rate floor is
+`strip-floor`, an uncaught exception is `uncaught`, and every other rule that
+reaches `report_issues` is a `patch-miss`. The offline checks pass no capture
+dir, learn nothing once, and keep warning through the root logger. The event
+is what lets a watch wake on the queue changing instead of polling the store
+(`every-duty-has-an-occasion.md`).
 
 ## Testing note
 

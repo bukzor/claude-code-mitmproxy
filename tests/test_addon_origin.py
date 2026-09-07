@@ -78,7 +78,7 @@ def test_syspatch_records_the_requests_origin(capture_dir, tmp_path, monkeypatch
     })
     syspatch.request(flow)
 
-    for rule in ("a-patch", prompt_patches.STRIP_RULE):
+    for rule in ("a-patch", incidents.STRIP_RULE):
         (record_path,) = (capture_dir / rule).glob("*.json")
         record = json.loads(record_path.read_text())
         assert record["cc_version"] == "2.1.248.abc", (rule, record)

@@ -112,10 +112,11 @@ def test_reporting_a_failure_cannot_recurse_through_this_handler(
 ):
     """Reporting emits through `logging`, which can arrive back here.
 
-    `incidents` warns, and is expected to grow an `events.incident.*` record;
-    when the write that failed is the one that report needs, the report repeats
+    `incidents` announces a fresh record as an `events.incident.*` event; when
+    the write that failed is the one that report needs, the report repeats
     forever. Stand in for that with a reporter whose own event goes to the
-    blocked file, so the loop closes on the first hop.
+    blocked file, so the loop closes on the first hop; the real path is
+    `test_incident_events`.
     """
     reported: list[str] = []
 

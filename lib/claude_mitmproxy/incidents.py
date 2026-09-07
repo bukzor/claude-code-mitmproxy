@@ -27,6 +27,10 @@ from claude_mitmproxy import rule_templates
 CAPTURE_DIR = repo_paths.LOG / "patch-failures"
 BODIES_DIRNAME = "_bodies"
 ARCHIVE_DIRNAME = "_archive"
+# The one rule that is not a patch: the aggregate strip-rate tripwire
+# (`prompt_patches.strip_floors`). Named here because it keys a store and an
+# event type of its own, and both are this module's to derive.
+STRIP_RULE = "_strip-rate"
 
 # In-repo, unlike the patches under ~/.claude: patches are one operator's
 # preferences, but masks define the capture system's identity function, and a
@@ -174,6 +178,27 @@ def archive_incident(rule: str, digest: str, capture_dir: Path) -> None:
             body_dest.touch()
 
 
+def incident_event(rule: str) -> logging.Logger:
+    """The event type a fresh record under `rule` is announced as.
+
+    An event is a fact learned once, and the store's idempotence is what makes
+    a fresh record exactly that: the same failure on the next request finds
+    its record present and announces nothing. The type is read off the rule
+    -- the strip-rate floor is its own kind of miss, and everything else that
+    reaches `report_issues` is a patch that failed to apply.
+
+    Imported here rather than at the top: `logging_handlers` imports this
+    module for the incident it files when an event write fails, and that
+    report comes back through the logger returned here. The handler's
+    re-entry guard is what closes that loop; the function-local import is
+    what lets the two modules exist at all.
+    """
+    from claude_mitmproxy import logging_handlers
+
+    incident = logging_handlers.events.incident
+    return incident.strip_floor if rule == STRIP_RULE else incident.patch_miss
+
+
 def report_issues(
     body: str,
     issues: list[Incident],
@@ -182,12 +207,16 @@ def report_issues(
 ) -> None:
     """Warn about rules that didn't apply cleanly; when capture_dir is given,
     save the body once (content-addressed) plus one incident record per
-    (rule, content) so it can be diagnosed later.
+    (rule, content) so it can be diagnosed later, and announce each fresh
+    record as an `events.incident.*` event.
 
     Capture is idempotent on disk: a body whose content was already recorded
     re-saves nothing and re-warns nothing. The live proxy patches every request,
-    so this is what keeps a persistent mismatch from logging endlessly — the
+    so this is what keeps a persistent mismatch from logging endlessly -- the
     first request captures and warns, the rest find the record present.
+
+    Without a capture_dir (the offline checks) nothing is learned once, so
+    nothing is an event: the warning is the whole report.
     """
     if capture_dir is None:
         for issue in issues:
@@ -201,7 +230,7 @@ def report_issues(
         # logging (not stderr): the console TUI routes records to its event log /
         # status bar; raw stderr corrupts curses. Warn only on a fresh capture.
         if saved is not None:
-            logging.warning("patch %r %s -> %s", issue.rule, issue.kind, saved)
+            incident_event(issue.rule).warning("patch %r %s -> %s", issue.rule, issue.kind, saved)
 
 
 def capture_uncaught(rule: str, exc: BaseException, capture_dir: Path | None) -> None:
@@ -217,4 +246,8 @@ def capture_uncaught(rule: str, exc: BaseException, capture_dir: Path | None) ->
     save_body(body, digest, capture_dir)
     saved = save_incident(Incident(rule, type(exc).__name__), digest, capture_dir)
     if saved is not None:
-        logging.warning("%s: uncaught %s -> %s", rule, type(exc).__name__, saved)
+        from claude_mitmproxy import logging_handlers  # see incident_event
+
+        logging_handlers.events.incident.uncaught.warning(
+            "%s: uncaught %s -> %s", rule, type(exc).__name__, saved
+        )

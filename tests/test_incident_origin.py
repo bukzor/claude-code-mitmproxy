@@ -94,7 +94,7 @@ def test_check_strip_floor_records_origin(tmp_path):
     captures = tmp_path / "captures"
     origin = incidents.Origin("2.1.249.def", "claude-sonnet-5")
     prompt_patches.check_strip_floor("an unknown shape", "an unknown shape", (), captures, origin)
-    record = read_only_record(captures, prompt_patches.STRIP_RULE)
+    record = read_only_record(captures, incidents.STRIP_RULE)
     assert record["kind"].startswith("unknown-shape-"), record
     assert record["cc_version"] == "2.1.249.def", record
 
