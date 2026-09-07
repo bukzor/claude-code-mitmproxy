@@ -88,40 +88,30 @@ it (`.pre-commit-config.yaml`).
 
 ## Standing maintenance
 
-One duty, always implicitly appended to the todo list. That there is only one
-is a design commitment, not an accident: every other recurring obligation has
-been bound to the occasion that creates it or argued away
-(`design/040-design.kb/every-duty-has-an-occasion.md`), so a duty listed here
-is a claim that neither was possible.
+> [!DRAFT] agent-authored 2026-09-07, vetoable -- from the 2026-09-01 ruling
+> "Simply: address the Monitor output? If so, then adjusting responsibilities
+> amounts to adjusting monitor output". Landed by 58e801c and cf671f1.
 
-- **Triage `log/patch-failures/` when it is nonempty**, per
-  `CLAUDE.kb/patch-failure-triage.md`. Reading a drifted body and deciding what
-  upstream did to a patch's target is judgment about someone else's prose, and
-  no occasion produces it. The queue's _upkeep_ is not yours: a proxy start
-  sweeps it, expiring `_uncaught-*` transients unread and reclaiming archives
-  past their window.
+One duty: address the Monitor output. Arm `./driftwatch.sh` through
+`Monitor` (persistent) when a maintenance session opens; it prints on its
+first pass and then only when what it would print changes. Every line that
+asks something starts with its event type, and `playbook.kb/<type>.md` says
+what addressing it means -- so moving a responsibility onto or off the
+operator is an edit to what the watch prints, and this instruction does not
+change. A line with no key asks nothing (`committed N fixtures`, the
+all-clear). A line starting `driftwatch:` is a tool that crashed, and its
+output follows.
 
-Fixture promotion left that list by becoming a signal. Arm `./driftwatch.sh`
-through `Monitor` (persistent) when a maintenance session opens: it watches
-whether upstream is serving prompt text no fixture covers -- the one drift no
-tripwire catches, since `_strip-rate` sees only subtractive and rewrite drift
--- and prints on its first pass, then only when the answer changes. Answer it
-with `claude-mitmproxy-survey-captures --promote`, which files every row,
-derives each name, and commits. Arming is setup rather than a duty: it asks
-nothing of you when nothing happened, which is the distinction the design
-entry draws.
+That there is only one duty is a design commitment, not an accident: every
+other recurring obligation has been bound to the occasion that creates it or
+argued away (`design/040-design.kb/every-duty-has-an-occasion.md`). The
+watch is what binds the two that had no occasion -- fixture promotion, which
+it runs and commits itself, and the patch-failure queue, which it reports as
+a count per rule -- so a duty added here is a claim that neither was
+possible.
 
-Reading the report is no longer part of the job. Since "promote every copy"
-there is no winner to pick and no name to award, so the report names work a
-function can do. Two cases still reach you, and only two. A shape carrying no
-marker this repo knows is declined outright -- no derivable name, and the one
-drift worth reading. And a promotion that breaks a check is refused by the
-commit hook, which is why promoting commits rather than stopping short:
-filing a fixture is what can go wrong (an unruled `blocks.d/` block leaves
-session-optional text inside a core and inflates that shape's `_strip-rate`
-floor until ordinary traffic trips it), and committing is what detects it.
-
-Ask by hand with `claude-mitmproxy-survey-captures --current`. Without
-`--current` you also get the backlog the watch deliberately drops, and with no
-argument at all the full inventory -- what is on disk, rather than what is
-missing.
+Ask by hand with `claude-mitmproxy-survey-captures --current` (what the
+watch checks); without `--current` for the backlog the watch deliberately
+drops; with no argument for the full inventory, what is on disk rather than
+what is missing; and `claude-mitmproxy-gc-patch-failures --queue` for the
+queue.
