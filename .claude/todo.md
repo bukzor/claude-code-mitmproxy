@@ -7,16 +7,12 @@ managed-by: Skill(llm-subtask)
 Use subtasks, not sections for organization. Ordered by intended completion.
 Narrative in `../session.kb/`.
 
-- [ ] Decide whether `driftwatch.sh` should run `--promote` itself. The
-      framing this entry first had was wrong: it asked whether a background
-      process should *write* fixtures unbidden, when writing is the step that
-      can go wrong and committing is the step that catches it -- a commit
-      touching `system-prompts.kb/` runs the whole offline suite, so
-      `--promote` commits now and a red hook leaves the files in the tree with
-      the check naming what it found. What is actually left to decide is
-      whether the watch invokes it: that is one command's worth of toil per
-      drift event, against a background process making commits on `main` with
-      nobody reading first.
+- [x] Decide whether `driftwatch.sh` should run `--promote` itself. Ruled
+      2026-09-01 ("Yes that's my proposal"), landed 58e801c: the watch runs
+      the pass on every wake, the pass commits, and each fixture is announced
+      with a diff against its nearest committed sibling -- the glance a reader
+      still owes it. The playbook every line keys into: cf671f1. Narrative:
+      `../session.kb/2026-09-01-relitigating-what-the-watch-owes-a-reader.md`.
 
 - [ ] Revamp the logging story across the addons. Every addon logs through
       `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
@@ -147,24 +143,24 @@ Narrative in `../session.kb/`.
     - [ ] The two testing rules added to `design/040-design.kb/` are marked
           agent-authored and vetoable in place; they are normative text a
           session wrote, not a ruling.
-  - [ ] Wire the six taxonomy names that still have no emitter. `capture.*` and
-        `lifecycle.reload` are live; `lifecycle.startup` (the three `load`-hook
-        inventories in `syspatch`/`toolpatch`), `incident.{patch-miss,
-        strip-floor,uncaught}` (beside the `logging.warning` in `incidents`,
-        which stays -- the warning is the alarm, the event is the record) and
-        `housekeeping.{gc,compress}` are still announcing to stderr only.
-        Publishing a name and leaving it dead is the same defect this task
-        exists to fix, one rung out.
-  - [ ] Known edge, found by verifying against the live proxy: it holds the
+  - [ ] Wire the three taxonomy names that still have no emitter:
+        `lifecycle.startup` (the three `load`-hook inventories in
+        `syspatch`/`toolpatch`) and `housekeeping.{gc,compress}` still announce
+        to stderr only. `incident.*` landed 0334fd4 (the `logging.warning`
+        stays -- the warning is the alarm, the event is the record) and
+        `promotion.*` arrived wired (58e801c). Publishing a name and leaving it
+        dead is the same defect this task exists to fix, one rung out; until
+        wired, each dead name's `playbook.kb/` entry says so.
+  - [x] Known edge, found by verifying against the live proxy: it holds the
         shard's flock for its lifetime, so a *second* process that emits an
-        event is refused -- correct by design (one writer, loud on contention).
-        Since the 2026-09-01 ruling that is no longer fatal to the emitter: the
-        line is dropped and an `_uncaught-events-log` incident records why. But
-        an offline tool whose events all vanish while the proxy runs is a bad
-        deal either way. Today nothing outside `addons/` emits; decide whether
-        offline tools should emit at all before that changes, and note the
-        obvious alternative is a per-process shard suffix rather than one
-        writer per file.
+        event is refused -- correct by design (one writer, loud on contention);
+        since the 2026-09-01 ruling the line is dropped and an
+        `_uncaught-events-log` incident records why. Settled 2026-09-07
+        (agent, vetoable) by construction rather than by a suffix: an offline
+        tool emits only into a domain no proxy process writes -- `promotion.*`,
+        written by `survey_captures --promote` alone (58e801c) -- so no shard
+        ever has two writers. A tool that wanted to emit into a proxy domain
+        reopens this; the per-process shard suffix is the alternative.
   - [ ] Growth tripwire, since the size estimate predates the system:
         ~13 KB/month predicted for `events.capture.*`, so alarm at 2 MB across
         `log/events/` (>100x). Occasion: proxy start, beside
