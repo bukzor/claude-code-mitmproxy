@@ -42,6 +42,12 @@ AUX_TASK_PREFIXES = (
     "You transform a mechanically-gathered recon block",
     # phone-notification classifier (PushNotification tool)
     "A user kicked off a Claude Code agent to do a coding task and walked away",
+    # sdk-cli entrypoint's delegated-worker task, riding alongside the
+    # Agent SDK identity line (observed v2.1.260)
+    "You are a delegated worker.",
+    # session-title generation grew a preamble block ahead of the naming
+    # task itself (observed v2.1.257)
+    "# Reporting outcomes",
 )
 # A trailing per-session context block (user identity) may follow the task
 # prompt -- seen on the auto-mode security-monitor request. It leads with
