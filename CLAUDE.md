@@ -88,9 +88,9 @@ it (`.pre-commit-config.yaml`).
 
 ## Standing maintenance
 
-> [!DRAFT] agent-authored 2026-09-07, vetoable -- from the 2026-09-01 ruling
-> "Simply: address the Monitor output? If so, then adjusting responsibilities
-> amounts to adjusting monitor output". Landed by 58e801c and cf671f1.
+> [!@bukzor] ruled 2026-09-01, recorded 2026-09-07, sensatim -- "Simply:
+> address the Monitor output? If so, then adjusting responsibilities amounts
+> to adjusting monitor output". Landed by 58e801c and cf671f1.
 
 One duty: address the Monitor output. Arm `./driftwatch.sh` through
 `Monitor` (persistent) when a maintenance session opens; it prints on its
