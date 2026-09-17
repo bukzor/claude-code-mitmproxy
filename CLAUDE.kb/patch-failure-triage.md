@@ -58,11 +58,11 @@ in whole -- `mv` within a filesystem is atomic, `mkdir`-then-write is not.
 
 Environment half: `_uncaught-syspatch` `AssertionError: rules dir missing
 (wrong $HOME?)` -- not a malformed patch subdirectory but the whole
-`~/.claude/system-prompt-patches.d/` tree transiently absent, because
-`~/.claude` is itself a git repo an operator edits live. A `git rebase`
+`~/.claude/system-prompt-patches.d/` tree transiently absent, because it
+sits inside `~`, itself a git repo an operator edits live. A `git rebase`
 there briefly checks out a commit that doesn't have the directory (e.g.
 `checkout origin/main` before the pick), and a request lands in that
-window. Confirm with `git -C ~/.claude reflog --date=iso`: a
+window. Confirm with `git -C ~ reflog --date=iso`: a
 `rebase (start)`/`rebase (abort)` (or any checkout) pair straddling the
 incident's `at` timestamp dates the burst, same as the code half's
 `git log -S{symbol}` check.
