@@ -2,7 +2,7 @@
 
 Hooks only; `tool_patches` loads the patch directories and does the swap.
 Patch format and triage workflow:
-~/.claude/tool-description-patches.d/README.md.
+~/.config/claude-mitmproxy/tool-description.d/README.md.
 """
 
 from __future__ import annotations

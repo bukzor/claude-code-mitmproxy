@@ -4,7 +4,7 @@ The patch half of `addons/toolpatch.py`, minus every mitmproxy concept: the
 `tools` list in, mutated in place, incidents filed on the way. That is what
 lets `check_tool_patches.py` exercise the same code the proxy runs.
 
-Patch format and triage workflow: ~/.claude/tool-description-patches.d/README.md.
+Patch format and triage workflow: ~/.config/claude-mitmproxy/tool-description.d/README.md.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from typing import Mapping, NamedTuple
 
 from claude_mitmproxy import incidents
 
-PATCHES_DIR = Path("~/.claude/tool-description-patches.d").expanduser()
+PATCHES_DIR = Path("~/.config/claude-mitmproxy/tool-description.d").expanduser()
 
 
 class ToolPatch(NamedTuple):

@@ -8,7 +8,7 @@ Applying a rule set therefore *returns* what failed to apply instead of
 reporting it -- keeping this module ignorant of `incidents.py` is what lets
 `incidents.py` import it without a cycle.
 
-Format spec: `~/.claude/system-prompt-patches.d/README.md` for the patch
+Format spec: `~/.config/claude-mitmproxy/system-prompt.d/README.md` for the patch
 dialect, `masks.d/README.md` for the mask dialect (a bare template, rewriting
 every occurrence to itself).
 """

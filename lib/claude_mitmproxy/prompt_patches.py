@@ -131,4 +131,4 @@ def check_strip_floor(
 # Re-read per request by the addon, so editing a patch takes effect without a
 # restart (`CLAUDE.kb/patches-reread-per-request.md`). Under `~`, not in-repo:
 # patches encode one operator's preferences (`design/010-mission.kb/`).
-PATCHES_DIR = Path("~/.claude/system-prompt-patches.d").expanduser()
+PATCHES_DIR = Path("~/.config/claude-mitmproxy/system-prompt.d").expanduser()
