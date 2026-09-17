@@ -16,7 +16,8 @@ are normative.
 
 Does not belong: operational gotchas and triage procedure (`CLAUDE.kb/`),
 captured payloads (`system-prompts.kb/`), deferred ideas
-(`.claude/ideas.kb/`), patch format specs (the `*-patches.d/` READMEs).
+(`.claude/ideas.kb/`), patch format specs (the
+`~/.config/claude-mitmproxy/*.d/` READMEs).
 
 When to add: a session surfaces a goal or invariant future agents must
 not accidentally violate. When to update: after architectural change,

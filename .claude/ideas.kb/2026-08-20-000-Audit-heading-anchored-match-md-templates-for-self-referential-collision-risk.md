@@ -48,7 +48,7 @@ where it's actually fired" — so this stayed an idea rather than a todo.
 ## Next Steps (if pursuing)
 
 - [ ] Grep all `match.md`/`match.d/*.md` under
-      `~/.claude/system-prompt-patches.d/` for a bare `# ` opener with no
+      `~/.config/claude-mitmproxy/system-prompt.d/` for a bare `# ` opener with no
       leading `\n`; for each, prepend the anchor if a promoted fixture
       confirms the real heading is always preceded by a blank line.
 - [ ] Consider a `check_laws.py` (or new checker) assertion instead, so the

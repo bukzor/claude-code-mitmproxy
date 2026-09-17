@@ -200,7 +200,7 @@ Narrative in `../session.kb/`.
       `name`/`description`, the package `claude_mitmproxy` (dir + every import +
       `claude-mitmproxy-*` script), the README h1, and CLAUDE.md's lead; plus two
       external references -- the `~/.claude/settings.json` SessionStart hook path
-      and the `~/.claude/{system-prompt,tool-description}-patches.d/README.md`
+      and the `~/.config/claude-mitmproxy/{system-prompt,tool-description}.d/README.md`
       that cite `~/claude/mitmproxy/`. `grep -rwin mitmproxy` scopes it.
 - [ ] Finish weaving binpatch into `design/`'s why-chain. The sharpest
       contradiction is already reconciled --

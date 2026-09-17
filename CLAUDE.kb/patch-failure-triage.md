@@ -50,16 +50,16 @@ Data half: `_uncaught-syspatch` `AssertionError`s whose messages name a
 patch directory in a half-created state ("missing match.md", "no *.md
 files in match.d/", missing replace.md). The proxy loads patches
 per-request from the live directory, so editing
-`~/.claude/system-prompt-patches.d/` while traffic flows makes every
+`~/.config/claude-mitmproxy/system-prompt.d/` while traffic flows makes every
 intermediate file state load-bearing for a moment; affected requests pass
 through unpatched (mitmproxy contains addon exceptions). To avoid causing
-them: build a new patch dir outside `system-prompt-patches.d/` and `mv` it
+them: build a new patch dir outside `system-prompt.d/` and `mv` it
 in whole -- `mv` within a filesystem is atomic, `mkdir`-then-write is not.
 
 Environment half: `_uncaught-syspatch` `AssertionError: rules dir missing
 (wrong $HOME?)` -- not a malformed patch subdirectory but the whole
-`~/.claude/system-prompt-patches.d/` tree transiently absent, because it
-sits inside `~`, itself a git repo an operator edits live. A `git rebase`
+`~/.config/claude-mitmproxy/system-prompt.d/` tree transiently absent, because
+it sits inside `~`, itself a git repo an operator edits live. A `git rebase`
 there briefly checks out a commit that doesn't have the directory (e.g.
 `checkout origin/main` before the pick), and a request lands in that
 window. Confirm with `git -C ~ reflog --date=iso`: a
@@ -84,7 +84,7 @@ traffic went unrecorded.
 A second patch domain shares this capture machinery: `tool_patches.py` swaps
 built-in tool descriptions for slim stubs, comparing the live text against
 the accepted wordings in
-`~/.claude/tool-description-patches.d/{Tool}/upstream.d/`. A mismatch still
+`~/.config/claude-mitmproxy/tool-description.d/{Tool}/upstream.d/`. A mismatch still
 gets the stub -- it's self-contained -- but captures kind
 `changed-upstream` under rule `tooldesc-{Tool}`. Triage: diff
 `_bodies/{digest}.md` against the accepted wordings, fold anything worth

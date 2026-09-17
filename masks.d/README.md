@@ -2,7 +2,7 @@
 
 One file per mask, `<what-it-masks>.md`, holding a single template in the
 same language as the system-prompt patches (`$PLACEHOLDER` holes in literal
-prose -- spec: `~/.claude/system-prompt-patches.d/README.md`). Every
+prose -- spec: `~/.config/claude-mitmproxy/system-prompt.d/README.md`). Every
 occurrence a mask matches is rewritten to the template *verbatim*, so each
 placeholder's captured text becomes the placeholder's own name:
 

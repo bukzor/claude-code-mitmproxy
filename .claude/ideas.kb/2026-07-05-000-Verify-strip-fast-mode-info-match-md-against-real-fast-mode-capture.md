@@ -23,7 +23,7 @@ reading "uses the same Claude Opus 4.6 model", but the *unconditional*
 Fast Mode line elsewhere in the current prompt already says
 "Opus 4.8/4.7" -- the same stale-version smell `strip-over-engineering`
 had before it was found to be silently dark. See
-`~/.claude/system-prompt-patches.d/strip-fast-mode-info/README.md`.
+`~/.config/claude-mitmproxy/system-prompt.d/strip-fast-mode-info/README.md`.
 
 ## Open Questions / Unknowns
 

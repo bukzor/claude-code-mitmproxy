@@ -17,7 +17,7 @@ Claude Code network traffic (Claude Code is a product of Anthropic, PBC):
 These files are reproduced unmodified, or as minimally-modified derivative
 works, for the purposes of interoperability and research -- specifically as
 fixture input to `check_patches.py` for offline validation of the patches
-defined under `~/.claude/system-prompt-patches.d/`.
+defined under `~/.config/claude-mitmproxy/system-prompt.d/`.
 
 Copyright in those captured prompts, where applicable, is held by their
 original authors (Anthropic, PBC). They are NOT covered by the Apache

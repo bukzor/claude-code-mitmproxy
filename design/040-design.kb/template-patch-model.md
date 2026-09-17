@@ -43,7 +43,7 @@ them, so the caller owns the loudness decision — which is what lets one
 format serve a mechanism whose misses are loud and ones whose misses are
 silent by construction.
 
-Normative format specs: `~/.claude/system-prompt-patches.d/README.md`
-and `~/.claude/tool-description-patches.d/README.md`; the in-repo rule
+Normative format specs: `~/.config/claude-mitmproxy/system-prompt.d/README.md`
+and `~/.config/claude-mitmproxy/tool-description.d/README.md`; the in-repo rule
 sets (`masks.d/`, `blocks.d/`) use the same format and document their
 own deviations in their `README.md`.
