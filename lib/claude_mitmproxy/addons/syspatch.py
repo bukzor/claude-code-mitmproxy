@@ -1,8 +1,13 @@
-"""mitmproxy addon: rewrite the Claude Code system prompt in flight.
+"""mitmproxy addon: rewrite Claude-Code-authored instruction text in flight.
+
+Two loci, one addon: the system prompt body, and the `role: "system"` entries
+in `messages[]` that carry mid-conversation instructions. Same job, same
+incident rule, same capture dir, and one `json.loads` of the body for both.
 
 Hooks only. Finding the prompt body is `prompt_location`, rewriting it is
-`prompt_patches`, and both are importable without mitmproxy -- which is how
-the offline checks run the same code this addon does.
+`prompt_patches`, walking the system messages is `message_patches`, and all
+three are importable without mitmproxy -- which is how the offline checks and
+the tests run the same code this addon does.
 """
 
 from __future__ import annotations
@@ -12,6 +17,7 @@ import logging
 
 from claude_mitmproxy import gc_patch_failures
 from claude_mitmproxy import incidents
+from claude_mitmproxy import message_patches
 from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
@@ -44,6 +50,10 @@ def load(loader):
         else:
             label = "match-only"
         logging.info("  %s (%s)", patch.name, label)
+    message_rules = rule_templates.load_rules(message_patches.PATCHES_DIR)
+    logging.info("loaded %d system message patches", len(message_rules))
+    for patch in message_rules:
+        logging.info("  %s", patch.name)
     logging.info("loaded %d capture-digest masks", len(incidents.masks()))
     gc_patch_failures.sweep_at_startup()
 
@@ -85,6 +95,27 @@ def _request(flow):
         prompt_location.cc_version_of(system), request.get("model", "unknown")
     )
 
+    _patch_prompt(request, system, patches, origin)
+
+    messages = request.get("messages")
+    if isinstance(messages, list):
+        message_patches.patch_system_messages(
+            messages,
+            rule_templates.load_rules(message_patches.PATCHES_DIR),
+            incidents.CAPTURE_DIR,
+            origin,
+        )
+
+    flow.request.set_content(json.dumps(request).encode())
+
+
+def _patch_prompt(request, system, patches, origin):
+    """Rewrite the prompt body in `request`, in place.
+
+    A request that carries no locatable body -- a subagent call, an auxiliary
+    CLI shape -- returns having changed nothing, which is not the end of the
+    request: the `role: "system"` messages are a separate locus and are
+    patched either way."""
     if isinstance(system, str):
         patched = prompt_patches.apply_patches(system, patches, incidents.CAPTURE_DIR, origin)
         request["system"] = patched
@@ -122,5 +153,3 @@ def _request(flow):
         )
     else:
         raise AssertionError(("unexpected system type", type(system)))
-
-    flow.request.set_content(json.dumps(request).encode())

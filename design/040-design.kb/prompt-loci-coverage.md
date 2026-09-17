@@ -5,7 +5,7 @@ why:
 
 # Prompt loci coverage
 
-The behavior-shaping text spreads over five request surfaces (inventory
+The behavior-shaping text spreads over six request surfaces (inventory
 and discovery method: `../../CLAUDE.kb/system-prompt-loci.md`).
 Coverage is deliberate, not aspirational:
 
@@ -15,6 +15,16 @@ Coverage is deliberate, not aspirational:
 - `<system-reminder>` envelopes in user messages — unpatched by policy:
   their bulk is the user's own CLAUDE.md/agents/skills content, already
   under user control.
+- `messages[]` entries with `role: "system"` — patched
+  (`message_patches.py`, walked by `addons/syspatch.py`). The policy
+  that spares the envelopes above is what argues for patching this one:
+  none of this text is the user's. It is Claude Code's own instruction,
+  injected mid-conversation -- plan-mode transitions, and the auto-mode
+  bash-first steer that tells the model to prefer `cat`/`sed`/heredocs
+  over Read/Edit/Write. One hazard is peculiar to the surface: it is
+  interleaved with the conversation's own tool results, so a rule can
+  match a quoted copy of itself, and anchoring around that is the rule
+  author's job (`~/.config/claude-mitmproxy/system-message.d/README.md`).
 - Per-turn envelopes (`<command-*>`, hook output) — unpatched;
   transient.
 - Subagent request system prompts (`system` blocks where

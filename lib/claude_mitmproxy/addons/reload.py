@@ -25,6 +25,7 @@ from claude_mitmproxy import flocked_logs
 from claude_mitmproxy import gc_patch_failures
 from claude_mitmproxy import incidents
 from claude_mitmproxy import logging_handlers
+from claude_mitmproxy import message_patches
 from claude_mitmproxy import prompt_capture
 from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
@@ -49,6 +50,7 @@ RELOADED = (
     gc_patch_failures,
     prompt_location,
     prompt_patches,
+    message_patches,
     prompt_capture,
     tool_patches,
 )
