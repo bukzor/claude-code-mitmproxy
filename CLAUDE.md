@@ -86,6 +86,11 @@ answering a different question than the one asked. Running it, and the rest of
 the offline checks, is not a duty: the commit that edits either directory does
 it (`.pre-commit-config.yaml`).
 
+## Shorthand
+
+- `routine maintenance` (or `regular maintenance`) -- open a maintenance
+  session: see "Standing maintenance" below.
+
 ## Standing maintenance
 
 > [!@bukzor] ruled 2026-09-01, recorded 2026-09-07, sensatim -- "Simply:
