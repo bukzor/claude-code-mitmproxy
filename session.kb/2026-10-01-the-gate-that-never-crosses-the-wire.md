@@ -74,12 +74,19 @@ So the text patch stays the guarantee, and no flag work obviates it.
 Three of the agent's own positions were withdrawn under examination.
 
 The residual exposure was framed as a reworded steer *heading*, on the
-grounds that a `match` miss is silent while a `search` miss is loud. That is
-true but secondary. The heading is a section inside a composite bulletin with
-siblings, so the live risk is sibling accretion: a `match` of heading, blank
-line and one line lands on whichever section comes first, and an upstream
-reordering would send the steer through while reporting a miss on a benign
-notice.
+grounds that a `match` miss is silent while a `search` miss is loud. That
+framing holds; the replacement offered for it does not. Sibling accretion was
+named as the live risk -- a `match` of heading, blank line and one line landing
+on whichever section comes first -- reasoning that an upstream reordering would
+send the steer through while reporting a miss on a benign notice. Those two
+outcomes are mutually exclusive, so neither follows. `search` is resolved over
+the whole body independent of where `match` landed, so a sibling-then-steer
+ordering still finds and deletes the steer and reports no miss; and a heading
+present with no steer is a loud alarm with nothing riding through, because
+there is nothing left to patch. Reordering is already handled. The only cost
+is the false alarm in the second case, and the pristine window before the rule
+landed -- 2026-09-01 to 09-16, 80 distinct heading-bearing bodies -- records it
+at zero instances: every one led with the steer.
 
 A whole-body patch's fail-open behavior was derived from its `match` spanning
 the whole body. That is a coincidence, not a cause: the span can be
