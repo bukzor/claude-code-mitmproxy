@@ -38,6 +38,15 @@ Narrative in `../session.kb/`.
       compiler: 65 of 240 bodies violated it. Fixed, unguarded. Blocked on the
       trailing-newline convention, which changes the fixpoint.
 
+- [ ] <https:todo.kb/2026-10-01-003-Unify-pristine-capture-across-loci.md>
+      -- the `role: "system"` locus has patching and no pristine record, so
+      whether the bash-first steer still ships is answerable only from a
+      deletion scar. Stage 1 closes that alone and depends on nothing else:
+      capture in `syscapture.py`, recognition by session-breadth of a masked
+      digest, novelty to the queue under `_novel-system-message`. Stages 2-5
+      fold the tool locus's exact-compare into the template dialect and put
+      every locus in one table. Six questions unruled; four change the build.
+
 - [ ] Revamp the logging story across the addons. Every addon logs through
       `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
       and nothing captures it -- `log/` holds only `compress_traffic.log`, from
