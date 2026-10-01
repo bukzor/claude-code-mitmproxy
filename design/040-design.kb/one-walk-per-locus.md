@@ -11,6 +11,10 @@ why:
 > surfaces are covered; this entry states how coverage is declared, and the
 > declaration does not exist yet.
 
+> [!DRAFT] agent-authored 2026-10-01, vetoable, except where marked
+> otherwise. The empirical claims are measured; the design is inferred and has
+> not been ruled on.
+
 Every behavior-shaping surface is one row of a locus table, and the only
 per-locus code is the walk -- where in a request that locus's text lives, and
 which requests legitimately carry none of it. Capture, dedup, masking,
@@ -67,6 +71,13 @@ asserts that the content is what was last reviewed. Separating them collapses
 `tool_patches.py`'s exact-compare into the template engine, because the
 behavior each needs then follows from the data instead of from which engine
 ran:
+
+> [!@bukzor] ruled 2026-10-01. The factoring below is the operator's, quoted:
+> "The write region is search. / Search, if absent, defaults to match." The
+> agent had written it as one three-armed conditional; stating it as a
+> definition plus a chain of defaults is what makes the whole-body case a
+> default rather than a value a rule declares, and the completion of the chain
+> to `expect` and to the whole body follows the same form.
 
 - `match` answers whether the rule is in scope here. A miss is silent, which
   is how a rule detects its own irrelevance.
