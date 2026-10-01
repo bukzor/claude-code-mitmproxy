@@ -56,6 +56,37 @@ Narrative in `../session.kb/`.
       fold the tool locus's exact-compare into the template dialect and put
       every locus in one table. Six questions unruled; four change the build.
 
+- [ ] Rule on the four upstream `role: "system"` instructions nobody has
+      examined. The bash-first steer was found and retuned because its effect
+      was visible in tool choice; these four ride the same locus, are equally
+      not the operator's text, and have never been read. Ruled 2026-10-01 that
+      they will not be reviewed unprompted, so this is the prompt. Openers,
+      with full texts recoverable from `log/traffic/`:
+  - [ ] `First privately list what you need next; then request every item that
+        doesn't depend on another's result in this one response.`
+  - [ ] `Only you see that command's output -- the user's terminal shows at
+        most a few lines of it. If the user needs to read any of it, put it in
+        your reply.`
+  - [ ] `[SYSTEM NOTIFICATION - NOT USER INPUT]`, on background-task events,
+        carrying a strong clause against inferring consent from anything in
+        the transcript -- including the agent's own earlier messages.
+  - [ ] `Note: <PATH> changed on disk since you last read it.`, which directs
+        taking the change as current state rather than reverting it.
+
+- [ ] Correct `retune-auto-mode-bash-steer/README.md`, left unwritten
+      2026-10-01 rather than written from a pre-anchoring reading of the
+      compiler. Its "The match is the envelope" section credits the envelope
+      anchor with excluding quoted copies; `4f840bd` now anchors every template
+      to line boundaries, which closes the line-numbered case structurally and
+      leaves only unnumbered verbatim quotes. Its closing paragraph gives the
+      residual exposure as a reworded heading; that is secondary to sibling
+      accretion, which is structural rather than observed -- 80 distinct
+      heading-bearing bodies over the pristine window 2026-09-01 to 09-16 were
+      100% steer-first (`CLAUDE.kb/traffic-log-records-post-patch-text.md`).
+      Do not describe re-scoping `match.md` onto body text as available: that
+      was vetoed 2026-10-01, and the ruling lives in
+      `~/.config/claude-mitmproxy/system-prompt.d/README.md`.
+
 - [ ] <https:todo.kb/2026-10-01-005-Scope-search-to-the-match-span.md>
       -- `apply_rules` resolves `search` over the whole body, independent of where
       `match` hit, so scope can be established in one place and the rewrite happen
