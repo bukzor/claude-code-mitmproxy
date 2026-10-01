@@ -59,6 +59,21 @@ fi
 
 cd "$SCRIPT_DIR"
 
+# A re-arm that lands while a prior instance is still watching (a content
+# notification mistaken for an expiry, a second session opening its own
+# maintenance watch) must not become a second live watcher: two instances
+# both react to every change, so N instances turn one real event into N
+# subprocess spawns, and each occupies a live PID that Monitor's own re-arm
+# never reclaims. flock ties the lock to this process's lifetime rather than
+# a PID file's, which a killed-and-recycled PID can never invalidate on its
+# own. Incident: ~/.claude/sessions.kb/penguin.kb/driftwatch-process-storm.md.
+mkdir -p log
+exec 9>log/driftwatch.lock
+if ! flock -n 9; then
+  echo "driftwatch: another instance already holds log/driftwatch.lock, exiting"
+  exit 0
+fi
+
 # An events directory is created by the first event of its kind, which may be
 # days out; inotifywait on a missing path fails, and this loop answers a failed
 # watch by degrading to polling at the ceiling. Make the precondition true
