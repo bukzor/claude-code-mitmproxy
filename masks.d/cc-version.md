@@ -1,1 +1,1 @@
-cc_version=$CCVERSION; cc_entrypoint=
+$PREcc_version=$CCVERSION; cc_entrypoint=$CCENTRYPOINT

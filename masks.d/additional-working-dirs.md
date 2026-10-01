@@ -1,3 +1,3 @@
  - Additional working directories:
 $ADDDIRLINES
- - Platform:
+ - Platform:$PLATFORM

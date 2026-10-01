@@ -1,1 +1,1 @@
-You have a persistent, file-based memory system at `$AUTOMEMORYDIR`. This directory already exists
+You have a persistent, file-based memory system at `$AUTOMEMORYDIR`. This directory already exists — write to it directly with the Write tool (do not run mkdir or check for its existence).

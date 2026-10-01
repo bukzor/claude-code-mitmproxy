@@ -41,6 +41,16 @@ sit inside a placeholder. `(1M context)` and the `[1m]` model-ID suffix
 are removed by `model-id.md` only because its placeholders span the whole
 model name and ID.
 
+Templates match whole lines (spec: the patch README), and a mask's edge falls
+mid-line only by declaring it with a hole. The choice of hole matters here
+because the hole is masked: for an environment value -- `$PLATFORM`,
+`$CCENTRYPOINT` -- that is the point, since it makes fixtures host-portable.
+Where the tail of the line is upstream prose, write it out verbatim instead
+(`memory-dir.md`, `auto-memory-dir.md`): a hole would hide a reword from the
+digest, while a verbatim tail makes one break the mask, which shows as digest
+churn. Where upstream has served more than one tail, one file per tail
+(`background-job-tmp-dir*.md`) -- and keep no tail a prefix of another.
+
 A `$...LINES` hole matches zero lines as readily as many, and that is the
 behavior a mask wants: a region that is empty this session -- a clean
 status, a repo with no commits -- masks to the placeholder's name in the

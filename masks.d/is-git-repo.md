@@ -1,1 +1,1 @@
- - Is a git repository: $ISGITREPO
+$INDENT- Is a git repository: $ISGITREPO

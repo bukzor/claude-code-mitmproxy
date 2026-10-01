@@ -99,3 +99,28 @@ def test_non_system_roles_untouched(reported):
     assert not changed
     assert messages[0]["content"] == ENVELOPE + STRICT
     assert reported == []
+
+
+def test_live_steer_deleted_beside_numbered_quote(reported):
+    """`search` is matched over the whole body, not inside `match`'s span, so
+    an unanchored template takes the leftmost hit -- the quotation -- and
+    leaves the live steer riding through with nothing reported."""
+    content = QUOTED + "\n" + ENVELOPE + STRICT
+    messages = [{"role": "system", "content": content}]
+    changed = message_patches.patch_system_messages(messages, RULES, capture_dir=None)
+    assert changed
+    assert messages[0]["content"] == QUOTED + "\n" + PATCHED
+    assert reported == []
+
+
+def test_indented_copy_of_envelope_untouched(reported):
+    """An indented code block keeps its blank lines empty, so nothing about the
+    quoting breaks the template except that the heading is not at a line start."""
+    indented = "\n".join(
+        f"    {line}" if line else line for line in (ENVELOPE + STRICT).split("\n")
+    )
+    messages = [{"role": "system", "content": indented}]
+    changed = message_patches.patch_system_messages(messages, RULES, capture_dir=None)
+    assert not changed
+    assert messages[0]["content"] == indented
+    assert reported == []

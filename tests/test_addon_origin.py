@@ -73,7 +73,7 @@ def test_syspatch_records_the_requests_origin(capture_dir, tmp_path, monkeypatch
         "model": "claude-sonnet-5",
         "system": [
             {"type": "text", "text": BILLING_HEADER},
-            {"type": "text", "text": prompt_location.BODY_MARKER + " that MATCHES"},
+            {"type": "text", "text": prompt_location.BODY_MARKER + " that\nMATCHES"},
         ],
     })
     syspatch.request(flow)

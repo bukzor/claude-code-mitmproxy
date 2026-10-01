@@ -177,7 +177,15 @@ def template_to_regex(template: str) -> re.Pattern[str]:
     # has a literal but still names every line.
     literals = "".join(parts[::2])
     assert literals.strip(), (template, "all placeholder: no anchor text")
-    return re.compile("".join(regex_parts), re.DOTALL)
+    # Every template matches whole lines: the authored file reads as a block of
+    # lines, so the pattern must not float free as a substring (it would match
+    # a quoted or indented copy, or a rule's own replacement output). A
+    # template whose edge falls mid-line says so with a placeholder. The
+    # anchors are zero-width -- a consuming `(^|\n)` would eat a newline that
+    # `apply_masks` re-emits from the template, breaking mask idempotence.
+    left = "" if template.startswith("\n") else r"(?:\A|(?<=\n))"
+    right = "" if template.endswith("\n") else r"(?=\n|\Z)"
+    return re.compile(left + "".join(regex_parts) + right, re.DOTALL)
 
 
 def expand_replace(template: str, target: re.Match[str]) -> str:

@@ -82,7 +82,7 @@ def test_apply_patches_records_origin(tmp_path):
 
     captures = tmp_path / "captures"
     origin = incidents.Origin("2.1.248.abc", "claude-opus-5")
-    prompt_patches.apply_patches("body MATCHES here", rules, captures, origin)
+    prompt_patches.apply_patches("body\nMATCHES\nhere", rules, captures, origin)
     record = read_only_record(captures, "a-patch")
     assert record["kind"] == "failed-to-match", record
     assert record["cc_version"] == "2.1.248.abc", record
