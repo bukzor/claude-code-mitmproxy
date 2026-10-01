@@ -28,6 +28,28 @@ empty match still cannot cross a blank line. What it does require is that
 every template carry literal non-whitespace somewhere, or it would match
 the empty string at every position; `template_to_regex` asserts that.
 
+A template matches whole lines: its first line starts at a line start and
+its last runs to a line end, and a template whose edge falls mid-line says
+so with a hole. Authored text reads as a block of lines, so the compiled
+pattern must not float free as a substring -- it would match a quoted or
+indented copy of its own target, and text its own replacement just wrote,
+silently. Both edges are zero-width, because a mask rewrites a hit to its
+template verbatim and a consuming anchor would eat a newline from the output.
+The operator ruled the rule directories ours to bring into line rather than a
+fixed constraint on the compiler (2026-10-01).
+
+A file's trailing newline carries no meaning. Every rule, fixture and capture
+is read with one trailing newline stripped and written with one appended
+(`textfile.py`, the only way the library touches a text file --
+`tests/test_textfile_enforced.py` holds it to that), so no template ends in
+the break of its last line and that break belongs to the body. The
+convention governs files, not wire text: a body keeps whatever newline
+upstream sent, which the line-end anchor absorbs. A rule whose rewritten text
+is empty deletes lines, and a deleted line takes one break with it -- the
+following one, else at end-of-body the preceding one, so a block at the very
+end of a body strips to the same core as the body without it. Ruled
+2026-10-01; format specifics are in the dialect README.
+
 The `match`/`search` split is what makes earned silence expressible:
 `match` (is this patch applicable to this body at all?) anchors on
 stable structure like section headings; `search` (the precise text to
