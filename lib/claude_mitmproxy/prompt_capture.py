@@ -32,6 +32,7 @@ from pathlib import Path
 from claude_mitmproxy import incidents
 from claude_mitmproxy import repo_paths
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 
 PROMPTS_DIR = repo_paths.LOG / "prompt-captures"
 
@@ -60,11 +61,11 @@ def load_masked_digests(
         return cached[1]
     digests: set[str] = set()
     for raw in sorted(directory.glob("*.raw.md")):
-        masked = rule_templates.apply_masks(raw.read_text(), masks)
+        masked = rule_templates.apply_masks(textfile.read(raw), masks)
         digests.add(incidents.digest_of(masked))
         sibling = directory / f"{raw.name.removesuffix('.raw.md')}.md"
-        if not sibling.exists() or sibling.read_text() != masked:
-            sibling.write_text(masked)
+        if not sibling.exists() or textfile.read(sibling) != masked:
+            textfile.write(sibling, masked)
     _CAPTURED[directory] = (masks, digests)
     return digests
 
@@ -88,7 +89,7 @@ def save_prompt(
         return None
     base_name = f"v{cc_version}_{model}_{incidents.digest_of(body)}"
     raw_path = directory / f"{base_name}.raw.md"
-    raw_path.write_text(body)
-    (directory / f"{base_name}.md").write_text(masked)
+    textfile.write(raw_path, body)
+    textfile.write(directory / f"{base_name}.md", masked)
     captured.add(masked_digest)
     return raw_path

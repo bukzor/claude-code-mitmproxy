@@ -28,6 +28,7 @@ from claude_mitmproxy import prompt_shape
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
 from claude_mitmproxy import check_verdict
+from claude_mitmproxy import textfile
 
 
 class StripRates(NamedTuple):
@@ -40,7 +41,7 @@ def collect() -> StripRates:
     patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
     strips: dict[str, list[tuple[int, str]]] = {}
     for path in prompt_corpus.captures():
-        text = path.read_text()
+        text = textfile.read(path)
         # Misses suppressed the same way `strip_floors` suppresses them:
         # measuring is not triaging, and a capture old enough to miss a patch
         # is expected, not a regression.

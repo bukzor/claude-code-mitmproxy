@@ -21,6 +21,7 @@ from pathlib import Path
 from claude_mitmproxy import prompt_corpus
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,7 +31,7 @@ def main(argv: list[str] | None = None) -> int:
     patches_dir = Path(argv[1]) if len(argv) > 1 else prompt_patches.PATCHES_DIR
 
     assert system_file.exists(), system_file
-    text = system_file.read_text()
+    text = textfile.read(system_file)
     patches = rule_templates.load_rules(patches_dir)
     # The real pipeline, not `apply_rules`: this is what a session receives.
     # capture_dir=None keeps a hand-run from filing an incident nobody hit.

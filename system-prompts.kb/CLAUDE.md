@@ -8,6 +8,10 @@ requires:
 Snapshots of the system prompt body Claude Code sends to the Messages API,
 used as input to `check_patches.py` for offline patch validation.
 
+Every file here is the body plus exactly one trailing newline, which is not
+part of the body (`textfile`): a body that itself ends in a newline is a file
+ending in two. Read and write fixtures through `textfile`, never by hand.
+
 ## Naming
 
 `v<MAJOR>.<MINOR>.<PATCH>.md` — full captured body for that cc_version.

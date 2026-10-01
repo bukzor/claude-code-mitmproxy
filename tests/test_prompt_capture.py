@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from claude_mitmproxy import prompt_capture
 from claude_mitmproxy import prompt_location
+from claude_mitmproxy import textfile
 
 
 def body(tag: str) -> str:
@@ -23,7 +24,7 @@ def test_first_sighting_returns_the_raw_path(tmp_path):
     assert saved is not None
     assert saved.parent == tmp_path
     assert saved.name.endswith(".raw.md")
-    assert saved.read_text() == body("a")
+    assert textfile.read(saved) == body("a")
     assert masked_sibling(saved).exists()
 
 

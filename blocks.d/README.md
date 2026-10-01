@@ -2,7 +2,9 @@
 
 One file per block, `<what-it-is>.md`, holding a template in the same
 language as the masks next door (`$PLACEHOLDER` holes in literal prose).
-Every hit is **deleted**, and the block's name is reported as present.
+Every hit is **deleted**, and the block's name is reported as present. A
+deleted line takes one line break with it, so a block never leaves an empty
+line where it was.
 
 `survey_captures.py` reads these for its `core` column -- the digest of a body
 with every block this session happened to switch on removed -- so two captures

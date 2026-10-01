@@ -32,6 +32,7 @@ from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import prompt_shape
 from claude_mitmproxy import repo_paths
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 from claude_mitmproxy import tool_patches
 
 # Dependency order: reloading a module re-executes its own imports, so it has
@@ -81,7 +82,7 @@ def check_no_local_from_imports() -> None:
     offenders = [
         f"{path.name}:{line}"
         for path in sorted(PACKAGE.rglob("*.py"))
-        for line in LOCAL_FROM_IMPORT.findall(path.read_text())
+        for line in LOCAL_FROM_IMPORT.findall(textfile.read(path))
     ]
     assert not offenders, (offenders, "local from-import defeats reload.py")
 
@@ -96,7 +97,7 @@ def check_addons_unimported() -> None:
     offenders = [
         str(path.relative_to(PACKAGE.parent))
         for path in sorted(PACKAGE.rglob("*.py"))
-        if path.parent != ADDONS and ADDON_IMPORT.search(path.read_text())
+        if path.parent != ADDONS and ADDON_IMPORT.search(textfile.read(path))
     ]
     assert not offenders, (offenders, "addons are loaded, not imported")
 
@@ -114,7 +115,7 @@ def check_reloaded_covers_addon_imports() -> None:
     imported = {
         name
         for path in sorted(ADDONS.glob("*.py"))
-        for name in LIBRARY_IMPORT.findall(path.read_text())
+        for name in LIBRARY_IMPORT.findall(textfile.read(path))
     }
     assert not imported - named, (
         sorted(imported - named),

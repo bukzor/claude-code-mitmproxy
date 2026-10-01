@@ -21,6 +21,7 @@ from typing import NamedTuple
 
 from claude_mitmproxy import repo_paths
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 
 # Gitignored; callers pass capture_dir=None to disable capture entirely
 # (offline callers like check_patches only want an in-process warning).
@@ -113,7 +114,7 @@ def save_body(body: str, digest: str, capture_dir: Path) -> Path:
     bodies_dir.mkdir(parents=True, exist_ok=True)
     body_path = bodies_dir / f"{digest}.md"
     if not body_path.exists():
-        body_path.write_text(body)
+        textfile.write(body_path, body)
     return body_path
 
 
@@ -141,7 +142,7 @@ def save_incident(
         "kind": incident.kind,
         "body": digest,
     }
-    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+    textfile.write(meta_path, json.dumps(meta, indent=2))
     return meta_path
 
 

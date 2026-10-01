@@ -14,13 +14,13 @@ Narrative in `../session.kb/`.
       still owes it. The playbook every line keys into: cf671f1. Narrative:
       `../session.kb/2026-09-01-relitigating-what-the-watch-owes-a-reader.md`.
 
-- [~] <https:todo.kb/2026-10-01-000-Anchor-patch-templates-to-line-boundaries.md>
+- [x] <https:todo.kb/2026-10-01-000-Anchor-patch-templates-to-line-boundaries.md>
       -- templates compile unanchored, so a rule can match mid-line. Demonstrated:
       a quoted copy of a rule file is deleted while the live target survives,
       silently. Zero-width line anchors in `template_to_regex` plus seven config
       edits, measured against all 44 fixtures.
   - [x] Anchor the templates.
-  - [ ] Follow-on, same session: a uniform trailing-newline convention. Strip
+  - [x] Follow-on, same session: a uniform trailing-newline convention. Strip
         one on read, append one on write, so a file's trailing newline stops
         being load-bearing. Deletes `borrow_newline`, kills the right-anchor
         branch the first half added, and needs its data migration in the same

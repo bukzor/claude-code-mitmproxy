@@ -36,6 +36,7 @@ from claude_mitmproxy import prompt_corpus
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
 from claude_mitmproxy import check_verdict
+from claude_mitmproxy import textfile
 
 # The cell vocabulary, in the order a reader should worry about them.
 MISS = "-"
@@ -67,7 +68,7 @@ def fixture_texts(paths: list[Path] | None) -> dict[str, str]:
     promoted fixture."""
     if paths is None:
         return {p.stem: text for p, text in prompt_corpus.fixtures().items()}
-    texts = {p.stem: p.read_text() for p in paths}
+    texts = {p.stem: textfile.read(p) for p in paths}
     return {stem: t if t.endswith("\n") else t + "\n" for stem, t in texts.items()}
 
 

@@ -27,6 +27,7 @@ from typing import Any, NamedTuple
 
 from claude_mitmproxy import check_verdict
 from claude_mitmproxy import repo_paths
+from claude_mitmproxy import textfile
 
 PACKAGE_DIR = Path(check_verdict.__file__).parent
 PYPROJECT = repo_paths.ROOT / "pyproject.toml"
@@ -59,7 +60,7 @@ def check_commands(pyproject: Path) -> dict[str, str]:
     transform instead of the wiring. Scripts pointing anywhere else are tools,
     not checks, and `pyproject.toml` says which is which by saying so.
     """
-    scripts = tomllib.loads(pyproject.read_text())["project"]["scripts"]
+    scripts = tomllib.loads(textfile.read(pyproject))["project"]["scripts"]
     targets = {name: target.partition(":")[0].rsplit(".", 1)[-1] for name, target in scripts.items()}
     return {module: name for name, module in targets.items() if module.startswith("check_")}
 

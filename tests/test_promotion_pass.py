@@ -17,6 +17,7 @@ import pytest
 
 from claude_mitmproxy import logging_handlers
 from claude_mitmproxy import survey_captures
+from claude_mitmproxy import textfile
 from test_logging_handlers import messages
 from test_promote import drift
 
@@ -160,14 +161,14 @@ def test_coverage_is_read_from_what_is_committed(tmp_path):
     would stop drifting and the commit would never be retried."""
     kb = tmp_path / "system-prompts.kb"
     kb.mkdir()
-    (kb / "v2.1.250-opus-aaaaaaaa.md").write_text("one\n")
+    textfile.write(kb / "v2.1.250-opus-aaaaaaaa.md", "one")
     git = ["git", "-C", str(tmp_path), "-c", "user.name=t", "-c", "user.email=t@t"]
     subprocess.run([*git, "init", "-q"], check=True)
     subprocess.run([*git, "add", "--", "system-prompts.kb"], check=True)
     subprocess.run([*git, "commit", "-q", "-m", "one", "--", "system-prompts.kb"], check=True)
-    (kb / "v2.1.257-opus-cccccccc.md").write_text("two\n")  # filed, refused, left behind
+    textfile.write(kb / "v2.1.257-opus-cccccccc.md", "two")  # filed, refused, left behind
     assert survey_captures.read_fixtures(kb).keys() == {"v2.1.250-opus-aaaaaaaa", "v2.1.257-opus-cccccccc"}
-    assert survey_captures.committed_fixtures(kb) == {"v2.1.250-opus-aaaaaaaa": "one\n"}
+    assert survey_captures.committed_fixtures(kb) == {"v2.1.250-opus-aaaaaaaa": "one"}
 
 
 def test_event_key_is_the_type_below_the_events_root():

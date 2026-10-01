@@ -30,6 +30,7 @@ from claude_mitmproxy import prompt_corpus
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
 from claude_mitmproxy import check_verdict
+from claude_mitmproxy import textfile
 
 
 class Patched(NamedTuple):
@@ -43,7 +44,7 @@ def collect() -> tuple[Patched, ...]:
     patches = rule_templates.load_rules(prompt_patches.PATCHES_DIR)
     rows = []
     for source in prompt_corpus.current_fixtures():
-        text = source.read_text()
+        text = textfile.read(source)
         # `apply_rules`, not `prompt_patches.apply_patches`: measuring is not
         # triaging, and a miss provoked here must not file an incident for
         # someone to discover as if a session had hit it.

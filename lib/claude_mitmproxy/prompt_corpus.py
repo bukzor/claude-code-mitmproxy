@@ -13,6 +13,7 @@ from pathlib import Path
 from claude_mitmproxy import prompt_capture
 from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
+from claude_mitmproxy import textfile
 
 
 def fixtures() -> dict[Path, str]:
@@ -21,7 +22,7 @@ def fixtures() -> dict[Path, str]:
     `apply_masks` does before matching. Committed, so these are always here."""
     paths = sorted(p for p in prompt_patches.KB_DIR.glob("*.md") if p.name != "CLAUDE.md")
     assert paths, prompt_patches.KB_DIR
-    texts = {p: p.read_text() for p in paths}
+    texts = {p: textfile.read(p) for p in paths}
     return {p: t if t.endswith("\n") else t + "\n" for p, t in texts.items()}
 
 
@@ -45,7 +46,7 @@ def current_fixtures() -> list[Path]:
     versioned = [
         (prompt_patches.fixture_version(path), path)
         for path in sorted(prompt_patches.KB_DIR.glob("v*.md"))
-        if prompt_location.BODY_MARKER in path.read_text()
+        if prompt_location.BODY_MARKER in textfile.read(path)
     ]
     assert versioned, ("no full fixtures in", prompt_patches.KB_DIR)
     newest = max(version for version, _ in versioned)
@@ -63,4 +64,4 @@ def capture_bodies() -> dict[str, str]:
     """Every capture body, `subagents/` included -- they are masked by the same
     rules, and are where overlapping-span bugs have shown up first. Only the
     keying laws want these; anything that patches a body wants `captures()`."""
-    return {str(p): p.read_text() for p in sorted(prompt_capture.PROMPTS_DIR.rglob("*.raw.md"))}
+    return {str(p): textfile.read(p) for p in sorted(prompt_capture.PROMPTS_DIR.rglob("*.raw.md"))}

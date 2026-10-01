@@ -126,7 +126,7 @@ def bodies_with_overlapping_blocks(found: Corpus) -> dict[str, list[str]]:
     """
     found_overlaps = {}
     for name, body in sorted(found.bodies.items()):
-        masked, _ = rule_templates.borrow_newline(incidents.normalize_body(body))
+        masked = incidents.normalize_body(body)
         overlapping = overlapping_blocks(block_spans(masked, found.blocks))
         if overlapping:
             found_overlaps[name] = sorted(overlapping)

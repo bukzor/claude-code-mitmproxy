@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Mapping, NamedTuple
 
 from claude_mitmproxy import incidents
+from claude_mitmproxy import textfile
 
 PATCHES_DIR = Path("~/.config/claude-mitmproxy/tool-description.d").expanduser()
 
@@ -34,20 +35,20 @@ class ToolPatch(NamedTuple):
             directory,
             "missing upstream.md or upstream.d/",
         )
-        # rstrip: descriptions travel without a trailing newline; the files
-        # carry one (text editors, jq -j both happen -- normalize either way).
+        # Descriptions travel without a trailing newline; the files carry one
+        # (`textfile`), so this compares like with like.
         if single.is_file():
-            upstreams = (single.read_text().rstrip("\n"),)
+            upstreams = (textfile.read(single),)
         else:
             files = sorted(p for p in multi.iterdir() if p.suffix == ".md")
             assert files, (multi, "no *.md files in upstream.d/")
-            upstreams = tuple(p.read_text().rstrip("\n") for p in files)
+            upstreams = tuple(textfile.read(p) for p in files)
         description_file = directory / "description.md"
         assert description_file.is_file(), (directory, "missing description.md")
         return ToolPatch(
             name=directory.name,
             upstreams=upstreams,
-            replacement=description_file.read_text().rstrip("\n"),
+            replacement=textfile.read(description_file),
         )
 
 

@@ -74,3 +74,51 @@ sync, and the one-off `\n` that `condense-delivering-work` carries still works
 because a template that starts with `\n` is left alone. Deleted.
 `2026-09-17-a-steer-that-arrived-where-nothing-patches.md` still cites it by
 path; that narrative is what was true then.
+
+## Follow-on: a file's trailing newline stops meaning anything
+
+The operator ruled the same day that no file's trailing newline should be
+load-bearing: strip one on read, append one on write, so strings in memory carry
+no terminator and strings on disk always do. The case for it was already in the
+corpus. `masks.d/` was split nine files to seven on whether they ended in a
+newline, `tool-description.d/` fourteen to thirty-six, and each ending silently
+changed what its file meant. It also rewrites the right-anchor branch the first
+half had just added: with no template ever ending in its line break, that
+branch is dead and the lookahead is unconditional.
+
+`textfile.read`/`write` are the pair, and `tests/test_textfile_enforced.py`
+asserts nothing else in the library calls `read_text`/`write_text`, with no
+escape list -- a JSON or TOML parse is indifferent to the stripped newline, so
+nothing needed one. `borrow_newline` and its four callers are gone.
+
+The measurement harness did the work again. Before touching anything it saved
+every fixture's patched, masked, core and digest output. First pass after the
+change: 38 of 44 differed. Two causes, both a wrong guess of mine about what
+"a deletion consumes one following newline" had to mean.
+
+- At end-of-body there is no following newline, and the old code had been
+  consuming the *preceding* one (it borrowed a newline for the deleted block,
+  then stripped one from the end). A block at the very end of a body must
+  strip to the same text as the body without it, or core digests split. The
+  rule became `cut_lines`: the following break, else the preceding.
+- A deletion is not "the replacement file is empty" but "the rewritten text is
+  empty": `strip-duplicate-parallel-tools` replaces with `$PRE`, which is empty
+  when the sentence is its own line.
+
+Down to three, all `strip-git-status/match.d/v2.1.221.md` on a repo with no
+commits. That variant alone had lost its terminator, so alone it never took the
+line break its two siblings take; now it does, and the patched body for an
+empty-commits session is one trailing newline shorter. Accepted as the
+convention working, not a regression: the three older variants now agree.
+
+Masks and every digest were identical on all 44 fixtures. The data migration --
+one newline appended to the 44 fixtures and, because they are read the same
+way, to the gitignored captures and incident bodies under `log/` -- lands with
+the code. `survey-captures --current` reports no uncovered copies.
+
+Not done, and noted by another session: the offline checks spend most of their
+time in `check_laws.masks_that_split_a_class` (~23 of 31 seconds), which re-masks
+all 240 bodies once per left-out mask. `(?m:^)`/`(?m:$)` in place of the
+lookaround anchors measured 3x faster on a masking pass with identical output,
+and a leave-one-out that only recomputes bodies the dropped mask touches is
+exact. Neither is applied.

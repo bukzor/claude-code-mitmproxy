@@ -205,7 +205,7 @@ debug information instead of costing a round trip.
 
 ## Follow-on: a uniform trailing-newline convention
 
-Not started. Added 2026-10-01 at the operator's direction, to be done in this
+Done 2026-10-01 (see `session.kb/2026-10-01-templates-matched-as-substrings.md`). Added 2026-10-01 at the operator's direction, to be done in this
 same session: it rewrites the right-anchor branch this task just introduced, so
 splitting the two means editing a compiler whose semantics changed underneath.
 
@@ -336,16 +336,31 @@ meaningless.
    do not consume their trailing newline and nine do. Check whether any of the
    nine depend on consuming it before converting, rather than assuming parity.
 
+**Resolved 2026-10-01** (agent, unratified): 1 -- a new module, `textfile`, not
+`repo_paths`: it carries the convention's whole docstring and nothing else wants
+it. 2 -- said out loud in the dialect README. 3 -- no: all seven unconsumed and
+nine consumed masks produce identical masked text and digests on all 44
+fixtures, because a mask re-emits its template and the terminator now sits
+outside it either way.
+
+Two premises in this section turned out wrong. The exact-compare dialect was
+already normalizing (`tool_patches` did `rstrip("\n")`), so converting it was a
+swap, not a bug fix. And a deletion cannot be "extend by one following newline":
+at end-of-body there is none, and the old code had been taking the *preceding*
+break there, which core digests depend on -- a block present at the very end
+and the same body without it must strip to the same text. The rule is
+`cut_lines`: the following break, else the preceding one.
+
 ### Success Criteria
 
-- [ ] `borrow_newline` is gone, with no caller left.
-- [ ] All 44 fixtures produce byte-identical patched output before and after,
+- [x] `borrow_newline` is gone, with no caller left.
+- [x] All 44 fixtures produce byte-identical patched output before and after,
       using the measurement harness this task already built. This is the real
       safety property: the convention plus the deletion rule should reproduce
       current behavior exactly for the 72 newline-terminated templates.
-- [ ] Any fixture that does differ is explained, not accepted by default.
-- [ ] Nothing outside the helper pair calls `read_text`/`write_text`, asserted
+- [x] Any fixture that does differ is explained, not accepted by default.
+- [x] Nothing outside the helper pair calls `read_text`/`write_text`, asserted
       rather than documented, with the escape list carrying its reasons.
-- [ ] The data migration lands in the same commit as the code, and
+- [x] The data migration lands in the same commit as the code, and
       `claude-mitmproxy-survey-captures --current` reports no new drift.
-- [ ] Full suite and `monitoring/` green; pre-commit green.
+- [x] Full suite and `monitoring/` green; pre-commit green.

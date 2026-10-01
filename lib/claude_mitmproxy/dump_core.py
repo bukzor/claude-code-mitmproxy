@@ -16,6 +16,7 @@ from pathlib import Path
 from claude_mitmproxy import incidents
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -23,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     assert argv, "usage: dump_core.py BODY.md ..."
     blocks = rule_templates.load_templates(prompt_patches.BLOCKS_DIR)
     for arg in argv:
-        masked = incidents.normalize_body(Path(arg).read_text())
+        masked = incidents.normalize_body(textfile.read(Path(arg)))
         core, _present = rule_templates.strip_blocks(masked, blocks)
         sys.stdout.write(core)
     return 0

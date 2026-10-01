@@ -19,6 +19,8 @@ import re
 from pathlib import Path
 from typing import NamedTuple
 
+from claude_mitmproxy import textfile
+
 # Matches $ALLCAPS placeholders in templates (trailing digits allowed:
 # $LINES1/$LINES2 are distinct placeholders of the LINES type). A trailing
 # underscore disqualifies the name, so shell-style literals the prompt itself
@@ -86,7 +88,7 @@ class Rule(NamedTuple):
             replace = None
         else:
             assert replace_file.exists(), (name, replace_file)
-            replace = replace_file.read_text()
+            replace = textfile.read(replace_file)
 
         return Rule(
             name=name,
@@ -113,19 +115,19 @@ def _load_alternatives(directory: Path, base_name: str) -> tuple[str, ...]:
     )
 
     if has_file:
-        return (single_file.read_text(),)
+        return (textfile.read(single_file),)
     if not has_dir:
         return ()
 
     files = sorted(p for p in multi_dir.iterdir() if p.is_file() and p.suffix == ".md")
     assert files, (multi_dir, f"no *.md files in {base_name}.d/")
-    return tuple(p.read_text() for p in files)
+    return tuple(textfile.read(p) for p in files)
 
 
 def _read_bool(path: Path) -> bool:
     if not path.exists():
         return False
-    text = path.read_text().strip().lower()
+    text = textfile.read(path).strip().lower()
     match text:
         case "true" | "1" | "yes":
             return True
@@ -156,6 +158,16 @@ def template_to_regex(template: str) -> re.Pattern[str]:
     blank line -- so the literal on either side of a hole is a delimiter that
     always exists. A hole that could cross blank lines would have no such
     bound; see `load_templates` for why none is offered.
+
+    A template matches whole lines: its first line starts at a line start and
+    its last line runs to a line end, so the file reads the way it matches.
+    Without that it would match a quoted or indented copy of its own target,
+    or text its own replacement wrote. A template whose edge falls mid-line
+    declares it with a placeholder. The line end is a zero-width lookahead --
+    the terminator belongs to the body, not the template (`textfile`), so a
+    template matches at end-of-body natively and a mask can rewrite a hit to
+    the template verbatim without disturbing a newline. A template that starts
+    with `\n` already says where it starts, and takes no left anchor.
     """
     parts = PLACEHOLDER_RE.split(template)
     # parts alternates: [literal, name, literal, name, ..., literal]
@@ -177,15 +189,8 @@ def template_to_regex(template: str) -> re.Pattern[str]:
     # has a literal but still names every line.
     literals = "".join(parts[::2])
     assert literals.strip(), (template, "all placeholder: no anchor text")
-    # Every template matches whole lines: the authored file reads as a block of
-    # lines, so the pattern must not float free as a substring (it would match
-    # a quoted or indented copy, or a rule's own replacement output). A
-    # template whose edge falls mid-line says so with a placeholder. The
-    # anchors are zero-width -- a consuming `(^|\n)` would eat a newline that
-    # `apply_masks` re-emits from the template, breaking mask idempotence.
     left = "" if template.startswith("\n") else r"(?:\A|(?<=\n))"
-    right = "" if template.endswith("\n") else r"(?=\n|\Z)"
-    return re.compile(left + "".join(regex_parts) + right, re.DOTALL)
+    return re.compile(left + "".join(regex_parts) + r"(?=\n|\Z)", re.DOTALL)
 
 
 def expand_replace(template: str, target: re.Match[str]) -> str:
@@ -239,7 +244,7 @@ def load_templates(directory: Path) -> tuple[Template, ...]:
         p for p in directory.glob("*.md") if p.is_file() and p.name != "README.md"
     )
     assert files, (directory, "no templates found")
-    templates = tuple(Template(p.stem, p.read_text()) for p in files)
+    templates = tuple(Template(p.stem, textfile.read(p)) for p in files)
     for template in templates:
         # $...BLOCK used to mean "the rest of this top-level section", which it
         # approximated as "up to the next `# ` heading" -- a right-hand
@@ -252,24 +257,23 @@ def load_templates(directory: Path) -> tuple[Template, ...]:
     return templates
 
 
-def borrow_newline(text: str) -> tuple[str, bool]:
-    """Templates ending in `\\n` must be able to match a block that sits at
-    end-of-body; without a trailing newline `$LINES\\n` backtracks one line
-    short. Callers undo this before returning -- leaving it makes an all-miss
-    run differ from its input by a byte, which reads as a rule firing.
-
-    Public because measuring where a rule *would* match has to be done against
-    the same text the appliers below see, off-by-one newline included."""
-    if text.endswith("\n"):
-        return text, False
-    return text + "\n", True
+def cut_lines(text: str, start: int, end: int) -> str:
+    """`text` without the lines in [start, end) and one line break with them:
+    the one that follows, or at end-of-body the one that precedes, so cutting
+    the last line does not leave the body ending in the break that used to
+    separate it. Cutting every line of a body is therefore the same as joining
+    what remains, whichever order the cuts come in."""
+    if text.startswith("\n", end):
+        end += 1
+    elif end == len(text) and start > 0 and text[start - 1] == "\n":
+        start -= 1
+    return text[:start] + text[end:]
 
 
 def apply_rules(text: str, rules: tuple[Rule, ...]) -> tuple[str, list[Miss]]:
     """Apply each rule at most once, in order, returning the rewritten text
     and the rules that didn't apply cleanly. A `match` miss is not a Miss:
     that's the mechanism by which a rule detects its own irrelevance."""
-    text, borrowed = borrow_newline(text)
     misses: list[Miss] = []
     for rule in rules:
         m = first_hit(text, rule.matches)
@@ -295,9 +299,12 @@ def apply_rules(text: str, rules: tuple[Rule, ...]) -> tuple[str, list[Miss]]:
                 continue
         assert rule.replace is not None  # invariant: only None when upstream_removed
         replacement = expand_replace(rule.replace, target)
-        text = text[: target.start()] + replacement + text[target.end() :]
-    if borrowed and text.endswith("\n"):
-        text = text[:-1]
+        if replacement:
+            text = text[: target.start()] + replacement + text[target.end() :]
+        else:
+            # Empty, however it came out (`$PRE` over nothing counts): the
+            # rule deleted lines, and a deleted line takes its break along.
+            text = cut_lines(text, target.start(), target.end())
     return text, misses
 
 
@@ -307,15 +314,15 @@ def strip_blocks(text: str, blocks: tuple[Template, ...]) -> tuple[str, list[str
     block rule answers "would this body be the same if the session hadn't
     switched this on?", so the result must be byte-identical to a body that
     never carried the block."""
-    text, borrowed = borrow_newline(text)
     present = []
     for block in blocks:
-        stripped = template_to_regex(block.template).sub("", text)
-        if stripped != text:
+        spans = [m.span() for m in template_to_regex(block.template).finditer(text)]
+        if spans:
             present.append(block.name)
-        text = stripped
-    if borrowed and text.endswith("\n"):
-        text = text[:-1]
+        # Right to left, so a cut never moves a span still to be cut, and the
+        # end-of-body test sees what the cuts to its right left behind.
+        for start, end in reversed(spans):
+            text = cut_lines(text, start, end)
     return text, present
 
 
@@ -328,11 +335,8 @@ def apply_masks(text: str, masks: tuple[Template, ...]) -> str:
     same session paths per block, and one surviving copy is enough to fork
     the digest. And the template is emitted verbatim, never expanded, which
     is what makes a mask unable to delete text it didn't capture."""
-    text, borrowed = borrow_newline(text)
     for mask in masks:
         text = template_to_regex(mask.template).sub(
             lambda _hit, template=mask.template: template, text
         )
-    if borrowed and text.endswith("\n"):
-        text = text[:-1]
     return text

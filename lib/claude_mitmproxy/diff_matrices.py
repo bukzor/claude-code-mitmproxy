@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from claude_mitmproxy import check_dark_patches
+from claude_mitmproxy import textfile
 
 
 class CellChange(NamedTuple):
@@ -73,7 +74,7 @@ def render(result: MatrixDiff) -> str:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     assert len(argv) == 2, "usage: diff_matrices.py BEFORE.txt AFTER.txt"
-    before, after = (check_dark_patches.parse(Path(arg).read_text()) for arg in argv)
+    before, after = (check_dark_patches.parse(textfile.read(Path(arg))) for arg in argv)
     sys.stdout.write(render(diff(before, after)))
     return 0
 

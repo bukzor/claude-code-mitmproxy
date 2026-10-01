@@ -21,6 +21,7 @@ from claude_mitmproxy import incidents
 from claude_mitmproxy import repo_paths
 from claude_mitmproxy import prompt_shape
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 
 
 def apply_patches(
@@ -79,7 +80,7 @@ def strip_floors(patches: tuple[rule_templates.Rule, ...]) -> dict[str, int]:
     rebuilds this module and the cache with it."""
     newest: dict[str, tuple[tuple, str]] = {}
     for path in KB_DIR.glob("v*.md"):
-        text = path.read_text()
+        text = textfile.read(path)
         shape = prompt_shape.shape_of(text)
         if shape.startswith("?"):
             continue

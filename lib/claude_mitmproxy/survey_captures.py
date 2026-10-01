@@ -40,6 +40,7 @@ from claude_mitmproxy import logging_handlers
 from claude_mitmproxy import prompt_shape
 from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import rule_templates
+from claude_mitmproxy import textfile
 
 CAPTURES_DIR = Path("log/prompt-captures")
 KB_DIR = Path("system-prompts.kb")
@@ -118,7 +119,7 @@ def survey(
 ) -> list[Surveyed]:
     rows = []
     for capture in sorted(captures, key=lambda c: c.sort_key):
-        text = capture.path.read_text()
+        text = textfile.read(capture.path)
         core, present = core_of(text, blocks)
         rows.append(
             Surveyed(
@@ -255,12 +256,12 @@ def promote(drifts: list[Drift], kb_dir: Path) -> tuple[list[Filed], list[str]]:
             skipped.append(f"unknown shape {drift.shape}, read it yourself: {drift.candidate.path}")
             continue
         target = kb_dir / fixture_name(drift)
-        body = drift.candidate.path.read_text()
+        body = textfile.read(drift.candidate.path)
         if target.exists():
-            assert target.read_text() == body, (target, "already on disk with a different body")
+            assert textfile.read(target) == body, (target, "already on disk with a different body")
             written.append(Filed(target, drift, fresh=False))
         else:
-            target.write_text(body)
+            textfile.write(target, body)
             written.append(Filed(target, drift, fresh=True))
     return written, skipped
 
@@ -381,7 +382,7 @@ def glance(nearest: Nearest, kb_dir: Path) -> str:
 
 def read_fixtures(kb_dir: Path) -> dict[str, str]:
     """Every fixture on disk, by stem -- the pool a glance searches."""
-    return {p.stem: p.read_text() for p in sorted(kb_dir.glob("*.md")) if p.name != "CLAUDE.md"}
+    return {p.stem: textfile.read(p) for p in sorted(kb_dir.glob("*.md")) if p.name != "CLAUDE.md"}
 
 
 def committed_fixtures(kb_dir: Path) -> dict[str, str]:
@@ -398,7 +399,7 @@ def committed_fixtures(kb_dir: Path) -> dict[str, str]:
         check=True,
     ).stdout
     names = [name for name in listed.split("\0") if name.endswith(".md") and name != "CLAUDE.md"]
-    return {Path(name).stem: (kb_dir / name).read_text() for name in sorted(names)}
+    return {Path(name).stem: textfile.read(kb_dir / name) for name in sorted(names)}
 
 
 def all_clear(current: bool) -> str:
