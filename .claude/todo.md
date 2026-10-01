@@ -26,6 +26,15 @@ Narrative in `../session.kb/`.
         branch the first half added, and needs its data migration in the same
         commit.
 
+- [ ] <https:todo.kb/2026-10-01-004-Correct-the-role-system-coverage-rationale.md>
+      -- `prompt-loci-coverage.md` spares `<system-reminder>` envelopes because
+      their bulk is the user's own content, then justifies patching the
+      `role: "system"` locus with "none of this text is the user's". Measured
+      2026-10-01: 10.5% of that locus is the user's CLAUDE.md, 14.6% is
+      system-reminder payloads, 3.7% skills/agents listings. Same bytes spared at
+      one address and patched at another. Doc correction is small; whether the
+      walk should spare them is a ruling, and may reduce to nothing if 005 lands.
+
 - [ ] <https:todo.kb/2026-10-01-001-Derive-check-provenance-from-declared-inputs.md>
       -- whether a red from `monitoring/` is upstream drift to triage or a defect
       in this commit is recorded three times over: the hook's `files:` regex,
@@ -46,6 +55,14 @@ Narrative in `../session.kb/`.
       digest, novelty to the queue under `_novel-system-message`. Stages 2-5
       fold the tool locus's exact-compare into the template dialect and put
       every locus in one table. Six questions unruled; four change the build.
+
+- [ ] <https:todo.kb/2026-10-01-005-Scope-search-to-the-match-span.md>
+      -- `apply_rules` resolves `search` over the whole body, independent of where
+      `match` hit, so scope can be established in one place and the rewrite happen
+      in another. Anchoring closed the line-numbered half; an unnumbered verbatim
+      quote still gets gutted while the live target rides through, silently.
+      Prefer an in-span hit, fall back to whole-body. Trap: `pos`/`endpos`, never
+      slicing, or `\A` re-admits the mid-line match anchoring just removed.
 
 - [ ] Revamp the logging story across the addons. Every addon logs through
       `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
@@ -219,6 +236,26 @@ Narrative in `../session.kb/`.
       recompute only the bodies it touches; and cache `template_to_regex` per
       template, which is recompiled on every call. Found by another session's
       timing of the suite, 2026-10-01; not yet measured here.
+
+- [ ] Rule on six defaults chosen while landing line anchoring and the
+      trailing-newline convention, none ratified (`Skill(review-open-questions)`
+      batch -- the work around them is finished, so no sweep will surface them).
+      Where each lives: `.claude/todo.kb/2026-10-01-000-Anchor-patch-templates-to-line-boundaries.md`
+      (the "Resolved" paragraphs) and `../session.kb/2026-10-01-templates-matched-as-substrings.md`.
+  - [ ] The three prose masks (`auto-memory-dir`, `memory-dir`,
+        `background-job-tmp-dir`) extend verbatim to the line end instead of
+        ending in a hole, so an upstream reword breaks the mask and shows as
+        digest churn rather than hiding in it.
+  - [ ] `background-job-tmp-dir` is therefore two files, one per upstream tail
+        on disk (v2.1.214, v2.1.246).
+  - [ ] `fix-tone-conciseness` going 16 -> 15 fixture hits is accepted, not
+        repaired: the lost hit was the rule matching its own replacement.
+  - [ ] The three empty-commits fixtures' patched body is one trailing newline
+        shorter, because `strip-git-status/match.d/v2.1.221.md` alone had lost
+        its terminator and so alone never took the line break its siblings do.
+  - [ ] The helper pair lives in a new module, `textfile`, not `repo_paths`.
+  - [ ] `masks.d/cc-version.md` reads `$PREcc_version=...`, legible only if
+        you know `$PRE` is the hole.
 
 ## Later
 
