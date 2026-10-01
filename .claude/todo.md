@@ -211,6 +211,15 @@ Narrative in `../session.kb/`.
       141 MiB / ~66.6 h, ~30x slower than the pre-fix leak) — only the
       standing-RSS-monitoring ruling is left, open question for the user.
 
+- [ ] Make `check_laws.masks_that_split_a_class` leave-one-out incremental.
+      It re-masks all 240 bodies once per left-out mask (17 passes, 4080
+      `apply_masks` calls) and was ~23 of the suite's 31s before the anchor swap
+      took a pass from 1.5s to 0.5s. Exact and cheap: a dropped mask that does
+      not change a body in the full chain cannot change that body's result, so
+      recompute only the bodies it touches; and cache `template_to_regex` per
+      template, which is recompiled on every call. Found by another session's
+      timing of the suite, 2026-10-01; not yet measured here.
+
 ## Later
 
 - [ ] Consider injecting the attention signal into live session context, as a

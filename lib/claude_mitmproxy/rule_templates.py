@@ -163,7 +163,7 @@ def template_to_regex(template: str) -> re.Pattern[str]:
     its last line runs to a line end, so the file reads the way it matches.
     Without that it would match a quoted or indented copy of its own target,
     or text its own replacement wrote. A template whose edge falls mid-line
-    declares it with a placeholder. The line end is a zero-width lookahead --
+    declares it with a placeholder. The line end is a zero-width assertion (`(?m:$)`, as `(?m:^)` is the start) --
     the terminator belongs to the body, not the template (`textfile`), so a
     template matches at end-of-body natively and a mask can rewrite a hit to
     the template verbatim without disturbing a newline. A template that starts
@@ -189,8 +189,8 @@ def template_to_regex(template: str) -> re.Pattern[str]:
     # has a literal but still names every line.
     literals = "".join(parts[::2])
     assert literals.strip(), (template, "all placeholder: no anchor text")
-    left = "" if template.startswith("\n") else r"(?:\A|(?<=\n))"
-    return re.compile(left + "".join(regex_parts) + r"(?=\n|\Z)", re.DOTALL)
+    left = "" if template.startswith("\n") else r"(?m:^)"
+    return re.compile(left + "".join(regex_parts) + r"(?m:$)", re.DOTALL)
 
 
 def expand_replace(template: str, target: re.Match[str]) -> str:
