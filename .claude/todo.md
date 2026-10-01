@@ -95,6 +95,17 @@ Narrative in `../session.kb/`.
       Prefer an in-span hit, fall back to whole-body. Trap: `pos`/`endpos`, never
       slicing, or `\A` re-admits the mid-line match anchoring just removed.
 
+- [ ] Rule on the `[!DRAFT]` standing exception at `tests/CLAUDE.md:12`, open
+      since 2026-09-17 and raised once without a ruling. `test_message_patches.py`
+      loads the live rules from `message_patches.PATCHES_DIR`, so that file cannot
+      collect at all without `~/.config/claude-mitmproxy/system-message.d/` --
+      which is real-data validation sitting in `tests/`, on the wrong side of the
+      line this very file draws. Recommended disposition: do not ratify. Stage 1
+      of `<https:todo.kb/2026-10-01-003-Unify-pristine-capture-across-loci.md>`
+      supplies captured bodies for this locus, which moves the live-rule
+      assertions into a `check_*` module where the convention already puts them
+      and dissolves the exception rather than blessing it. Blocked on 003.
+
 - [ ] Revamp the logging story across the addons. Every addon logs through
       `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
       and nothing captures it -- `log/` holds only `compress_traffic.log`, from
