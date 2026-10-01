@@ -32,6 +32,12 @@ Narrative in `../session.kb/`.
       `REQUIRES`, and prose. All three are projections of what each check reads
       and who writes it. Declare that once per check; derive the rest.
 
+- [ ] <https:todo.kb/2026-10-01-002-Assert-patch-rule-set-idempotence.md>
+      -- applying a rule set twice must equal applying it once, and nothing
+      asserts it for patches. Measured 2026-10-01 against the pre-anchoring
+      compiler: 65 of 240 bodies violated it. Fixed, unguarded. Blocked on the
+      trailing-newline convention, which changes the fixpoint.
+
 - [ ] Revamp the logging story across the addons. Every addon logs through
       `logging`, mitmdump sends the lot to stderr (`proxy.sh` does `exec >&2`),
       and nothing captures it -- `log/` holds only `compress_traffic.log`, from
