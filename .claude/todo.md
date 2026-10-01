@@ -237,6 +237,12 @@ Narrative in `../session.kb/`.
       template, which is recompiled on every call. Found by another session's
       timing of the suite, 2026-10-01; not yet measured here.
 
+- [ ] Resolve the dangling `tests/test_all_checks.py` citation.
+      `check_verdict.py` (`NOT_A_CHECK`) and `monitoring/CLAUDE.md` both say it
+      is what holds check discovery and the normal form together; the file does
+      not exist (db94148). Either write it -- `tests/test_check_inventory.py`
+      may already be the intended home -- or correct the two citations.
+
 - [ ] Rule on six defaults chosen while landing line anchoring and the
       trailing-newline convention, none ratified (`Skill(review-open-questions)`
       batch -- the work around them is finished, so no sweep will surface them).
