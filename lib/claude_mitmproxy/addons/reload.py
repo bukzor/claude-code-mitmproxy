@@ -39,6 +39,7 @@ from claude_mitmproxy import tool_patches
 # to see already-reloaded versions of what it builds on.
 RELOADED = (
     repo_paths,
+    textfile,
     flocked_logs,
     rule_templates,
     prompt_shape,

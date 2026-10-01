@@ -122,3 +122,12 @@ all 240 bodies once per left-out mask. `(?m:^)`/`(?m:$)` in place of the
 lookaround anchors measured 3x faster on a masking pass with identical output,
 and a leave-one-out that only recomputes bodies the dropped mask touches is
 exact. Neither is applied.
+
+One slip in the commit that carried the convention, caught afterward by
+touching `reload.py` and seeing no `lifecycle.reload` line follow: `reload.py`
+is itself an addon, so importing `textfile` for its own reads put an unlisted
+library module in front of its own `check_reloaded_covers_addon_imports`, and
+it asserted on every re-execution -- a live proxy would have kept running the
+old code, and a restart would have refused to start. Nothing ran the file, so
+the suite stayed green. `tests/test_reload.py` now executes it in a
+subprocess, and `textfile` is in `RELOADED`.
