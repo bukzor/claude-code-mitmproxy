@@ -4,7 +4,9 @@
 # `check_*` module reads: nothing else under version control can move a
 # digest, a floor, or a verdict. `playbook.kb/` and the event taxonomy in
 # `logging_handlers.py` are the two sides `check_playbook` holds in
-# correspondence. That makes a commit touching one of them the only occasion
+# correspondence, and `check_*.py` against the `pyproject.toml` commands that
+# run them are the two `check_inventory` holds -- one more pair whose halves
+# are edited a file apart. That makes a commit touching one of them the only occasion
 # these checks have, and firing them there is what turns "run check_laws
 # after editing masks.d/" from a line someone has to remember into something
 # that cannot be skipped by forgetting.
@@ -26,8 +28,8 @@ repos:
   - repo: local
     hooks:
       - id: offline-checks
-        name: offline checks (masks, blocks, fixtures, playbook)
+        name: offline checks (masks, blocks, fixtures, playbook, inventory)
         entry: .venv/bin/pytest monitoring/ -q
         language: system
         pass_filenames: false
-        files: ^(masks\.d/|blocks\.d/|system-prompts\.kb/|playbook\.kb/|lib/claude_mitmproxy/logging_handlers\.py)
+        files: ^(masks\.d/|blocks\.d/|system-prompts\.kb/|playbook\.kb/|lib/claude_mitmproxy/logging_handlers\.py|lib/claude_mitmproxy/check_.*\.py|pyproject\.toml)

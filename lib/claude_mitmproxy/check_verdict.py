@@ -18,11 +18,17 @@ it returns ("fixtures sharing a masked digest."), and explains why that is bad
 after it. That first sentence is what the verdict block prints, on pass as
 well as fail: a check that silently examined nothing otherwise looks exactly
 like one that passed.
+
+Knowing the form, this module also knows who takes it: `all_checks()` is the
+inventory, and it is the one every consumer asks rather than keeping its own.
 """
 
 from __future__ import annotations
 
+import importlib
 import sys
+from pathlib import Path
+from types import ModuleType
 from typing import Any, Callable, Sequence, TypeVar
 
 Data = TypeVar("Data")
@@ -31,6 +37,32 @@ Data = TypeVar("Data")
 # drift from a crash is a script that will eventually promote a fixture to
 # "fix" a NameError.
 UNHEALTHY = 2
+
+# `check_*.py` that is deliberately not a check. Only this module: everything
+# else matching the glob must take the normal form, and
+# `tests/test_all_checks.py` is what says so -- so adding a name here is a
+# claim to defend, not a way to quiet a failure.
+NOT_A_CHECK = frozenset({"check_verdict"})
+
+
+def all_checks() -> tuple[ModuleType, ...]:
+    """Every check module, in name order.
+
+    Discovered rather than listed. A hand-kept inventory is one more place to
+    forget, and it fails in the direction that looks healthy: a check missing
+    from it is a check whose properties nothing asserts, and the suite stays
+    green saying so. The filesystem already knows which modules there are.
+
+    A function, not a constant, because every check imports this module -- an
+    inventory resolved at import time would be a cycle. At call time the
+    imports are already cached, so this returns the same module objects a
+    caller's own `from claude_mitmproxy import check_masks` would.
+    """
+    return tuple(
+        importlib.import_module(f"{__package__}.{path.stem}")
+        for path in sorted(Path(__file__).parent.glob("check_*.py"))
+        if path.stem not in NOT_A_CHECK
+    )
 
 
 def summary(predicate: Callable[..., Any]) -> str:

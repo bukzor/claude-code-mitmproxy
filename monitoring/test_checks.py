@@ -6,7 +6,10 @@ hand-run command and this suite cannot disagree about what healthy means. What
 this adds is isolation (one failing property no longer hides the rest) and a
 name in a runner. There is nothing check-specific to write here: a new property
 is a function in a check module's `PREDICATES`, and it shows up as a test the
-next run.
+next run. A whole new check module does too -- `check_verdict.all_checks()`
+discovers them, so this file names none of them and cannot fall behind the
+ones that exist. Only `REQUIRES` below is per-check, because only it holds
+something the filesystem does not already say.
 
 Test ids read `check_masks-dark_masks`, so `pytest -k check_masks` is the one
 check and `-k dark_masks` is the one property.
@@ -21,10 +24,7 @@ from typing import Any, Callable
 import pytest
 
 from claude_mitmproxy import check_dark_patches
-from claude_mitmproxy import check_laws
-from claude_mitmproxy import check_masks
 from claude_mitmproxy import check_patches
-from claude_mitmproxy import check_playbook
 from claude_mitmproxy import check_strip_floors
 from claude_mitmproxy import check_tool_patches
 from claude_mitmproxy import prompt_capture
@@ -32,15 +32,9 @@ from claude_mitmproxy import prompt_patches
 from claude_mitmproxy import tool_patches
 from claude_mitmproxy import check_verdict
 
-CHECKS = (
-    check_masks,
-    check_laws,
-    check_patches,
-    check_dark_patches,
-    check_strip_floors,
-    check_tool_patches,
-    check_playbook,
-)
+# The four imported above are imported for `REQUIRES`, not for this: the
+# inventory is whatever is on disk.
+CHECKS = check_verdict.all_checks()
 
 # What each check needs on disk before its properties mean anything. The checks
 # themselves assert instead of skipping -- an absent patch dir is a broken
