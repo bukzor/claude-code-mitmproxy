@@ -285,6 +285,18 @@ Narrative in `../session.kb/`.
       not exist (db94148). Either write it -- `tests/test_check_inventory.py`
       may already be the intended home -- or correct the two citations.
 
+- [ ] Rule on `dcdfba5`, which is pushed with the wrong message. Its subject
+      says it adds the `003` todo entry; its tree also carries the
+      `(?m:^)`/`(?m:$)` anchor swap in `rule_templates.py`. Cause, 2026-10-01:
+      an agent reworded what it took to be its own HEAD while a parallel
+      session committed on top, and the original (`926dbef`, "rule_templates:
+      anchor with (?m:^) and (?m:$)", with the 1.55s -> 0.53s measurement)
+      went orphan. Same tree, so nothing is lost but the message. Options:
+      leave it (`git log -S'(?m:^)'` finds it; recommended), or
+      force-push a reword over 11+ commits of other sessions' work. The
+      original message is kept at `trash/orig-926dbef.msg` (gitignored, local
+      only), so if leaving it, paste it into `session.kb/` instead.
+
 - [ ] Rule on six defaults chosen while landing line anchoring and the
       trailing-newline convention, none ratified (`Skill(review-open-questions)`
       batch -- the work around them is finished, so no sweep will surface them).
