@@ -43,6 +43,7 @@ AUX_TASK_PREFIXES = (
     "Generate a short kebab-case name",  # session-title generation, reworded
     "You are naming a coding session",  # session-title generation, v2.1.234
     "You are an assistant for performing a web search tool use",
+    "You run a web search for another Claude model",  # reworded, v2.1.310
     "You are a security monitor for autonomous AI coding agents",
     # auto-mode configuration proposal (auto-mode setup flow, v2.1.232)
     "You transform a mechanically-gathered recon block",
