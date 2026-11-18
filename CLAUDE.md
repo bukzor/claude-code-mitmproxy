@@ -97,10 +97,11 @@ it (`.pre-commit-config.yaml`).
 > address the Monitor output? If so, then adjusting responsibilities amounts
 > to adjusting monitor output". Landed by 58e801c and cf671f1.
 
-One duty: address the watch's output. Keep `./driftwatch.sh` running as a
-background shell with the longest timeout allowed: it exits when its report
-next changes, so its exit notice is the event; re-arm it after each one, and
-after a timeout. When a maintenance session opens, read
+One duty: address the watch's output. Keep `./driftwatch.sh` running via
+`Bash` with `run_in_background: true` and `timeout: 7200000` -- in the
+foreground it blocks the session until the report changes. It exits when its
+report next changes, so its exit notice is the event; re-arm it after each
+one, and after a timeout. When a maintenance session opens, read
 `log/driftwatch.last` for what is still outstanding, then arm it -- a report
 that changed while no session was open prints at once. Every line that
 asks something starts with its event type, and `playbook.kb/<type>.md` says
