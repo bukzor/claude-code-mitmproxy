@@ -16,8 +16,14 @@ from __future__ import annotations
 import json
 import re
 
-# Opening text that identifies the main prompt body among `system` blocks.
-BODY_MARKER = "\nYou are an interactive agent"
+# Opening text that identifies the main prompt body among `system` blocks,
+# one per wording upstream has shipped. Accumulate, never replace: builds
+# still in service send the older openings.
+BODY_MARKERS = (
+    "\nYou are an interactive agent",
+    "\nYou are an agent working with the user",  # v2.1.327
+)
+
 # Incident rule for a `system` list without exactly one such block.
 # Underscore-prefixed, like _bodies, so it can't collide with a patch name.
 LOCATOR_RULE = "_locate-system-prompt"
@@ -56,8 +62,8 @@ AUX_TASK_PREFIXES = (
 AUX_TRAILER_PREFIXES = ("## Session Context",)
 
 # Subagent requests (Task-tool invocations) carry a per-agent-type prompt
-# template that never uses BODY_MARKER either, but unlike the auxiliary CLI
-# shapes above, the template body itself varies arbitrarily by agent type
+# template that never opens with a BODY_MARKERS entry either, but unlike the
+# auxiliary CLI shapes above, the template body itself varies arbitrarily by agent type
 # (claude-code-guide, Explore, general-purpose, ...) -- too open-ended to
 # enumerate block-by-block. Recognize the request instead, via the billing
 # header's own subagent flag.
@@ -81,15 +87,22 @@ def cc_version_of(system) -> str:
 
 
 def locate_prompt_bodies(system: list) -> list[dict]:
-    """The text blocks carrying an interactive prompt body (BODY_MARKER).
+    """The text blocks opening with an interactive prompt body (BODY_MARKERS).
     Exactly one is expected in an interactive request; callers handle 0/N."""
     return [
         item
         for item in system
         if isinstance(item, dict)
         and item.get("type") == "text"
-        and item.get("text", "").startswith(BODY_MARKER)
+        and item.get("text", "").startswith(BODY_MARKERS)
     ]
+
+
+def carries_body_marker(text: str) -> bool:
+    """True when a prompt-body opening occurs anywhere in `text` -- the test
+    for a whole-string `system` or a fixture file, where the body is not a
+    block of its own to check the start of."""
+    return any(marker in text for marker in BODY_MARKERS)
 
 
 def is_auxiliary_system(system: list) -> bool:
@@ -101,8 +114,8 @@ def is_auxiliary_system(system: list) -> bool:
 def is_subagent_request(system: list) -> bool:
     """True when the billing-header block marks this a subagent request.
     Most agent types' prompt body is agent-type-specific and never
-    carries BODY_MARKER; the general-purpose/default agent type is an
-    exception -- it resends the interactive body verbatim, so it takes
+    opens with a BODY_MARKERS entry; the general-purpose/default agent type
+    is an exception -- it resends the interactive body verbatim, so it takes
     the ordinary patched/captured path instead of this branch."""
     if not system:
         return False

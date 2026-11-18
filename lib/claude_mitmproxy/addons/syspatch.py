@@ -119,7 +119,7 @@ def _patch_prompt(request, system, patches, origin):
     if isinstance(system, str):
         patched = prompt_patches.apply_patches(system, patches, incidents.CAPTURE_DIR, origin)
         request["system"] = patched
-        if prompt_location.BODY_MARKER in system:
+        if prompt_location.carries_body_marker(system):
             prompt_patches.check_strip_floor(
                 system, patched, patches, incidents.CAPTURE_DIR, origin
             )

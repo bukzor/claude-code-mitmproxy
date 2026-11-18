@@ -130,12 +130,13 @@ the non-patch rule `_locate-system-prompt/` (underscore-prefixed, like
 `_bodies/`, so it can't collide with a patch name):
 
 - `found-N-prompt-bodies` — a content-blocks `system` list didn't contain
-  exactly one block starting with the prompt-body marker
-  (`\nYou are an interactive agent`); the request passed through unpatched.
+  exactly one block starting with a prompt-body opening
+  (`prompt_location.BODY_MARKERS`); the request passed through unpatched.
   The captured body is the whole list flattened: text blocks verbatim (so
   `masked_hash` dedup still neutralizes session-volatile regions), non-text
   blocks as JSON, with `=== system[i] ===` separators. Usual causes: the
-  marker text drifted upstream, or a non-Claude-Code request shape.
+  opening drifted upstream (append the new one to `BODY_MARKERS`; older
+  builds stay in service, so never replace), or a non-Claude-Code request shape.
 
   Known auxiliary CLI shapes (session-title generation, web-search helper)
   are exempt: `is_auxiliary_system` passes them through, no incident. It

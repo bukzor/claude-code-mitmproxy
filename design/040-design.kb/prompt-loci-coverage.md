@@ -37,7 +37,7 @@ Coverage is deliberate, not aspirational:
     `is_subagent_request` never enters into it.
   - Specialized agent types (confirmed: `Explore`) send a genuinely
     distinct, agent-type-specific prompt that never carries
-    BODY_MARKER. `prompt_location.locate_subagent_body` captures this shape
+    a BODY_MARKERS opening. `prompt_location.locate_subagent_body` captures this shape
     (wired into `addons/syscapture.py`) — still unpatched, since there's not
     yet evidence on whether these prompts carry the same
     bloat/contradiction problems the interactive prompt does.

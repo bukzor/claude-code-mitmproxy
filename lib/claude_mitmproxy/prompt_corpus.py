@@ -46,7 +46,7 @@ def current_fixtures() -> list[Path]:
     versioned = [
         (prompt_patches.fixture_version(path), path)
         for path in sorted(prompt_patches.KB_DIR.glob("v*.md"))
-        if prompt_location.BODY_MARKER in textfile.read(path)
+        if prompt_location.carries_body_marker(textfile.read(path))
     ]
     assert versioned, ("no full fixtures in", prompt_patches.KB_DIR)
     newest = max(version for version, _ in versioned)

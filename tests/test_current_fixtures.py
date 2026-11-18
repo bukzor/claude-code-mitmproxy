@@ -14,7 +14,7 @@ from claude_mitmproxy import prompt_corpus
 from claude_mitmproxy import prompt_location
 from claude_mitmproxy import prompt_patches
 
-FULL = f"{prompt_location.BODY_MARKER}\nYou are Claude Code.\n"
+FULL = f"{prompt_location.BODY_MARKERS[0]}\nYou are Claude Code.\n"
 PARTIAL = "# Doing tasks\n\nOne section, no body marker.\n"
 
 

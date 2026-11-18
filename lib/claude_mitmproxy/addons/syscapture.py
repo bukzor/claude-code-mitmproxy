@@ -46,7 +46,7 @@ def _request(flow):
 
     system = request.get("system")
     if isinstance(system, str):
-        bodies = [system] if prompt_location.BODY_MARKER in system else []
+        bodies = [system] if prompt_location.carries_body_marker(system) else []
         subagent_body = None
     elif isinstance(system, list):
         bodies = [item["text"] for item in prompt_location.locate_prompt_bodies(system)]

@@ -11,7 +11,7 @@ Two shapes observed:
 - **Default/general-purpose agent type** (the "claude" catch-all):
   resends the interactive body verbatim -- identical `system[1]`
   (`"You are Claude Code, Anthropic's official CLI for Claude."`) and
-  `system[2]` (BODY_MARKER-prefixed) to a normal interactive session.
+  `system[2]` (BODY_MARKERS-prefixed) to a normal interactive session.
   Already patched and captured today via the ordinary
   `locate_prompt_bodies` match; `is_subagent_request` never enters into
   it.
@@ -21,7 +21,7 @@ Two shapes observed:
   auxiliary CLI shapes in `prompt_location.IDENTITY_LINES`) -- followed by an
   agent-type-specific prompt at `system[2]` (Explore's opens `"You are
   a file search specialist for Claude Code..."`). Never
-  BODY_MARKER-prefixed. `prompt_location.locate_subagent_body` walks this
+  BODY_MARKERS-prefixed. `prompt_location.locate_subagent_body` walks this
   shape for capture; see
   `design/040-design.kb/prompt-loci-coverage.md` for the coverage
   decision this fed.

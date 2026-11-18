@@ -12,7 +12,7 @@ from claude_mitmproxy import textfile
 
 
 def body(tag: str) -> str:
-    return f"{prompt_location.BODY_MARKER}\n\ntest body {tag}\n"
+    return f"{prompt_location.BODY_MARKERS[0]}\n\ntest body {tag}\n"
 
 
 def masked_sibling(raw):
