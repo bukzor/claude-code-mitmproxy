@@ -1,10 +1,15 @@
 #!/bin/bash
 # Run the promotion pass whenever its inputs change, and print only when its
-# report changes, so a maintenance session can arm it once (Monitor) and be
-# handed what the pass did -- each fixture it filed with a glance at its diff
-# from the nearest sibling -- instead of remembering to look. The incident
-# queue rides along the same way. Every line that asks something of the reader
-# starts with its event type, which is the key into playbook.kb/.
+# report changes, so a maintenance session is handed what the pass did -- each
+# fixture it filed with a glance at its diff from the nearest sibling --
+# instead of remembering to look. The incident queue rides along the same way.
+# Every line that asks something of the reader starts with its event type,
+# which is the key into playbook.kb/.
+#
+# One-shot: it prints the first report that differs from the last one printed
+# (log/driftwatch.last), then exits. Run it as a background shell, whose exit
+# is the notification, and re-arm after each: a wake means the report changed,
+# and a crash is an exit too, so it is never silent about its own failure.
 #
 # inotify only decides *when to look*; the pass still decides what is worth
 # saying. That split is the whole design -- a capture event is a superset of a
@@ -59,6 +64,14 @@ fi
 
 cd "$SCRIPT_DIR"
 
+# The last report printed: what a re-arm waits to see change, and what a session
+# opening reads for whatever is still outstanding. Absent, the first pass prints.
+LAST=log/driftwatch.last
+previous=''
+if [[ -e "$LAST" ]]; then
+  previous="$(<"$LAST")"
+fi
+
 # A re-arm that lands while a prior instance is still watching (a content
 # notification mistaken for an expiry, a second session opening its own
 # maintenance watch) must not become a second live watcher: two instances
@@ -85,10 +98,15 @@ wait_for_change() {
   # on that timeout, which is normal; any other failure means the watcher
   # itself is unusable, so fall back to sleeping and let the loop degrade to
   # polling at the ceiling rate rather than spinning or dying.
+  #
+  # Both run with the lock's fd closed. Killing this shell (a background
+  # timeout) orphans whichever is waiting, and an orphan holding fd 9 keeps the
+  # lock for up to $FLOOR -- every re-arm in that window exits at once on
+  # "another instance". The lock is this process's, not its children's.
   local status=0
-  inotifywait -qq -t "$FLOOR" -e "$EVENTS" "${WATCHED[@]}" || status="$?"
+  inotifywait -qq -t "$FLOOR" -e "$EVENTS" "${WATCHED[@]}" 9>&- || status="$?"
   if (( status != 0 && status != 2 )); then
-    sleep "$FLOOR"
+    sleep "$FLOOR" 9>&-
   fi
 }
 
@@ -109,15 +127,13 @@ report() {
   fi
 }
 
-# Empty, so the first pass always prints: arming the watch reports whatever
-# accumulated while no session was open, and an all-clear proves it is live.
-previous=''
-
 while true; do
   current="$(report "$SURVEY" --promote; report "$GC" --queue)"
   if [[ "$current" != "$previous" ]]; then
     printf '%s\n' "$current"
-    previous="$current"
+    printf '%s\n' "$current" >"$LAST.part"
+    mv "$LAST.part" "$LAST"
+    exit 0
   fi
   wait_for_change
 done

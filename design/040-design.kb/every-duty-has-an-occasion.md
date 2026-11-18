@@ -78,7 +78,7 @@ promotes what it finds -- the operator's own proposal (ruled 2026-09-01: "Yes
 that's my proposal"), on the ground that the watch already holds every input
 the promotion reads. What still has to arrive on its own is the *report* of
 what the pass did, and that is what the watch prints: into a maintenance
-session, through `Monitor`.
+session, as the exit notice of a background `driftwatch.sh`.
 
 > [!DECISION] an uncovered core at the newest release on disk gets the warning
 > Agent-ratified and vetoable -- asked to choose, the operator had no
@@ -150,8 +150,8 @@ maintenance window is open, and on the first pass of the next one", which is
 enough because promotion has no deadline tighter than the next time a check's
 silence has to mean something. Arming the watch is therefore setup bound to
 session start, not a duty -- it asks nothing when nothing happened -- but the
-binding is an instruction rather than a hook, because `Monitor` is an agent
-tool and a hook cannot call one.
+binding is an instruction rather than a hook, because the report has to land
+in an agent turn, and only a command the agent itself armed delivers there.
 
 ## What stays a duty
 
@@ -163,7 +163,7 @@ the point of the three routes above, not a gap in them.
 Noticing it has an occasion, though. An incident is an event
 (`events-are-separate-from-logs.md`), so the watch wakes on it and reports the
 queue's state, keyed by incident type, whenever that changes. The standing
-instruction then reduces to one sentence -- address the Monitor output -- and
+instruction then reduces to one sentence -- address the watch's output -- and
 moving a responsibility onto or off the operator is an edit to what the watch
 prints (ruled 2026-09-01: "Simply: address the Monitor output? If so, then
 adjusting responsibilities amounts to adjusting monitor output"). Each line's
