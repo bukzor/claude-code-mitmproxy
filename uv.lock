@@ -103,7 +103,6 @@ wheels = [
 
 [[package]]
 name = "basedpyright-as-pyright"
-version = "0.1.0"
 source = { directory = "../../repo/github.com/bukzor/basedpyright-as-pyright" }
 dependencies = [
     { name = "basedpyright" },
@@ -119,11 +118,10 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=26.5.1" },
-    { name = "copier", specifier = ">=9.16.0" },
-    { name = "hypothesis", specifier = ">=6.155.7" },
+    { name = "copier", specifier = ">=9.17.0" },
+    { name = "hypothesis", specifier = ">=6.161.5" },
     { name = "isort", specifier = ">=8.0.1" },
-    { name = "llm-kb", marker = "python_full_version >= '3.12'", editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" },
-    { name = "pre-commit", specifier = ">=4.6.0" },
+    { name = "pre-commit", specifier = ">=4.6.1" },
     { name = "pyright", specifier = ">=1.1.411" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-pyright", specifier = ">=0.0.6" },
@@ -530,11 +528,15 @@ name = "llm-claims-kb"
 version = "0.1.0"
 source = { editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-claims-kb" }
 dependencies = [
+    { name = "llm-kb" },
     { name = "pyyaml" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pyyaml", specifier = ">=6.0" }]
+requires-dist = [
+    { name = "llm-kb", editable = "../../repo/github.com/bukzor/bukzor-agent-skills/llm-kb" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
 
 [[package]]
 name = "llm-kb"
