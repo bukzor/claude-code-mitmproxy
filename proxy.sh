@@ -33,6 +33,7 @@ fi
 # (see proxy-memory-leak-2026-08-18/). The flows are all on disk anyway;
 # flow_detail=0 leaves only the event log, on stderr.
 exec >&2
+uv sync
 exec mitmdump \
   --mode "reverse:https://api.anthropic.com" \
   --listen-port "$PORT" \

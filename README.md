@@ -11,7 +11,7 @@ on disk instead, re-applying after each upgrade (Binary patches, below).
 ## Quick start
 
 ```bash
-./proxy.sh          # mitmproxy TUI, listening on :8080 (pass another port as $1)
+./proxy.sh          # mitmdump, listening on :8080 (pass another port as $1)
 
 # in another terminal:
 ANTHROPIC_BASE_URL=http://localhost:8080 claude
@@ -20,6 +20,20 @@ ANTHROPIC_BASE_URL=http://localhost:8080 claude
 All generated output lives under `log/` (gitignored). Traffic is dumped to
 `log/traffic/YYYY-MM-DD.flow` / `.jsonl`, sharded daily since a live proxy
 can run for weeks without restarting.
+
+### Install (Alpine)
+
+PyPI has no musl wheels for mitmproxy-linux, so it builds from source,
+which needs Rust (stable + nightly) and bpf-linker:
+
+```
+brew install rustup
+rustup default stable
+rustup toolchain install nightly --component rust-src
+cargo install --locked cargo-binstall
+cargo binstall bpf-linker
+uv sync
+```
 
 ## Addons
 
