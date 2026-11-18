@@ -11,9 +11,9 @@ summaries).
 The mechanism lives in `addons/thinkpatch.py`'s docstring/code; what isn't obvious there:
 
 - It took **both** stripping the `anthropic-beta: redact-thinking-2026-02-12`
-  header **and** setting `thinking.display="summarized"`. Either alone is
-  insufficient — Claude Code sends that beta unconditionally, which forces
-  redaction on Opus 4.7+ regardless of `display`.
+  header **and** setting `thinking.display="summarized"`, on versions that
+  send that beta unconditionally: it forces redaction on Opus 4.7+ regardless
+  of `display`. v2.1.327 no longer sends it, so there only the body patch acts.
 
 ## Subtleties for future work
 
@@ -26,6 +26,21 @@ The mechanism lives in `addons/thinkpatch.py`'s docstring/code; what isn't obvio
   request-body patch treats an explicit `"omitted"` the same as an absent
   field — both fall through to being overwritten with `"summarized"`; only
   `"summarized"` itself is a no-op.
+- **`"updates"` is a third redacting mode.** v2.1.327 sends
+  `display: "updates"` under the beta `thinking-display-updates-2026-08-18`
+  unless `showThinkingSummaries` is set. Its `thinking_delta`s carry
+  empty `thinking` and only an `estimated_tokens` count (incident
+  `462f893f594f`), so it is overwritten like `"omitted"`. The beta stays;
+  it enables the value rather than forcing redaction.
+- > [!DRAFT] agent-authored 2026-11-18, vetoable -- the user asked what to do
+  > with `"highlights"`; this is the agent's answer, unruled.
+
+  **`"highlights"` passes through untouched.** v2.1.327 can also send
+  `display: "highlights"` (direct Anthropic API only, behind an experiment
+  gate; on rejection it falls back on its own). Claude Code's own display
+  classifier puts it with `"summarized"` as a mode that returns thinking text,
+  so overwriting it would only swap one visible mode for another. Known from
+  the binary only -- not yet seen on the wire.
 - **Multi-turn continuity is safe.** The `signature` blob is byte-identical
   across display modes, so flipping `display` does not break tool-use / signature
   round-trips.

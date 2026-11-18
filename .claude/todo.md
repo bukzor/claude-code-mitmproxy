@@ -26,6 +26,16 @@ Narrative in `../session.kb/`.
         branch the first half added, and needs its data migration in the same
         commit.
 
+- [ ] Rule on thinkpatch's two v2.1.327 judgment calls
+      (`../CLAUDE.kb/thinking-display.md`).
+  - [ ] Set `showThinkingSummaries: true` in `~/.claude/settings.json`?
+        That setting makes Claude Code request `"summarized"` itself and
+        render it. The body patch then only acts as a fallback, and its
+        `"updates"` overwrite stops firing.
+  - [ ] Ratify or veto the `[!DRAFT]` decision to pass `"highlights"`
+        through. It's known from the binary only; check it against the
+        first `"highlights"` request seen on the wire.
+
 - [ ] <https:todo.kb/2026-10-01-004-Correct-the-role-system-coverage-rationale.md>
       -- `prompt-loci-coverage.md` spares `<system-reminder>` envelopes because
       their bulk is the user's own content, then justifies patching the

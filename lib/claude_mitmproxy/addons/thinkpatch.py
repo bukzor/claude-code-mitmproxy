@@ -1,10 +1,12 @@
 """Restore plaintext thinking on Opus 4.7+ via two patches:
 
 1. Strip `redact-thinking-2026-02-12` from the `anthropic-beta` header.
-   Claude Code sends this beta unconditionally, which forces thinking
-   redaction (empty text + opaque signature) on Opus 4.7+.
+   Through some version before v2.1.327, Claude Code sent this beta
+   unconditionally, forcing thinking redaction (empty text + opaque
+   signature) on Opus 4.7+. v2.1.327 no longer sends it.
 2. Inject `thinking.display=summarized` into the request body. Opus 4.7+
-   defaults this to "omitted"; both patches are required.
+   defaults this to "omitted"; v2.1.327 Claude Code sends "updates"
+   (empty thinking plus a token estimate). Both are overwritten.
 """
 from __future__ import annotations
 
@@ -53,12 +55,13 @@ def _patch_thinking_body(flow) -> None:
     assert thinking_type == "adaptive", ("unexpected thinking config", thinking)
 
     existing_display = thinking.get("display")
-    assert existing_display in (None, "omitted", "summarized"), (
+    assert existing_display in (None, "omitted", "updates", "summarized", "highlights"), (
         "unexpected thinking.display",
         existing_display,
     )
 
-    if existing_display == "summarized":
+    if existing_display in ("summarized", "highlights"):
+        # Both already return thinking text; see CLAUDE.kb/thinking-display.md.
         return
 
     thinking["display"] = "summarized"
