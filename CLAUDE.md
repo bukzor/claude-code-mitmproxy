@@ -96,12 +96,20 @@ it (`.pre-commit-config.yaml`).
 > [!@bukzor] ruled 2026-09-01, recorded 2026-09-07, sensatim -- "Simply:
 > address the Monitor output? If so, then adjusting responsibilities amounts
 > to adjusting monitor output". Landed by 58e801c and cf671f1.
+>
+> [!@bukzor] ruled 2026-11-20, sensatim -- maintenance opens with
+> `git pull --rebase`; keep the remote up to date.
+
+A maintenance session opens with `git pull --rebase`. This repo is
+maintained from more than one clone, and the watch commits on its own, so
+push every commit once it is verified, the watch's included. An unpushed
+commit becomes the next session's conflicted rebase.
 
 One duty: address the watch's output. Keep `./driftwatch.sh` running via
 `Bash` with `run_in_background: true` and `timeout: 7200000` -- in the
 foreground it blocks the session until the report changes. It exits when its
 report next changes, so its exit notice is the event; re-arm it after each
-one, and after a timeout. When a maintenance session opens, read
+one, and after a timeout. Once pulled, read
 `log/driftwatch.last` for what is still outstanding, then arm it -- a report
 that changed while no session was open prints at once. Every line that
 asks something starts with its event type, and `playbook.kb/<type>.md` says
