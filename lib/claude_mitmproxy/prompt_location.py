@@ -21,7 +21,7 @@ import re
 # still in service send the older openings.
 BODY_MARKERS = (
     "\nYou are an interactive agent",
-    "\nYou are an agent working with the user",  # v2.1.327
+    "\nYou are an agent working with the user",  # v2.1.286
 )
 
 # Incident rule for a `system` list without exactly one such block.
